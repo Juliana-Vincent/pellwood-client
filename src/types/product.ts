@@ -14,7 +14,7 @@ export interface Product {
   orientedImage?: boolean;
   price?: number | string;
   variants?: Variant[];
-  parameters?: Parameter[];
+  parametrs?: Parameter[];
   category?: Category | null;
   linkedProducts?: Product[];
 }

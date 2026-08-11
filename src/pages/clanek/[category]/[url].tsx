@@ -47,15 +47,14 @@ export async function getStaticPaths() {
 
 
 interface ArticleProps {
-  chapters: ArticleType & { descriptionHead?: string; titleHead?: string };
+  chapters: ArticleType;
 }
 
 const Article = ({ chapters }: ArticleProps) => {
   return (
     <Page
       id="blog"
-      description={chapters.descriptionHead}
-      title={chapters.titleHead}
+      title={chapters.title}
       image={chapters?.chapters?.[0]?.image ? urlFor(chapters.chapters[0].image).url() : undefined}
     >
       {chapters?.chapters?.map((item, index) => (

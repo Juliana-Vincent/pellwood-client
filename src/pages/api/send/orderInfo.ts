@@ -1,4 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import dbConnect from "@/lib/dbConnect";
+import Order from "@/models/order.model";
 import { createTransporter } from "@/lib/mailer";
 import { sendEmail as sendEmailViaResend } from "@/lib/mailer-resend";
 import { sendEmail as sendEmailViaSendGrid } from "@/lib/mailer-sendgrid";
@@ -18,6 +20,18 @@ export default async function handler(
 
   try {
     const data = req.body;
+
+    // Atomically claim the "notified" flag so a page refresh (thank-you re-runs its
+    // data fetch on every load) or a duplicate call can't send the confirmation email
+    // twice - only the request that actually flips false -> true proceeds to send.
+    await dbConnect();
+    const claimed = await Order.findOneAndUpdate(
+      { idOrder: data.idOrder, notified: { $ne: true } },
+      { notified: true }
+    );
+    if (!claimed) {
+      return res.status(200).json({ success: true, alreadyNotified: true });
+    }
 
     const mailOptions = {
       from: '"Objednávka dokončena - Pellwood" <info@hardart.cz>',

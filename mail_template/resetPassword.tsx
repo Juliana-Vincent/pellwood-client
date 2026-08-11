@@ -1,4 +1,4 @@
-const ResetPassword = (email: string): string => (`<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+const ResetPassword = (email: string, resetToken: string): string => (`<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office" style="width:100%;font-family:arial, 'helvetica neue', helvetica, sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;padding:0;Margin:0">
  <head>
   <meta charset="UTF-8">
@@ -138,7 +138,7 @@ a[x-apple-data-detectors] {
                      <tr style="border-collapse:collapse">
                      </tr>
                      <tr style="border-collapse:collapse">
-                      <td align="center" style="padding:0;Margin:0;padding-bottom:20px"><span class="es-button-border" style="border-style:solid;border-color:#000000;background:#305EE4;border-width:0px;display:inline-block;border-radius:3px;width:auto"><a href="https://pellwood.com/?email=${Buffer.from(email).toString('base64')}" class="es-button" target="_blank" style="mso-style-priority:100 !important;text-decoration:none;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:arial, 'helvetica neue', helvetica, sans-serif;font-size:14px;color:#FFFFFF;border-style:solid;border-color:#305EE4;border-width:10px 40px;display:inline-block;background:#305EE4;border-radius:3px;font-weight:normal;font-style:normal;line-height:17px;width:auto;text-align:center">Změnit heslo</a></span></td>
+                      <td align="center" style="padding:0;Margin:0;padding-bottom:20px"><span class="es-button-border" style="border-style:solid;border-color:#000000;background:#305EE4;border-width:0px;display:inline-block;border-radius:3px;width:auto"><a href="https://pellwood.com/?email=${Buffer.from(email).toString('base64')}&resetToken=${resetToken}" class="es-button" target="_blank" style="mso-style-priority:100 !important;text-decoration:none;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:arial, 'helvetica neue', helvetica, sans-serif;font-size:14px;color:#FFFFFF;border-style:solid;border-color:#305EE4;border-width:10px 40px;display:inline-block;background:#305EE4;border-radius:3px;font-weight:normal;font-style:normal;line-height:17px;width:auto;text-align:center">Změnit heslo</a></span></td>
                      </tr>
                    </table></td>
                  </tr>

@@ -11,14 +11,16 @@ const buildUrl = (path: string) => {
 
 async function generateSitemap() {
   try {
-    const [productsRes, categoriesRes, articlesRes] = await Promise.all([
+    const [productsRes, archivesRes, articlesRes] = await Promise.all([
       fetchAPI('products', { locale: 'cs', populate: ['localizations'] }),
-      fetchAPI('categories', { locale: 'cs', populate: ['localizations'] }),
+      // The /kategorie/[category] route reads from the `archives` content type (which
+      // has a slug), not `categories` (which doesn't) - use the same source here.
+      fetchAPI('archives', { locale: 'cs', populate: ['localizations'] }),
       fetchAPI('articles', { locale: 'cs', populate: ['localizations', 'category', 'localizations.category'] })
     ]);
 
     const products = productsRes.data || [];
-    const categories = categoriesRes.data || [];
+    const archives = archivesRes.data || [];
     const articles = articlesRes.data || [];
 
     const urls: string[] = [
@@ -36,9 +38,9 @@ async function generateSitemap() {
       }
     }
 
-    for (const c of categories) {
-      urls.push(buildUrl(`/kategorie/${c.slug}`));
-      const enLoc = c.localizations?.find((l: any) => l.locale === 'en');
+    for (const a of archives) {
+      urls.push(buildUrl(`/kategorie/${a.slug}`));
+      const enLoc = a.localizations?.find((l: any) => l.locale === 'en');
       if (enLoc?.slug) {
         urls.push(buildUrl(`/en/kategorie/${enLoc.slug}`));
       }

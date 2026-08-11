@@ -169,7 +169,7 @@ export async function getServerSideProps(context: any) {
   // 4. Fetch articles
   const articlesRes = await fetchAPI("articles", {
     locale: strapiLocale,
-    populate: { category: true },
+    populate: { category: true, image: true },
   });
   const articlesData = articlesRes.data || [];
 
@@ -320,15 +320,15 @@ const Catalog = ({
   return (
     <Page
       id="catalog"
-      title={settings?.metaCatalog?.title}
-      description={settings?.metaCatalog?.description}
+      title={settings?.title}
+      description={settings?.description}
     >
-      {settings?.titleCategory && (
+      {settings?.title && (
         <section className="head_category">
           <div className="uk-container uk-container-expand">
             <div className="content_head_wrap">
-              <h1>{settings.titleCategory}</h1>
-              <p>{settings.descriptionCategory}</p>
+              <h1>{settings.title}</h1>
+              <p>{settings.description}</p>
             </div>
           </div>
         </section>

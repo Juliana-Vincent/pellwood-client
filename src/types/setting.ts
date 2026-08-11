@@ -4,10 +4,6 @@ export interface Setting {
   title?: string;
   description: string;
   footer?: Footer[];
-  metaCatalog?: {
-    title: string,
-    description: string
-  };
   [key: string]: any;
 }
 

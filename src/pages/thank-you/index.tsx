@@ -31,23 +31,33 @@ export async function getServerSideProps({ query, locale }: any) {
     };
   }
 
-  // Отправляем email без ожидания ответа (fire and forget)
-  // Это не блокирует загрузку страницы
-  AxiosAPI.post(`/send/orderInfo`, order).catch((err) => {
-    console.error("Failed to send order email:", err.message);
-  });
+  // Fire the confirmation email and the purchase conversion event only the first time
+  // this order's thank-you page is loaded. This page re-runs on every request
+  // (refresh, revisit, bookmark), and without this guard both would fire again
+  // every single time.
+  const alreadyNotified = !!order.notified;
+
+  if (!alreadyNotified) {
+    // Fire and forget - doesn't block the page load. The endpoint itself atomically
+    // claims the "notified" flag, so this is also safe against races.
+    AxiosAPI.post(`/send/orderInfo`, order).catch((err) => {
+      console.error("Failed to send order email:", err.message);
+    });
+  }
 
   var status = "",
     dataGtag: any = undefined;
 
   if (order.payOnline) {
     status = order.status || "";
-    if (status !== "PENDING" && status !== "CANCELLED") {
+    if (!alreadyNotified && status !== "PENDING" && status !== "CANCELLED") {
       dataGtag = gtag(order);
     }
   } else {
     status = "dobirka";
-    dataGtag = gtag(order);
+    if (!alreadyNotified) {
+      dataGtag = gtag(order);
+    }
   }
 
   return {

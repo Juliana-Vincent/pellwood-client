@@ -13,6 +13,7 @@
     "@sendgrid/mail": "^8.1.6",
     "@strapi/blocks-react-renderer": "^1.0.2",
     "axios": "^1.6.5",
+    "bcryptjs": "^3.0.3",
     "cookies-next": "^6.1.1",
     "googleapis": "^173.0.0",
     "mongoose": "^8.1.0",
@@ -28,8 +29,8 @@
     "vanilla-cookieconsent": "^3.0.1"
   },
   "scripts": {
-    "dev": "next dev -p 3001",
-    "build": "next build",
+    "dev": "next dev -p 3001 --webpack",
+    "build": "next build --webpack",
     "start": "next start -p 3001",
     "pm2:start": "pm2 start ecosystem.config.js",
     "pm2:stop": "pm2 stop ecosystem.config.js",

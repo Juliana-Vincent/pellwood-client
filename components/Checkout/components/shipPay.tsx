@@ -1,27 +1,11 @@
 import React from "react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { deliveryData, paymentData } from "@/functions/shippingOptions";
 import {
   DeliveryMethodState,
   PaymentMethodState,
   CheckoutErrors,
 } from "@/src/types/shop";
-
-const deliveryData = {
-  cz: [
-    { value: "PPL standartní doručení v ČR", price: "150 Kč" },
-    { value: "PPL na Slovensko", price: "200 Kč" },
-  ],
-  en: [{ value: "DHL", price: "10 €" }],
-};
-
-const paymentData = {
-  cz: [
-    { value: "Online bankovní platby", price: "ZDARMA", payOnline: true },
-    { value: "Platba kartou on-line", price: "ZDARMA", payOnline: true },
-    { value: "Na dobírku", price: "30 Kč", payOnline: false },
-  ],
-  en: [{ value: "Card payment", price: "FREE", payOnline: true }],
-};
 
 interface ShipPayProps {
   delivery: DeliveryMethodState;

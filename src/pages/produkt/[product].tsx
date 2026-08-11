@@ -154,13 +154,12 @@ const Product = ({
     let basket = dataContextState["basket" + lang];
     let basketCount = dataContextState["basketCount" + lang];
 
-    if (basket === undefined || basket === null || !basket) {
-      basket = [];
-      basket.push(newBasketItem);
+    if (!basket || !basket.length) {
+      basket = [newBasketItem];
       basketCount = 1;
     } else {
       let indexBasket = -1;
-      basket.map((item: any, index: number) => {
+      basket.forEach((item: any, index: number) => {
         if (product?.variants?.length) {
           if (
             item.id === productId &&
@@ -173,13 +172,18 @@ const Product = ({
         }
       });
       if (indexBasket >= 0) {
-        basket[indexBasket].countVariant =
-          +basket[indexBasket].countVariant + count;
+        // Build a new array/item instead of mutating in place - context consumers
+        // (e.g. the mini-cart total) rely on the basket reference actually changing
+        // to know they need to recompute.
+        basket = basket.map((item: any, index: number) =>
+          index === indexBasket
+            ? { ...item, countVariant: +item.countVariant + count }
+            : item
+        );
       } else {
         basketCount = +basketCount + 1;
-        basket.push(newBasketItem);
+        basket = [...basket, newBasketItem];
       }
-      indexBasket = -1;
     }
     dataContextDispatch({ state: basket, type: "basket" + lang });
     dataContextDispatch({ state: basketCount, type: "basketCount" + lang });
@@ -431,7 +435,7 @@ const Product = ({
                 <div className="paramets">
                   <table className="uk-table uk-table-divider uk-table-small">
                     <tbody>
-                      {(product.parameters || []).map((item, index) => (
+                      {(product.parametrs || []).map((item, index) => (
                         <tr key={index}>
                           <td>{item.title}</td>
                           <td className="uk-text-right">{item.value}</td>

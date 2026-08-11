@@ -6,12 +6,13 @@ export interface DataState {
   basketCountcz: number;
   basketen: any[];
   basketCounten: number;
-  basketde: any[];
-  basketCountde: number;
   user: any;
   state: {
     searchFocus: boolean;
   };
+  // True once the cookie-restoration effect below has run at least once, so pages
+  // can tell "basket is genuinely empty" apart from "cookies haven't loaded yet".
+  hydrated: boolean;
 }
 
 export type DataAction =
@@ -19,10 +20,9 @@ export type DataAction =
   | { type: "basketCountcz"; state: number }
   | { type: "basketen"; state: any[] }
   | { type: "basketCounten"; state: number }
-  | { type: "basketde"; state: any[] }
-  | { type: "basketCountde"; state: number }
   | { type: "user"; state: any }
-  | { type: "state"; state: { searchFocus: boolean } };
+  | { type: "state"; state: { searchFocus: boolean } }
+  | { type: "hydrated"; state: boolean };
 
 export interface DataContextProps {
   dataContextState: DataState;
@@ -34,12 +34,11 @@ const initialState: DataState = {
   basketCountcz: 0,
   basketen: [],
   basketCounten: 0,
-  basketde: [],
-  basketCountde: 0,
   user: {},
   state: {
     searchFocus: false
-  }
+  },
+  hydrated: false
 };
 
 const reducer = (state: DataState, action: DataAction): DataState => {
@@ -56,17 +55,13 @@ const reducer = (state: DataState, action: DataAction): DataState => {
     case "basketCounten":
       setCookie('basketCounten', JSON.stringify(action.state));
       return { ...state, basketCounten: action.state };
-    case "basketde":
-      setCookie('basketde', JSON.stringify([ ...action.state ]));
-      return { ...state, basketde: action.state };
-    case "basketCountde":
-      setCookie('basketCountde', JSON.stringify(action.state));
-      return { ...state, basketCountde: action.state };
     case "user":
       setCookie('user', JSON.stringify({ ...action.state }));
       return { ...state, user: action.state };
     case "state":
       return { ...state, state: action.state };
+    case "hydrated":
+      return { ...state, hydrated: action.state };
     default:
       console.error('action.type is not implemented');
       return state;
@@ -95,16 +90,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const bcen = getCookie('basketCounten');
       if (bcen && typeof bcen === 'string') dataContextDispatch({ type: 'basketCounten', state: JSON.parse(bcen) });
 
-      const bde = getCookie('basketde');
-      if (bde && typeof bde === 'string') dataContextDispatch({ type: 'basketde', state: JSON.parse(bde) });
-
-      const bcde = getCookie('basketCountde');
-      if (bcde && typeof bcde === 'string') dataContextDispatch({ type: 'basketCountde', state: JSON.parse(bcde) });
-
       const u = getCookie('user');
       if (u && typeof u === 'string') dataContextDispatch({ type: 'user', state: JSON.parse(u) });
     } catch (e) {
       console.error("Failed to parse cookies", e);
+    } finally {
+      dataContextDispatch({ type: 'hydrated', state: true });
     }
   }, []);
 

@@ -14,6 +14,7 @@ const ResetPassword = ({ history }: ResetPasswordProps) => {
   
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [done, setDone] = useState(false);
@@ -30,6 +31,9 @@ const ResetPassword = ({ history }: ResetPasswordProps) => {
       } catch (e) {
         console.error("Invalid base64 email");
       }
+    }
+    if (router.query.resetToken && typeof router.query.resetToken === 'string') {
+      setResetToken(router.query.resetToken);
     }
   }, [router.query]);
 
@@ -66,7 +70,7 @@ const ResetPassword = ({ history }: ResetPasswordProps) => {
       return;
     }
 
-    AxiosAPI.put(`/user/password`, { email, password })
+    AxiosAPI.put(`/user/password`, { email, password, resetToken })
       .then(res => {
         setDone(true);
         router.replace(router.pathname, undefined, { shallow: true });

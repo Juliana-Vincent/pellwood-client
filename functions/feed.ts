@@ -17,7 +17,7 @@ const feedModel = (lang: string, products: any[]): FeedItem[] => {
         arr.push({
           id: `${prod.documentId.slice(0, 10)}_${lang}${variants[a].id}_${lang}`,
           title: `${prod.title} - ${variants[a].title}`,
-          description: prod.descriptionHead || '',
+          description: prod.SEOdescription || '',
           parametrs: prod.parametrs || [],
           link: `https://pellwood.com/${lang === 'cz' ? '' : 'en/'}produkt/${prod.slug}?${variants[a].title.toLowerCase().replace(/\s+/g, '-')}`,
           image_link: urlFor(prod.image).url(),
@@ -30,7 +30,7 @@ const feedModel = (lang: string, products: any[]): FeedItem[] => {
       arr.push({
         id: `${prod.documentId}_${lang}`,
         title: prod.title,
-        description: prod.descriptionHead || '',
+        description: prod.SEOdescription || '',
         link: `https://pellwood.com/${lang === 'cz' ? '' : 'en/'}produkt/${prod.slug}`,
         image_link: urlFor(prod.image).url(),
         parametrs: prod.parametrs || [],

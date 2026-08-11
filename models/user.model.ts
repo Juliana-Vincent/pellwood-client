@@ -26,7 +26,9 @@ const schema = new mongoose.Schema({
     companyName: { type: String, default: '' },
     ico: { type: String, default: '' },
     dic: { type: String, default: '' }
-  }
+  },
+  resetTokenHash: { type: String, default: null },
+  resetTokenExpires: { type: Date, default: null }
 });
 
 export default mongoose.models.user || mongoose.model('user', schema);

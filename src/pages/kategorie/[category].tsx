@@ -59,7 +59,7 @@ export async function getStaticProps({ params, locale }: any) {
 
 interface BlogShortProps {
   articles: ArticleType[];
-  archives: Archive & { descriptionHead?: string; titleHead?: string };
+  archives: Archive;
   lang: string;
 }
 
@@ -67,8 +67,7 @@ const BlogShort = ({ articles, archives, lang }: BlogShortProps) => {
   return (
     <Page
       id="blog"
-      description={archives.descriptionHead}
-      title={archives.titleHead}
+      title={archives.title}
     >
       <section className="head_category head_category_articles">
         <div className="uk-container uk-container-expand">

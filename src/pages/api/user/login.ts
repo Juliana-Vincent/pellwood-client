@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import dbConnect from "@/lib/dbConnect";
 import User from "@/models/user.model";
+import { verifyPassword } from "@/lib/auth";
 
 export default async function handler(
   req: NextApiRequest,
@@ -17,13 +18,15 @@ export default async function handler(
     await dbConnect();
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email, password });
+    const user = await User.findOne({ email });
+    const passwordMatches = user ? await verifyPassword(password, user.password) : false;
 
-    if (user) {
+    if (user && passwordMatches) {
+      const { password: _pw, resetTokenHash, resetTokenExpires, ...safeUser } = user.toObject();
       return res.status(200).json({
         msg: "User successfully found",
         error: false,
-        data: user,
+        data: safeUser,
       });
     }
 

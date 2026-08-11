@@ -19,10 +19,7 @@ export default async function handler(
   try {
     await dbConnect();
 
-    // Query either all orders or filter by exact email
-    const orderData = email === "all"
-      ? await Order.find({}).sort({ _id: -1 })
-      : await Order.find({ email });
+    const orderData = await Order.find({ email });
 
     return res.status(200).json({
       msg: "Order successfully getting",

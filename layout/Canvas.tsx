@@ -11,22 +11,21 @@ const Canvas = () => {
 
   const [mounted, setMounted] = useState(false);
   const { dataContextState, dataContextDispatch } = useContext(DataStateContext);
-  
+
   const basketKey = `basket${lang}` as keyof typeof dataContextState;
   const countKey = `basketCount${lang}` as keyof typeof dataContextState;
 
-  const [basket, setBasket] = useState<any[]>(dataContextState[basketKey] as any[] || []);
-  const [basketCount, setBasketCount] = useState<number>(dataContextState[countKey] as number || 0);
+  // Derived directly from context on every render (like Header.tsx) instead of a
+  // separate local mirror - a local copy previously fell out of sync with context
+  // and clobbered the real basketCount back to its stale value after every add-to-cart.
+  const basket = (dataContextState[basketKey] as any[]) || [];
+  const basketCount = (dataContextState[countKey] as number) || 0;
   const [sum, setSum] = useState<number>(0);
   const [sale, setSale] = useState<number>(0);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    setBasket(dataContextState[basketKey] as any[] || []);
-  }, [dataContextState[countKey], lang, basketKey, countKey]);
 
   const closeCanvas = (e: React.MouseEvent, link: string) => {
     if (e) e.preventDefault();
@@ -71,34 +70,18 @@ const Canvas = () => {
     onSumItems(basket);
   }, [basket, lang]);
 
-  useEffect(() => {
-    const ctxBasket = dataContextState[basketKey] as any[] || [];
-    setBasket(ctxBasket);
-    setBasketCount(dataContextState[countKey] as number || 0);
-    onSumItems(ctxBasket);
-  }, [router.query, lang, basketKey, countKey]);
-
-  useEffect(() => {
-    dataContextDispatch({ state: basket, type: basketKey as any });
-    dataContextDispatch({ state: basketCount, type: countKey as any });
-  }, [basketCount, basket, lang, basketKey, countKey]);
-
   const deleteItem = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     const id = e.currentTarget.dataset.id;
     const name = e.currentTarget.dataset.name;
-    
+
     const newBasket = [...basket];
     const index = newBasket.findIndex(item => item.id === id && item.variantName === name);
-    
+
     if (index >= 0) {
-      const removedItem = newBasket[index];
       newBasket.splice(index, 1);
-      setBasket(newBasket);
-      // Ensure we update basketCount correctly. If basketCount is total distinct items:
-      setBasketCount(Math.max(0, basketCount - 1));
-      // OR if it's total count: setBasketCount(Math.max(0, basketCount - removedItem.countVariant));
-      // Sticking to original - 1 logic to preserve existing behavior.
+      dataContextDispatch({ state: newBasket, type: basketKey as any });
+      dataContextDispatch({ state: Math.max(0, basketCount - 1), type: countKey as any });
     }
   };
 

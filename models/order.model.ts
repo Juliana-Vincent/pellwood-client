@@ -39,7 +39,8 @@ const schema = new mongoose.Schema({
   paymentPrice: { type: String, default: '' },
   payOnline: { type: Boolean, default: false },
   deliveryMethod: { type: String, default: '' },
-  deliveryPrice: { type: String, default: '' }
+  deliveryPrice: { type: String, default: '' },
+  notified: { type: Boolean, default: false }
 });
 
 export default mongoose.models.order || mongoose.model('order', schema);

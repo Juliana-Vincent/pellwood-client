@@ -81,8 +81,7 @@ const Homepage = ({
   return (
     <Page
       id="homepage"
-      description={homepage?.descriptionHead || homepage?.SEOdescription}
-      title={homepage?.titleHead || homepage?.title}
+      title={homepage?.title}
       image={homepage?.image ? urlFor(homepage.image).url() : ""}
     >
       <section className="homepage_slide">

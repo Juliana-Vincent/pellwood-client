@@ -9,6 +9,13 @@ import validationForm from "@/functions/validationForm";
 import { useRouter } from "next/router";
 import { useTranslation } from "@/hooks/useTranslation";
 
+// See src/pages/basket/index.tsx for why this trivial getServerSideProps is required:
+// pages with no data-fetching function fail to hydrate on a direct/fresh load on this
+// Next.js/Turbopack version, which would silently break the login/account forms here.
+export async function getServerSideProps() {
+  return { props: {} };
+}
+
 const User = () => {
   const router = useRouter();
   const { t, lang, currency } = useTranslation();

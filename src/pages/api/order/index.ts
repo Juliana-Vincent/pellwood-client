@@ -3,20 +3,7 @@ import mongoose from "mongoose";
 import axios from "axios";
 import dbConnect from "@/lib/dbConnect";
 import Order from "@/models/order.model";
-
-// CORS middleware helper
-function setCorsHeaders(res: NextApiResponse) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With, Accept"
-  );
-  res.setHeader("Access-Control-Max-Age", "3600");
-}
+import { computeAuthoritativeOrderTotal } from "@/functions/validateOrder";
 
 export default async function handler(
   req: NextApiRequest,
@@ -24,31 +11,7 @@ export default async function handler(
 ) {
   const { method } = req;
 
-  // Set CORS headers for all requests
-  setCorsHeaders(res);
-
-  // Handle OPTIONS request (preflight)
-  if (method === "OPTIONS") {
-    return res.status(204).end();
-  }
-
   await dbConnect();
-
-  if (method === "GET") {
-    try {
-      const orderData = await Order.find({}).sort({ _id: -1 });
-
-      return res.status(200).json({
-        msg: "Order successfully getting",
-        data: orderData,
-      });
-    } catch (err) {
-      console.error("Order GET error:", err);
-      return res.status(500).json({
-        msg: err instanceof Error ? err.message : "Internal Server Error",
-      });
-    }
-  }
 
   if (method === "POST") {
     try {
@@ -59,9 +22,14 @@ export default async function handler(
         basket,
         payment,
         delivery,
-        sum,
         status,
       } = req.body;
+
+      // Recompute the total server-side from real Strapi prices and the known
+      // delivery/payment options instead of trusting the client-submitted sum -
+      // that number is what gets charged via Comgate below.
+      const { total, deliveryPrice, paymentPrice, payOnline } =
+        await computeAuthoritativeOrderTotal(basket, delivery, payment, currency);
 
       const order = {
         _id: new mongoose.Types.ObjectId(),
@@ -80,23 +48,26 @@ export default async function handler(
         currency,
         note,
         basket,
-        sum,
+        sum: total,
         idOrder: Math.floor(Math.random() * 1000000),
         status,
         state: "new",
         paymentMethod: payment.value,
-        paymentPrice: payment.price,
-        payOnline: payment.payOnline,
+        paymentPrice,
+        payOnline,
         deliveryMethod: delivery.value,
-        deliveryPrice: delivery.price,
+        deliveryPrice,
       };
 
       let resDataParse: Record<string, string> = {};
 
-      if (payment.payOnline) {
+      if (payOnline) {
+        if (!process.env.PAYED_ID || !process.env.PAYED_PASSWORD) {
+          throw new Error("Payment gateway is not configured (PAYED_ID/PAYED_PASSWORD missing)");
+        }
         const paymentData = {
-          merchant: "147005",
-          price: String(Math.floor(sum * 100)),
+          merchant: process.env.PAYED_ID,
+          price: String(Math.floor(total * 100)),
           lang: currency === "Kč" ? "cs" : "en",
           curr: currency === "Kč" ? "CZK" : "EUR",
           label: `${user.name}-${user.surname}`,
@@ -105,7 +76,7 @@ export default async function handler(
           method: "ALL",
           prepareOnly: "true",
           email: user.email,
-          secret: "MBfhNsBL5v2DaKIhUnVsipeHyHwfoYhY",
+          secret: process.env.PAYED_PASSWORD,
         };
 
         // Leverage native URLSearchParams instead of manual loop and encodeURIComponent
@@ -125,7 +96,7 @@ export default async function handler(
       const resOrder = await Order.create(order);
 
       const zboziConverseBody = {
-        PRIVATE_KEY: "W9CQNC9gPMhvp4gQmyrj1XEmjnUuNFph",
+        PRIVATE_KEY: process.env.ZBOZI_PRIVATE_KEY,
         sandbox: false,
         orderId: order.idOrder,
         email: order.email,
@@ -153,7 +124,7 @@ export default async function handler(
 
       return res.status(200).json({
         msg: "Order successfully created",
-        data: payment.payOnline ? resDataParse : resOrder,
+        data: payOnline ? resDataParse : resOrder,
       });
     } catch (err) {
       console.error("Order POST error:", err);
@@ -181,6 +152,6 @@ export default async function handler(
     }
   }
 
-  res.setHeader("Allow", ["GET", "POST", "PUT"]);
+  res.setHeader("Allow", ["POST", "PUT"]);
   return res.status(405).end(`Method ${method} Not Allowed`);
 }

@@ -19,6 +19,13 @@ import {
   CheckoutErrors,
 } from "@/src/types/shop";
 
+// See src/pages/basket/index.tsx for why this trivial getServerSideProps is required:
+// pages with no data-fetching function fail to hydrate on a direct/fresh load on this
+// Next.js/Turbopack version, which would silently break order submission here.
+export async function getServerSideProps() {
+  return { props: {} };
+}
+
 const Basket = () => {
   const { t, lang, currency } = useTranslation();
   const { dataContextState, dataContextDispatch } = useContext(
@@ -27,7 +34,11 @@ const Basket = () => {
   const [sum, setSum] = useState<number | string>(0);
   const [sumBefore, setSumBefore] = useState<number | string>(0);
   const [sale, setSale] = useState<number | string>(0);
-  const [basket] = useState(dataContextState["basket" + lang] || []);
+  // Read straight from context on every render (not a frozen useState snapshot) so a
+  // fresh page load (refresh, bookmark) sees the real basket once cookies are restored,
+  // instead of permanently treating it as empty and later kicking the customer out of
+  // checkout when they submit the order.
+  const basket = dataContextState["basket" + lang] || [];
   const [user, setUser] = useState(dataContextState.user);
 
   const [state, setState] = useState<CheckoutState>({
@@ -106,7 +117,8 @@ const Basket = () => {
 
   useEffect(() => {
     sumTotal(0, 0, basket, setSumBefore, setSale, setSum, lang as "cz" | "en");
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [basket]);
 
   useEffect(() => {
     sumTotal(
@@ -118,7 +130,8 @@ const Basket = () => {
       setSum,
       lang as "cz" | "en"
     );
-  }, [deliveryMethod, paymentMethod]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deliveryMethod, paymentMethod, basket]);
 
   const onBlur = (type: any) => {
     if (validationForm(type, state, error, setError as any)) {
@@ -181,7 +194,9 @@ const Basket = () => {
     };
 
     if (state.registrationCheck) {
-      AxiosAPI.post(`/user`, { data: dataOrder.user, type: "create" }).then(
+      // The POST handler expects a flat {email, password} body; the PUT handler is the
+      // one that accepts this {data, type} shape and actually creates the account.
+      AxiosAPI.put(`/user`, { data: dataOrder.user, type: "create" }).then(
         (res) => dataContextDispatch({ state: res.data.data, type: "user" })
       );
     }
