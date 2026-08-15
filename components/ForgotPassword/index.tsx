@@ -34,22 +34,26 @@ const ForgotPassword = () => {
 
     // AxiosAPI already has the correct baseURL configured via restClient
     AxiosAPI.post("/send/reset-password", { email })
-      .then((res) => {
-        console.log(res);
+      .then(() => {
         setDone(true);
       })
       .catch((err) => {
-        console.log(err);
-        // Map backend errors to state strings if necessary
-        // For now, assuming general error logic:
-        setError({ loginEmail: "notExist" });
+        // The endpoint always returns 200 regardless of whether the account
+        // exists (so this can't be used to enumerate registered emails - see
+        // pages/api/send/reset-password.ts) - a rejection here is a genuine
+        // server-side failure, never "no such user", so "invalid email or
+        // password" would be actively wrong messaging.
+        console.error("Failed to request password reset:", err);
+        setError({ loginEmail: "serverError" });
       });
   };
 
   if (!mounted) return null;
 
   return (
-    <div id="forgot-password" className="uk-flex-top" uk-modal="">
+    // container: false - see components/Login/index.tsx for why this is required
+    // on every uk-modal in the app (otherwise React never sees input inside it).
+    <div id="forgot-password" className="uk-flex-top" uk-modal="container: false">
       <div className="uk-modal-dialog uk-modal-body uk-margin-auto-vertical">
         <div className="tm-canvas-head" style={{ marginTop: 0 }}>
           <h2>{t("forgottenpassword")}</h2>
@@ -64,9 +68,9 @@ const ForgotPassword = () => {
         {!done && (
           <div className="login_form">
             <form onSubmit={send}>
-              {error.loginEmail === "notExist" && (
+              {error.loginEmail === "serverError" && (
                 <div className="uk-alert-danger" uk-alert="">
-                  <p>{t("loginErrorWrong")}</p>
+                  <p>{t("errorSendOrder")}</p>
                 </div>
               )}
               {error.loginEmail === "exist" && (

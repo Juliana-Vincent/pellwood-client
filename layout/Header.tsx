@@ -16,9 +16,11 @@ interface MenuItem {
   slug: string;
 }
 
-interface FetchResponse {
-  data: ArchiveItem[];
-}
+// Accounts (login/register/account page) aren't a requested feature yet - the code
+// (Login, ForgotPassword, ResetPassword, /user, the auth API routes) is intentionally
+// left in place for whenever that's greenlit, just not linked to from anywhere on the
+// site. Flip this back on to re-expose the header's login/account entry point.
+const AUTH_ENABLED = false;
 
 const Header = ({ loginUser }: { loginUser?: boolean }) => {
   const router = useRouter();
@@ -37,11 +39,11 @@ const Header = ({ loginUser }: { loginUser?: boolean }) => {
     let isSubscribed = true;
     const strapiLocale = lang === "cz" ? "cs" : lang;
 
-    fetchAPI("archives", {
+    fetchAPI<ArchiveItem[]>("archives", {
       locale: strapiLocale,
       sort: ["sort:asc"],
     })
-      .then((res: FetchResponse) => {
+      .then((res) => {
         if (!isSubscribed) return;
         const formatted: MenuItem[] = (res.data || []).map((item) => ({
           title: item.title,
@@ -62,14 +64,30 @@ const Header = ({ loginUser }: { loginUser?: boolean }) => {
   const countKey = `basketCount${lang}` as keyof DataState;
   const basketCount = (dataContextState?.[countKey] as number) || 0;
 
+  // Derived directly from context (not the loginUser prop, which is only ever set
+  // true on mount and never reset on logout) so this never goes stale after the
+  // customer logs in or out.
+  const isLoggedIn = !!(dataContextState?.user as any)?.email;
+
+  // router.asPath can render as a bare trailing "?" with no actual query on some
+  // passes (confirmed via a live hydration-mismatch diff: SSR gives "/", the client
+  // re-render gives "/?") - normalize that away so the Link's href always agrees
+  // between server and client instead of triggering a hydration mismatch here on
+  // every single page.
+  const currentPath = router.asPath.replace(/\?$/, "");
+
   // Extracted Language Nav to prevent duplicate JSX code block
   const renderLanguageOptions = () => (
     <ul>
       <li className={lang === "cz" ? "menu_active" : undefined}>
-        <Link href={router.asPath} locale="cs">cs</Link>
+        <Link href={currentPath} locale="cs">
+          cs
+        </Link>
       </li>
       <li className={lang === "en" ? "menu_active" : undefined}>
-        <Link href={router.asPath} locale="en">en</Link>
+        <Link href={currentPath} locale="en">
+          en
+        </Link>
       </li>
       {/* If German (de) becomes active, it can be seamlessly added here */}
     </ul>
@@ -139,7 +157,21 @@ const Header = ({ loginUser }: { loginUser?: boolean }) => {
 
               <div className="user-area">
                 <div className="login">
-                  {/* TODO: Implement user login icon utilizing loginUser prop */}
+                  {AUTH_ENABLED && mounted && (
+                    isLoggedIn ? (
+                      <Link href="/user" className="account-link">
+                        {t("account")}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        className="account-link uk-button uk-button-link"
+                        uk-toggle="target: #modal-login"
+                      >
+                        {t("login")}
+                      </button>
+                    )
+                  )}
                   {mounted && (
                     <button
                       type="button"

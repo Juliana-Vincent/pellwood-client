@@ -29,7 +29,10 @@ const schema = new mongoose.Schema({
     ico: { type: String, default: '' },
     dic: { type: String, default: '' }
   },
-  idOrder: Number,
+  // idOrder is also used as the Comgate payment refId and as the public lookup key
+  // for the thank-you/status pages, so it must be guaranteed unique - the DB index
+  // is what actually enforces that; see the retry loop in api/order/index.ts.
+  idOrder: { type: Number, unique: true },
   status: { type: String, default: '' },
   state: { type: String, default: 'new' },
   note: { type: String, default: '' },

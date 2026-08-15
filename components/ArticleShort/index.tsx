@@ -2,7 +2,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { urlFor } from "@/lib/strapi";
 
-import type { Article as ArticleType } from "@/src/types/article";
+import type { Article as ArticleType } from "@/types/article";
 
 interface ArticleProps {
   data: ArticleType;
@@ -24,7 +24,7 @@ const Article = ({ data }: ArticleProps) => {
           <div className="uk-inline uk-height-1-1 uk-width-1-1">
             <div
               className="blanded-mix uk-width-1-1 uk-height-1-1 uk-background-cover"
-              data-src={urlFor(data.image).width(1200).auto().url()}
+              data-src={urlFor(data.image).width(1200).url()}
               uk-img=""
             ></div>
             <div className="overlay uk-position-center uk-flex uk-flex-center uk-flex-middle">

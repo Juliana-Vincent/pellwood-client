@@ -15,7 +15,12 @@ interface FilterParameters {
   diameterMax?: string | number;
 }
 
-export const getRangeParameter = (products: Product[], parameters?: FilterParameters | false) => {
+export interface RangeParameter {
+  length: { min: number; max: number };
+  diameter: { min: number; max: number };
+}
+
+export const getRangeParameter = (products: Product[], parameters?: FilterParameters | false): RangeParameter => {
   // If explicit parameters are provided via state/URL, return those immediately
   if (parameters && typeof parameters !== 'boolean' && parameters.lengthMin) {
     return {

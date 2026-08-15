@@ -79,7 +79,7 @@ const ResetPassword = ({ history }: ResetPasswordProps) => {
         }
       })
       .catch(err => {
-        console.log(err);
+        console.error("Password reset failed:", err);
         setError(prev => ({ ...prev, apiError: true }));
       });
   };
@@ -87,7 +87,9 @@ const ResetPassword = ({ history }: ResetPasswordProps) => {
   if (!mounted) return null;
 
   return (
-    <div id="reset-password" className="uk-flex-top" uk-modal="">
+    // container: false - see components/Login/index.tsx for why this is required on
+    // every uk-modal in the app (otherwise React never sees input inside it).
+    <div id="reset-password" className="uk-flex-top" uk-modal="container: false">
       <div className="uk-modal-dialog uk-modal-body uk-margin-auto-vertical">
         <div className="tm-canvas-head" style={{ marginTop: 0 }}>
           <h2>{t('forgottenpassword')}</h2>

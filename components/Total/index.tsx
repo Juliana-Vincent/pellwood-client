@@ -1,7 +1,8 @@
 import React from "react";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
-import { BasketItem } from "@/src/types/shop";
+import { BasketItem } from "@/types/shop";
+import { DELIVERY_FREE_THRESHOLD } from "@/functions/pricingRules";
 
 interface TotalProps {
   sum: number | string;
@@ -11,6 +12,9 @@ interface TotalProps {
   delivery?: string | number;
   payment?: string | number;
   isEnd?: boolean;
+  /** CMS-configured free-delivery threshold, resolved by the caller - defaults to
+   *  the hardcoded pricingRules.ts value if not passed. */
+  deliveryFreeThreshold?: number;
 }
 
 const Total = ({
@@ -21,11 +25,15 @@ const Total = ({
   delivery,
   payment,
   isEnd,
+  deliveryFreeThreshold,
 }: TotalProps) => {
   const { t, lang, currency } = useTranslation();
 
-  const parsedSumBefore = typeof sumBefore === 'string' ? parseFloat(sumBefore) || 0 : sumBefore || 0;
-  const parsedSum = typeof sum === 'string' ? parseFloat(sum) || 0 : sum || 0;
+  const parsedSumBefore =
+    typeof sumBefore === "string" ? parseFloat(sumBefore) || 0 : sumBefore || 0;
+  const parsedSum = typeof sum === "string" ? parseFloat(sum) || 0 : sum || 0;
+  const freeThreshold =
+    deliveryFreeThreshold ?? DELIVERY_FREE_THRESHOLD[lang as "cz" | "en"];
 
   return (
     <div className={isEnd ? "tm-total-end" : "tm-basket-total"}>
@@ -84,32 +92,29 @@ const Total = ({
                       delivery === t("free") ||
                       (delivery &&
                         String(delivery).length > 0 &&
-                        ((lang === "cz" && parsedSumBefore > 1500) ||
-                          (lang === "en" && parsedSumBefore > 100)))
+                        parsedSumBefore > freeThreshold)
                         ? "tm-positive"
                         : ""
                     }
                   >
                     {delivery &&
                       String(delivery).length > 0 &&
-                      ((lang === "cz" && parsedSumBefore <= 1500) ||
-                        (lang === "en" && parsedSumBefore <= 100)) &&
+                      parsedSumBefore <= freeThreshold &&
                       delivery}
                     {delivery &&
                       String(delivery).length > 0 &&
-                      ((lang === "cz" && parsedSumBefore > 1500) ||
-                        (lang === "en" && parsedSumBefore > 100)) &&
+                      parsedSumBefore > freeThreshold &&
                       t("free")}
-                    {(!delivery || String(delivery).length === 0) && t("notSelected")}
+                    {(!delivery || String(delivery).length === 0) &&
+                      t("notSelected")}
                   </span>
                 ) : (
                   <span
-                    className={`${(lang === "en" && parsedSum > 100) || (lang === "cz" && parsedSum > 1500) ? "tm-positive" : ""}`}
+                    className={`${parsedSum > freeThreshold ? "tm-positive" : ""}`}
                   >
-                    {lang === "cz" && parsedSum <= 1500 && "od 150 Kč"}
-                    {lang === "en" && parsedSum <= 100 && "10 €"}
-                    {lang === "en" && parsedSum > 100 && t("free")}
-                    {lang === "cz" && parsedSum > 1500 && t("free")}
+                    {lang === "cz" && parsedSum <= freeThreshold && "od 150 Kč"}
+                    {lang === "en" && parsedSum <= freeThreshold && "10 €"}
+                    {parsedSum > freeThreshold && t("free")}
                   </span>
                 )}
               </td>
@@ -119,7 +124,9 @@ const Total = ({
                 <td>{t("payment")}</td>
                 <td>
                   <span className={payment === t("free") ? "tm-positive" : ""}>
-                    {payment && String(payment).length > 0 ? payment : t("notSelected")}
+                    {payment && String(payment).length > 0
+                      ? payment
+                      : t("notSelected")}
                   </span>
                 </td>
               </tr>

@@ -1,4 +1,9 @@
 export default {
+  emailChangeUnavailable: {
+    cz: "E-mail nelze na tomto místě změnit.",
+    en: "Email address can't be changed here.",
+    de: "xxx"
+  },
   products: {
     cz: "Produkty",
     en: "Products",

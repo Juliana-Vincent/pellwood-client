@@ -1,6 +1,8 @@
-import { OrderData } from '../src/types/shop';
+import { OrderData } from "../types/shop";
 
-const InfoOrderEN = (data: OrderData): string => (`<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+const InfoOrderEN = (
+  data: OrderData,
+): string => `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office" style="width:100%;font-family:arial, 'helvetica neue', helvetica, sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;padding:0;Margin:0">
  <head>
   <meta charset="UTF-8">
@@ -84,7 +86,7 @@ a[x-apple-data-detectors] {
                   <td align="center" valign="top" style="padding:0;Margin:0;width:560px">
                    <table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
                      <tr style="border-collapse:collapse">
-                      <td align="center" style="padding:0;Margin:0;font-size:0px"><a href="https://pellwood.com/en" target="_blank"><img src="https://cdn.sanity.io/images/ejvonubx/production/8b33ced191f2c2d3289b62ea7904fcec7305baf0-201x30.png" alt style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" width="189"></a></td>
+                      <td align="center" style="padding:0;Margin:0;font-size:0px"><a href="https://pellwood.com/en" target="_blank"><img src="https://pellwood.com/assets/logo-email.png" alt style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" width="189"></a></td>
                      </tr>
                      <tr style="border-collapse:collapse">
                       <td align="center" class="es-m-p0r es-m-p0l" style="padding:20px;Margin:0;font-size:0">
@@ -132,7 +134,9 @@ a[x-apple-data-detectors] {
                </table></td>
              </tr>
 
-             ${data.payOnline ? `<tr style="border-collapse:collapse">
+             ${
+               data.payOnline
+                 ? `<tr style="border-collapse:collapse">
               <td align="left" style="padding:0;Margin:0;padding-top:20px;padding-left:20px;padding-right:20px">
                <table cellpadding="0" cellspacing="0" width="100%" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
                  <tr style="border-collapse:collapse">
@@ -140,9 +144,9 @@ a[x-apple-data-detectors] {
                    <table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
                      <tr style="border-collapse:collapse">
                       <td align="center" style="padding:0;Margin:0;padding-bottom:20px;padding-left:20px;padding-right:20px"><p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-size:14px;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:21px;color:#333333">
-                          ${data.status == 'PAID' ? 'Transaction&nbsp;<span style="color:#00CC33"><strong>COMPLETED</strong></span>' : ''}
-                          ${data.status == 'PENDING' ? 'Transaction <span style="color:#FFA500"><strong>WAITING FOR PAYMENT</strong>' : ''}
-                          ${data.status == 'CANCELLED' ? 'Transaction&nbsp;<span style="color:#FF3300"><strong>CANCELLED</strong></span>' : ''}
+                          ${data.status == "PAID" ? 'Transaction&nbsp;<span style="color:#00CC33"><strong>COMPLETED</strong></span>' : ""}
+                          ${data.status == "PENDING" ? 'Transaction <span style="color:#FFA500"><strong>WAITING FOR PAYMENT</strong>' : ""}
+                          ${data.status == "CANCELLED" ? 'Transaction&nbsp;<span style="color:#FF3300"><strong>CANCELLED</strong></span>' : ""}
                           <span style="color:#FF3300"><strong>&nbsp;</strong></span></p></td>
                      </tr>
 
@@ -157,7 +161,9 @@ a[x-apple-data-detectors] {
                    </table></td>
                  </tr>
                </table></td>
-             </tr>` : ''}
+             </tr>`
+                 : ""
+             }
            </table></td>
          </tr>
        </table>
@@ -173,7 +179,7 @@ a[x-apple-data-detectors] {
                    <table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
                      <tr style="border-collapse:collapse">
                       <td align="center" style="padding:0;Margin:0;padding-left:20px;padding-right:20px"><p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-size:14px;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:21px;color:#333333">
-                      ${(data.status === 'PAID' || !data.payOnline) ? 'The shipment will be delivered as soon as possible, in exceptional cases the delivery time may be extended. We will inform you about the next status.' : 'The shipment will be delivered as soon as possible after crediting the amount to our bank account, in exceptional cases the delivery time may be extended. We will inform you about the next status.'}
+                      ${data.status === "PAID" || !data.payOnline ? "The shipment will be delivered as soon as possible, in exceptional cases the delivery time may be extended. We will inform you about the next status." : "The shipment will be delivered as soon as possible after crediting the amount to our bank account, in exceptional cases the delivery time may be extended. We will inform you about the next status."}
                       </p></td>
                      </tr>
                    </table></td>
@@ -219,7 +225,8 @@ a[x-apple-data-detectors] {
                </table></td>
              </tr>
 
-             ${data.basket.map(item => `<tr style="border-collapse:collapse">
+             ${data.basket.map(
+               (item) => `<tr style="border-collapse:collapse">
               <td align="left" style="padding:0;Margin:0;padding-top:20px;padding-left:40px;padding-right:40px">
                <!--[if mso]><table style="width:520px" cellpadding="0" cellspacing="0"><tr><td style="width:157px" valign="top"><![endif]-->
                <table cellpadding="0" cellspacing="0" align="left" class="es-left" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;float:left">
@@ -244,7 +251,7 @@ a[x-apple-data-detectors] {
                      <tr style="border-collapse:collapse">
                       <td align="left" style="padding:0;Margin:0;padding-bottom:30px">
                       <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-size:14px;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:21px;color:#333333">
-                        <strong>${item.nameProduct}</strong> ${!!item.variantName ? '- ' + item.variantName : ''}<br>
+                        <strong>${item.nameProduct}</strong> ${!!item.variantName ? "- " + item.variantName : ""}<br>
                         ${item.countVariant} ks<br>
                         ${item.variantPrice} ${data.currency}
                       </p>
@@ -255,7 +262,8 @@ a[x-apple-data-detectors] {
                </table>
                <!--[if mso]></td></tr></table><![endif]--></td>
 
-             </tr>`)}
+             </tr>`,
+             )}
 
 
              <tr style="border-collapse:collapse">
@@ -283,7 +291,7 @@ a[x-apple-data-detectors] {
                      <tr style="border-collapse:collapse">
                       <td align="right" class="es-m-txt-l" style="padding:0;Margin:0">
                         <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-size:14px;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:21px;color:#333333">
-                          ${+data.sum > 100 ? 'FREE' : data.deliveryPrice}
+                          ${+data.sum > 100 ? "FREE" : data.deliveryPrice}
                         </p>
                       </td>
                      </tr>
@@ -393,7 +401,7 @@ a[x-apple-data-detectors] {
 
                         <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-size:14px;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:21px;color:#333333">
                           <b>Delivery address</b><br>
-                          ${data.anotherAddressCheck ? (data.anotherAdress!.name+' '+data.anotherAdress!.surname+'<br>'+data.anotherAdress!.address+'<br>'+data.anotherAdress!.code+' '+data.anotherAdress!.city+'<br>'+data.phone+'<br>'+data.note) : (data.name+' '+data.surname+'<br>'+data.address+'<br>'+data.code+' '+data.city+'<br>'+data.phone+'<br>'+data.note)}
+                          ${data.anotherAddressCheck ? data.anotherAdress!.name + " " + data.anotherAdress!.surname + "<br>" + data.anotherAdress!.address + "<br>" + data.anotherAdress!.code + " " + data.anotherAdress!.city + "<br>" + data.phone + "<br>" + data.note : data.name + " " + data.surname + "<br>" + data.address + "<br>" + data.code + " " + data.city + "<br>" + data.phone + "<br>" + data.note}
                         </p>
 
                       </td>
@@ -410,8 +418,8 @@ a[x-apple-data-detectors] {
                       <td align="left" style="padding:0;Margin:0">
                         <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-size:14px;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:21px;color:#333333">
                           <b>Billing address</b><br>
-                          ${data.companyDataCheck ? (data.companyData!.companyName+'<br>'+data.companyData!.ico+'<br>'+data.companyData!.dic) : ''}
-                          ${data.name+' '+data.surname+'<br>'+data.address+'<br>'+data.code+' '+data.city}
+                          ${data.companyDataCheck ? data.companyData!.companyName + "<br>" + data.companyData!.ico + "<br>" + data.companyData!.dic : ""}
+                          ${data.name + " " + data.surname + "<br>" + data.address + "<br>" + data.code + " " + data.city}
                         </p>
                       </td>
                      </tr>
@@ -477,6 +485,6 @@ a[x-apple-data-detectors] {
   </div>
  </body>
 </html>
-`)
+`;
 
 export default InfoOrderEN;

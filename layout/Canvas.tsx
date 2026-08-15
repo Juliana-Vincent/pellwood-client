@@ -4,6 +4,8 @@ import UIkit from 'uikit';
 import { DataStateContext } from '../context/dataStateContext';
 import { useTranslation } from '../hooks/useTranslation';
 import { useRouter } from 'next/router';
+import { DISCOUNT_THRESHOLD, DELIVERY_FREE_THRESHOLD } from '../functions/pricingRules';
+import { computePricing } from '../functions/computePricing';
 
 const Canvas = () => {
   const router = useRouter();
@@ -36,7 +38,7 @@ const Canvas = () => {
   };
 
   const onSumItems = (currentBasket: any[]) => {
-    let sumAll = 0;
+    let itemsSum = 0;
 
     if (currentBasket && currentBasket.length > 0) {
       currentBasket.forEach((item) => {
@@ -44,26 +46,16 @@ const Canvas = () => {
         if (typeof price === 'string') {
           price = parseFloat(price.split(' ')[0]);
         }
-        sumAll += price * item.countVariant;
+        itemsSum += price * item.countVariant;
       });
     }
 
-    let calculatedSale = 0;
-    if (lang === 'en' && sumAll > 150) {
-      calculatedSale = parseFloat((Math.round(sumAll * 0.05 * 100) / 100).toFixed(2));
-      sumAll = sumAll - calculatedSale;
-    } else if (lang === 'cz' && sumAll > 2000) {
-      calculatedSale = Math.round(sumAll * 0.05);
-      sumAll = sumAll - calculatedSale;
-    }
-
-    setSale(calculatedSale);
-
-    if (lang === 'en') {
-      setSum(parseFloat((Math.round(sumAll * 100) / 100).toFixed(2)));
-    } else {
-      setSum(Math.round(sumAll));
-    }
+    // Delivery/payment aren't chosen yet at this point in the flow (this is the
+    // "just added to cart" preview, before checkout) - same formula as checkout and
+    // the server via computePricing.ts, just with no shipping/payment surcharge yet.
+    const { sale, total } = computePricing(itemsSum, 0, 0, lang as 'cz' | 'en');
+    setSale(sale);
+    setSum(total);
   };
 
   useEffect(() => {
@@ -89,14 +81,19 @@ const Canvas = () => {
     return null;
   }
 
-  // Delivery thresholds logic
-  const isFreeDelivery = (lang === 'en' && sum > 100) || (lang === 'cz' && sum > 1500);
-  const deliveryLabel = isFreeDelivery 
-    ? t('free') 
+  // Delivery/discount thresholds - shared with functions/sumTotal.ts and the
+  // server-side total in functions/validateOrder.ts via pricingRules.ts, so this
+  // mini-cart preview can no longer drift from what checkout/the server charge.
+  const deliveryThreshold = DELIVERY_FREE_THRESHOLD[lang as 'cz' | 'en'];
+  const discountThreshold = DISCOUNT_THRESHOLD[lang as 'cz' | 'en'];
+
+  const isFreeDelivery = sum > deliveryThreshold;
+  const deliveryLabel = isFreeDelivery
+    ? t('free')
     : (lang === 'cz' ? 'od 150 Kč' : '10 €');
 
-  const showDeliveryFreeCanvas = (lang === 'cz' && sum <= 1500) || (lang === 'en' && sum <= 100);
-  const showSaleCanvas = (lang === 'cz' && sum <= 2000) || (lang === 'en' && sum <= 150);
+  const showDeliveryFreeCanvas = sum <= deliveryThreshold;
+  const showSaleCanvas = sum <= discountThreshold;
 
   return (
     <div id="offcanvas-flip" className="uk-offcanvas" uk-offcanvas="flip: true; overlay: true;">

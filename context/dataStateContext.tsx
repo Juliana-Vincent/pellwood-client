@@ -1,26 +1,26 @@
 import React, { useReducer, createContext, useEffect, ReactNode } from "react";
-import { setCookie, getCookie } from 'cookies-next';
+import type { BasketItem, SessionUser } from "@/types/shop";
 
 export interface DataState {
-  basketcz: any[];
+  basketcz: BasketItem[];
   basketCountcz: number;
-  basketen: any[];
+  basketen: BasketItem[];
   basketCounten: number;
-  user: any;
+  user: SessionUser;
   state: {
     searchFocus: boolean;
   };
-  // True once the cookie-restoration effect below has run at least once, so pages
-  // can tell "basket is genuinely empty" apart from "cookies haven't loaded yet".
+  // True once the storage-restoration effect below has run at least once, so pages
+  // can tell "basket is genuinely empty" apart from "storage hasn't loaded yet".
   hydrated: boolean;
 }
 
 export type DataAction =
-  | { type: "basketcz"; state: any[] }
+  | { type: "basketcz"; state: BasketItem[] }
   | { type: "basketCountcz"; state: number }
-  | { type: "basketen"; state: any[] }
+  | { type: "basketen"; state: BasketItem[] }
   | { type: "basketCounten"; state: number }
-  | { type: "user"; state: any }
+  | { type: "user"; state: SessionUser }
   | { type: "state"; state: { searchFocus: boolean } }
   | { type: "hydrated"; state: boolean };
 
@@ -36,34 +36,61 @@ const initialState: DataState = {
   basketCounten: 0,
   user: {},
   state: {
-    searchFocus: false
+    searchFocus: false,
   },
-  hydrated: false
+  hydrated: false,
 };
+
+// Cart/user data here is a purely client-side display concern - nothing in the app
+// reads these values during SSR (no getServerSideProps/getStaticProps touches them;
+// real auth uses the separate httpOnly session cookie in lib/auth.ts, not this
+// context) - so localStorage is the right fit, not cookies. Cookies have a ~4KB
+// practical size limit and are sent on every single HTTP request to the origin
+// (including static assets), which doesn't scale with cart size and adds needless
+// payload to every request for data the server never looks at.
+const STORAGE_PREFIX = "pellwood_";
+
+function readStorage(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(STORAGE_PREFIX + key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key: string, value: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_PREFIX + key, value);
+  } catch (e) {
+    console.error(`Failed to persist ${key} to localStorage`, e);
+  }
+}
 
 const reducer = (state: DataState, action: DataAction): DataState => {
   switch (action.type) {
     case "basketcz":
-      setCookie('basketcz', JSON.stringify([ ...action.state ]));
+      writeStorage("basketcz", JSON.stringify([...action.state]));
       return { ...state, basketcz: action.state };
     case "basketCountcz":
-      setCookie('basketCountcz', JSON.stringify(action.state));
+      writeStorage("basketCountcz", JSON.stringify(action.state));
       return { ...state, basketCountcz: action.state };
     case "basketen":
-      setCookie('basketen', JSON.stringify([ ...action.state ]));
+      writeStorage("basketen", JSON.stringify([...action.state]));
       return { ...state, basketen: action.state };
     case "basketCounten":
-      setCookie('basketCounten', JSON.stringify(action.state));
+      writeStorage("basketCounten", JSON.stringify(action.state));
       return { ...state, basketCounten: action.state };
     case "user":
-      setCookie('user', JSON.stringify({ ...action.state }));
+      writeStorage("user", JSON.stringify({ ...action.state }));
       return { ...state, user: action.state };
     case "state":
       return { ...state, state: action.state };
     case "hydrated":
       return { ...state, hydrated: action.state };
     default:
-      console.error('action.type is not implemented');
+      console.error("action.type is not implemented");
       return state;
   }
 };
@@ -74,33 +101,38 @@ export const DataStateContext = createContext<DataContextProps>({
 });
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [dataContextState, dataContextDispatch] = useReducer(reducer, initialState);
+  const [dataContextState, dataContextDispatch] = useReducer(
+    reducer,
+    initialState,
+  );
 
   useEffect(() => {
     try {
-      const bcz = getCookie('basketcz');
-      if (bcz && typeof bcz === 'string') dataContextDispatch({ type: 'basketcz', state: JSON.parse(bcz) });
+      const bcz = readStorage("basketcz");
+      if (bcz) dataContextDispatch({ type: "basketcz", state: JSON.parse(bcz) });
 
-      const bccz = getCookie('basketCountcz');
-      if (bccz && typeof bccz === 'string') dataContextDispatch({ type: 'basketCountcz', state: JSON.parse(bccz) });
+      const bccz = readStorage("basketCountcz");
+      if (bccz) dataContextDispatch({ type: "basketCountcz", state: JSON.parse(bccz) });
 
-      const ben = getCookie('basketen');
-      if (ben && typeof ben === 'string') dataContextDispatch({ type: 'basketen', state: JSON.parse(ben) });
+      const ben = readStorage("basketen");
+      if (ben) dataContextDispatch({ type: "basketen", state: JSON.parse(ben) });
 
-      const bcen = getCookie('basketCounten');
-      if (bcen && typeof bcen === 'string') dataContextDispatch({ type: 'basketCounten', state: JSON.parse(bcen) });
+      const bcen = readStorage("basketCounten");
+      if (bcen) dataContextDispatch({ type: "basketCounten", state: JSON.parse(bcen) });
 
-      const u = getCookie('user');
-      if (u && typeof u === 'string') dataContextDispatch({ type: 'user', state: JSON.parse(u) });
+      const u = readStorage("user");
+      if (u) dataContextDispatch({ type: "user", state: JSON.parse(u) });
     } catch (e) {
-      console.error("Failed to parse cookies", e);
+      console.error("Failed to parse stored cart/user data", e);
     } finally {
-      dataContextDispatch({ type: 'hydrated', state: true });
+      dataContextDispatch({ type: "hydrated", state: true });
     }
   }, []);
 
   return (
-    <DataStateContext.Provider value={{ dataContextState, dataContextDispatch }}>
+    <DataStateContext.Provider
+      value={{ dataContextState, dataContextDispatch }}
+    >
       {children}
     </DataStateContext.Provider>
   );

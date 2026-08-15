@@ -1,5 +1,5 @@
 import Article from "../ArticleShort";
-import type { Article as ArticleType } from "@/src/types/article";
+import type { Article as ArticleType } from "@/types/article";
 
 interface RandomArticlesProps {
   articleFirst: ArticleType[];

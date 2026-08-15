@@ -18,7 +18,7 @@ interface LoginErrorState {
 const Login = ({ setLoginUser }: LoginProps) => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { dataContextDispatch } = useContext(DataStateContext) as any;
+  const { dataContextDispatch } = useContext(DataStateContext);
   
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState('');
@@ -75,8 +75,15 @@ const Login = ({ setLoginUser }: LoginProps) => {
       setLoginUser(true);
       modal('#modal-login').hide();
     }).catch(err => {
-      console.log(err.response);
-      setError(prev => ({ ...prev, email: 'notExist' }));
+      // 401 means the credentials were genuinely wrong - anything else (network
+      // failure, 500) isn't, and telling the customer their password is wrong when
+      // the real problem is the server being unreachable is actively misleading.
+      if (err.response?.status === 401) {
+        setError(prev => ({ ...prev, email: 'notExist' }));
+      } else {
+        console.error("Login failed:", err);
+        setError(prev => ({ ...prev, email: 'serverError' }));
+      }
     });
   };
 
@@ -88,26 +95,41 @@ const Login = ({ setLoginUser }: LoginProps) => {
     }
 
     AxiosAPI.post(`/user`, { email, password }).then(res => {
-      if (res.data.error === 'email') {
+      dataContextDispatch({ state: res.data.data, type: 'user' });
+      setLoginUser(true);
+      router.push("/user");
+    }).catch(err => {
+      // Empty-input (400) and already-registered (409) are expected, real outcomes
+      // of this request, not just failures - but axios rejects on any non-2xx
+      // status, so they land here rather than in .then() (this used to check
+      // res.data.error inside .then(), which could never run: a 409/400 response
+      // never reaches the success branch, so registering with a taken email - or
+      // any other API-reported validation failure - silently did nothing at all).
+      const apiError = err.response?.data?.error;
+      if (apiError === 'email') {
         setError(prev => ({ ...prev, email: 'exist' }));
-      } else if (res.data?.error?.indexOf('password') >= 0) {
+      } else if (Array.isArray(apiError) && apiError.includes('password')) {
         setError(prev => ({ ...prev, password: 'empty' }));
-      } else if (res.data?.error?.indexOf('email') >= 0) {
+      } else if (Array.isArray(apiError) && apiError.includes('email')) {
         setError(prev => ({ ...prev, email: 'empty' }));
       } else {
-        dataContextDispatch({ state: res.data.data, type: 'user' });
-        setLoginUser(true);
-        router.push("/user");
+        console.error("Registration failed:", err);
+        setError(prev => ({ ...prev, email: 'serverError' }));
       }
-    }).catch(err => {
-      console.log(err);
     });
   };
 
   if (!mounted) return null;
 
   return (
-    <div id="modal-login" className="uk-flex-top" uk-modal="">
+    // container: false keeps this modal in its original React-rendered position
+    // instead of UIkit's default of moving it to a direct child of <body> - that
+    // move takes it outside Next's root container, breaking React's event
+    // delegation for every input/button inside once the modal is first opened
+    // (confirmed via fiber inspection: typing updated the raw DOM value but
+    // React's own state never saw it, so this login form couldn't be submitted
+    // with anything actually typed into it).
+    <div id="modal-login" className="uk-flex-top" uk-modal="container: false">
       <div className="uk-modal-dialog uk-modal-body uk-margin-auto-vertical">
         <div className="tm-canvas-head">
           <h2>{t('login')}</h2>
@@ -130,6 +152,12 @@ const Login = ({ setLoginUser }: LoginProps) => {
             {error.email === 'exist' && (
               <div className="uk-alert-danger" uk-alert="">
                 <p>{t('loginErrorExist')}</p>
+              </div>
+            )}
+
+            {error.email === 'serverError' && (
+              <div className="uk-alert-danger" uk-alert="">
+                <p>{t('errorSendOrder')}</p>
               </div>
             )}
 

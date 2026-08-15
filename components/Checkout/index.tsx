@@ -7,7 +7,7 @@ import Note from "./components/note";
 import ShipPay from "./components/shipPay";
 import { useTranslation } from "@/hooks/useTranslation";
 
-import type { CheckoutProps, CheckoutState } from "@/src/types/shop";
+import type { CheckoutProps, CheckoutState } from "@/types/shop";
 
 const Checkout = ({
   state,
@@ -31,6 +31,9 @@ const Checkout = ({
   paymentMethod,
   setPaymentMethod,
   onBlur,
+  deliveryOptions,
+  paymentOptions,
+  deliveryFreeThreshold,
 }: CheckoutProps) => {
   const router = useRouter();
   const { t } = useTranslation();
@@ -160,6 +163,9 @@ const Checkout = ({
             payment={paymentMethod}
             sumBefore={sumBefore}
             setPayment={setPaymentMethod}
+            deliveryOptions={deliveryOptions}
+            paymentOptions={paymentOptions}
+            deliveryFreeThreshold={deliveryFreeThreshold}
           />
         </fieldset>
       </form>

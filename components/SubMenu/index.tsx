@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { useTranslation } from "@/hooks/useTranslation";
 import changeUrl from "@/helpers/changeUrl";
 
-import type { SubMenuProps } from "@/src/types/menu";
+import type { SubMenuProps } from "@/types/menu";
 
 const SubMenu = ({ data, articles = false, setReset }: SubMenuProps) => {
   const router = useRouter();

@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "@/hooks/useTranslation";
-import { CompanyDataState } from "@/src/types/shop";
+import { CompanyDataState } from "@/types/shop";
 
 interface CorporateProps {
   state: CompanyDataState;

@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import { DataStateContext } from "@/context/dataStateContext";
 import { useTranslation } from "@/hooks/useTranslation";
-import { BasketItem } from "@/src/types/shop";
+import { BasketItem } from "@/types/shop";
 
 interface BodyProps {
   setSum: (sum: number | string) => void;

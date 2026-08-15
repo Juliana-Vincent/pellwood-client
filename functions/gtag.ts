@@ -1,11 +1,14 @@
-import type { OrderData } from '../src/types/shop';
+import type { OrderData } from "../types/shop";
 
+// GA4's recommended `purchase` event item schema - https://developers.google.com/analytics/devguides/collection/ga4/reference/events#purchase
+// (UA's Enhanced Ecommerce used id/name/brand/variant/list_position; GA4 renamed
+// all of these, it's not just a cosmetic difference).
 export interface GtagItem {
-  id: string;
-  name: string;
-  brand: string;
-  variant: string;
-  list_position: number;
+  item_id: string;
+  item_name: string;
+  item_brand: string;
+  item_variant: string;
+  index: number;
   quantity: number;
   price: number;
 }
@@ -30,20 +33,20 @@ const buildGtagPayload = (data: OrderData): GtagPurchaseEvent => {
 
   return {
     transaction_id: data.idOrder,
-    affiliation: 'Pellwood',
+    affiliation: "Pellwood",
     value: Number(sumWithoutTax.toFixed(2)),
-    currency: data.currency === 'Kč' ? 'CZK' : 'EUR',
+    currency: data.currency === "Kč" ? "CZK" : "EUR",
     tax: Number(tax.toFixed(2)),
     shipping,
     items: data.basket.map((item, index) => ({
-      id: item.id || '',
-      name: item.nameProduct || '',
-      brand: 'Pellwood',
-      variant: item.variantName || '',
-      list_position: index + 1,
+      item_id: item.id || "",
+      item_name: item.nameProduct || "",
+      item_brand: "Pellwood",
+      item_variant: item.variantName || "",
+      index,
       quantity: Number(item.countVariant) || 1,
-      price: Number(item.variantPrice) || 0
-    }))
+      price: Number(item.variantPrice) || 0,
+    })),
   };
 };
 

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import styles from "./CustomRangeSlider.module.scss";
-import type { CustomRangeSliderProps } from "@/src/types/shop";
+import type { CustomRangeSliderProps } from "@/types/shop";
 
 const CustomRangeSlider = ({
   minValue,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, FC } from "react";
+import React, { useState, useEffect, FC } from "react";
 import CustomRangeSlider from "../CustomRangeSlider";
 import { useTranslation } from "../../hooks/useTranslation";
 
@@ -41,7 +41,6 @@ const ModalFilter: FC<ModalFilterProps> = ({
   setStateRange,
 }) => {
   const [mounted, setMounted] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -55,30 +54,18 @@ const ModalFilter: FC<ModalFilterProps> = ({
     });
   };
 
-  useEffect(() => {
-    const button = buttonRef.current;
-
-    const handleClick = (e: MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleFilter();
-    };
-
-    if (button) {
-      button.addEventListener("click", handleClick, true);
-    }
-
-    return () => {
-      if (button) {
-        button.removeEventListener("click", handleClick, true);
-      }
-    };
-  }, [handleFilter]);
-
   if (!mounted) return null;
 
   return (
-    <div id="modal-filter" className="uk-flex-top" uk-modal="">
+    // container: false keeps this modal in its original React-rendered position in
+    // the DOM instead of UIkit's default of moving it to a direct child of <body> -
+    // that move takes it outside Next's root container, which is where React
+    // attaches its event delegation, so every onChange/onClick inside an unpatched
+    // modal silently stops working the moment it's first opened (confirmed via
+    // React DevTools-style fiber inspection: typing updated the raw DOM value, but
+    // the component's own state never saw it). Applies to every uk-modal in the
+    // app - see Login, ForgotPassword, ResetPassword.
+    <div id="modal-filter" className="uk-flex-top" uk-modal="container: false">
       <div className="uk-modal-dialog uk-modal-body uk-margin-auto-vertical">
         <div className="tm-canvas-head">
           <h2>{t('searchAndFilter')}</h2>
@@ -164,10 +151,10 @@ const ModalFilter: FC<ModalFilterProps> = ({
           </form>
 
           <button
-            ref={buttonRef}
             type="button"
             className="tm-button tm-black-button uk-width-1-1"
             style={{ marginTop: "30px" }}
+            onClick={handleFilter}
           >
             {t('showResults')}
           </button>

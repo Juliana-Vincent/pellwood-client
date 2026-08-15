@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Cart from "../Cart";
 import { useTranslation } from "@/hooks/useTranslation";
-import type { Product } from "@/src/types/product";
+import type { Product } from "@/types/product";
 
 interface ShortBlockProps {
   data?: Product[];
@@ -25,7 +25,11 @@ const ShortBlock = ({ data, lang, currency }: ShortBlockProps) => {
   return (
     <section className="grey section_base slider-card">
       <div className="uk-container uk-container-expand">
-        <div className="uk-grid uk-child-width-1-1 uk-grid-stack" uk-grid="" suppressHydrationWarning>
+        <div
+          className="uk-grid uk-child-width-1-1 uk-grid-stack"
+          uk-grid=""
+          suppressHydrationWarning
+        >
           <div suppressHydrationWarning>
             <h2
               className="section_head"

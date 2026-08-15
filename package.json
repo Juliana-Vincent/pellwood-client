@@ -8,20 +8,17 @@
     "npm": ">=10.0.0"
   },
   "dependencies": {
-    "@sanity/client": "^6.10.0",
-    "@sanity/image-url": "^1.0.2",
     "@sendgrid/mail": "^8.1.6",
     "@strapi/blocks-react-renderer": "^1.0.2",
     "axios": "^1.6.5",
     "bcryptjs": "^3.0.3",
-    "cookies-next": "^6.1.1",
     "googleapis": "^173.0.0",
     "mongoose": "^8.1.0",
     "next": "^16.2.9",
-    "nodemailer": "^8.0.11",
-    "react": "^18.2.0",
+    "nodemailer": "^9.0.5",
+    "react": "^19.2.0",
     "react-animate-height": "^3.2.3",
-    "react-dom": "^18.2.0",
+    "react-dom": "^19.2.0",
     "react-infinite-scroll-component": "^6.1.0",
     "resend": "^6.6.0",
     "sass": "^1.70.0",
@@ -29,8 +26,8 @@
     "vanilla-cookieconsent": "^3.0.1"
   },
   "scripts": {
-    "dev": "next dev -p 3001 --webpack",
-    "build": "next build --webpack",
+    "dev": "next dev -p 3001",
+    "build": "next build",
     "start": "next start -p 3001",
     "pm2:start": "pm2 start ecosystem.config.js",
     "pm2:stop": "pm2 stop ecosystem.config.js",
@@ -39,17 +36,24 @@
     "pm2:logs": "pm2 logs pellwood",
     "pm2:monit": "pm2 monit",
     "sitemap": "tsx ./functions/sitemap-generator.ts",
-    "feed": "tsx ./functions/feed.ts"
+    "feed": "tsx ./functions/feed.ts",
+    "postbuild": "npm run sitemap && npm run feed",
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^25.9.2",
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.4",
     "@types/uikit": "^3.23.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.0",
     "pm2": "^7.0.1",
     "postcss": "^8.5.15",
     "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
   },
   "browserslist": [
     ">0.3%",

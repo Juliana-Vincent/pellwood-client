@@ -10,6 +10,63 @@
 	background-color: $accent;
 	color: #fff;
 }
+
+#cc-main .cc-link {
+	font-weight: 700;
+	text-decoration: underline;
+	color: $accent;
+	cursor: pointer;
+}
+
+#cc-main .cm__title {
+	margin-bottom: 0 !important;
+	font-family: var(--cc-font-family) !important;
+}
+
+#cc-main {
+	font-size: 20px !important;
+	--cc-btn-primary-bg: #{$accent};
+	--cc-primary-color: #{$accent};
+	--cc-btn-secondary-color: #{$accent};
+}
+
+// pellwood-client-main never had custom cookie-widget CSS either - it just
+// loaded the old v2 library's default #cm{padding:1.1em 1.8em 1.4em 1.8em}
+// (padding on the card itself, not on each child). v3 puts zero padding on
+// .cm and pads title/desc/btns individually instead, which is what all the
+// per-child overrides above were working around. Using v2's real ratio here
+// (em, so it scales with the font-size bump above) instead of more
+// hand-picked px values. Title/desc/btns still need a small amount of their
+// own padding since v3's cloud/box layouts split text and buttons into
+// separate flex columns with a divider between them, which v2 didn't have -
+// the outer .cm padding alone can't create that internal gap.
+#cc-main .cm {
+	padding: 1.1em 1.8em 1.4em 1.8em !important;
+}
+#cc-main .cm__texts {
+	// library default adds its own 16px top padding here, which would stack
+	// with .cm's own top padding above and double the top gap
+	padding-top: 0 !important;
+}
+#cc-main .cm__title {
+	padding: 0 1.4em 0 0 !important;
+}
+#cc-main .cm__desc {
+	padding: 0 1.4em 0 0 !important;
+}
+#cc-main .cm__btns {
+	// matches the 1.8em used on .cm's own left/right padding, so the text-to-
+	// divider and divider-to-button gaps read as part of the same rhythm
+	padding: 0 0 0 1.8em !important;
+}
+#cc-main .cm__btn {
+	padding: 1em 1.7em !important;
+	min-height: 54px !important;
+}
+#cc-main {
+	--cc-secondary-color: #{$accent};
+}
+
 #checkout-form{
 	width: 100%;
 }
@@ -803,6 +860,33 @@ header{
 				transition: all .5s ease;
 			}
 			&:hover, &.menu_active{
+				text-decoration: none;
+				&:after{
+					width: 100%;
+				}
+			}
+		}
+		.account-link{
+			color: white;
+			font-size: 17px;
+			position: relative;
+			background: none;
+			border: none;
+			padding: 0;
+			cursor: pointer;
+			font-family: inherit;
+			&:after{
+				content: '';
+				position: absolute;
+				left: 0;
+				bottom: -8px;
+				width: 0;
+				height: 1px;
+				background-color: white;
+				display: block;
+				transition: all .5s ease;
+			}
+			&:hover{
 				text-decoration: none;
 				&:after{
 					width: 100%;
@@ -1771,6 +1855,14 @@ footer{
 
 .quantity {
   position: relative;
+  // Flexbox instead of floating input+nav side by side: the input takes
+  // calc(100% - 17px), leaving only 17px of line-box width for .quantity-nav
+  // to float into - a margin thin enough that Chrome and Safari round it
+  // differently, and Safari drops the float to a new line entirely. Flex
+  // items never wrap onto a new line unless flex-wrap says so, so this
+  // removes the ambiguity rather than relying on a razor-thin float fit.
+  display: flex;
+  align-items: flex-start;
 
 	&.error{
 		border: none!important;
@@ -1805,7 +1897,7 @@ input[type=number]
   width: calc(100% - 17px);
   height: 53px;
   line-height: 1.65;
-  float: left;
+  flex-shrink: 0;
 	font-size: 16px;
   display: block;
   padding: 0;
@@ -1820,7 +1912,6 @@ input[type=number]
 }
 
 .quantity-nav {
-  float: left;
   position: relative;
   height: 53px;
 }
@@ -1836,6 +1927,11 @@ input[type=number]
 	font-weight: bold;
   font-family: "Trebuchet MS", Helvetica, sans-serif !important;
   line-height: 1.7;
+  // Explicit anchor instead of the browser-computed "static position" fallback
+  // (left/right both auto), which depends on .quantity-nav having zero content
+  // width - an edge case worth pinning down explicitly rather than trusting
+  // every engine to resolve it the same way.
+  left: 0;
   transform: translateX(-100%);
   user-select: none;
 	z-index: 100;

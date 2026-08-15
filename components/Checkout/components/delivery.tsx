@@ -1,6 +1,6 @@
 import countryData from "@/data/country";
 import { useTranslation } from "@/hooks/useTranslation";
-import { AddressState, CheckoutErrors } from "@/src/types/shop";
+import { AddressState, CheckoutErrors } from "@/types/shop";
 import React from "react";
 
 interface DeliveryProps {
@@ -9,6 +9,12 @@ interface DeliveryProps {
   error: CheckoutErrors;
   setError: React.Dispatch<React.SetStateAction<CheckoutErrors>>;
   onBlur: (type: keyof CheckoutErrors) => void;
+  /** The account page reuses this form for a signed-in user's saved address, whose
+   *  email the backend deliberately never lets this endpoint change (see
+   *  UPDATABLE_FIELDS in pages/api/user/index.ts) - editing it there did nothing
+   *  and gave no indication why, so it's read-only wherever this is true. Checkout
+   *  (the only other caller) genuinely needs it editable for a guest's email. */
+  disableEmail?: boolean;
 }
 
 const Delivery = ({
@@ -17,6 +23,7 @@ const Delivery = ({
   error,
   onBlur,
   setError,
+  disableEmail,
 }: DeliveryProps) => {
   const { t, lang } = useTranslation();
 
@@ -30,18 +37,20 @@ const Delivery = ({
       <div className="form_column">
         <div className="input_item">
           <input
-            className={`${state.email.length && "hasValue"} ${error.email && "invalid"}`}
+            className={`${state.email.length ? "hasValue" : ""} ${error.email ? "invalid" : ""}`}
             type="email"
             onBlur={() => onBlur("email")}
             value={state.email}
             onChange={(e) => handleChange("email", e.target.value)}
             tabIndex={1}
+            readOnly={disableEmail}
+            title={disableEmail ? t("emailChangeUnavailable") : undefined}
           />
           <label>{t("formemail")}</label>
         </div>
         <div className="input_item">
           <input
-            className={`${state.phone.length && "hasValue"} ${error.phone && "invalid"}`}
+            className={`${state.phone.length ? "hasValue" : ""} ${error.phone ? "invalid" : ""}`}
             type="text"
             value={state.phone}
             onChange={(e) => handleChange("phone", e.target.value)}
@@ -53,7 +62,7 @@ const Delivery = ({
       <div className="form_column">
         <div className="input_item">
           <input
-            className={`${state.name.length && "hasValue"} ${error.name && "invalid"}`}
+            className={`${state.name.length ? "hasValue" : ""} ${error.name ? "invalid" : ""}`}
             type="text"
             value={state.name}
             onChange={(e) => handleChange("name", e.target.value)}
@@ -63,7 +72,7 @@ const Delivery = ({
         </div>
         <div className="input_item">
           <input
-            className={`${state.surname.length && "hasValue"} ${error.surname && "invalid"}`}
+            className={`${state.surname.length ? "hasValue" : ""} ${error.surname ? "invalid" : ""}`}
             type="text"
             value={state.surname}
             onChange={(e) => handleChange("surname", e.target.value)}
@@ -74,7 +83,17 @@ const Delivery = ({
       </div>
       <div className="form_column">
         <div className="select_item">
-          <div uk-form-custom="target: > * > span:first-child">
+          {/* UIkit's uk-form-custom auto-init adds a className to this div in the window
+              between initial paint and React's hydration walk - same UIkit-vs-hydration
+              conflict fixed elsewhere this session (e.g. pages/produkt/[product].tsx's
+              custom-select). suppressHydrationWarning covers that className.
+              The selected option's label is rendered by React itself (below) instead of
+              relying on uk-form-custom's own target-copy behavior: copying it in via
+              UIkit turns "zero children" into "one text child", which is a structural
+              mismatch suppressHydrationWarning can't paper over (it only covers a
+              differing value of a child React already expects to render). Rendering the
+              real label makes UIkit's copy redundant instead of conflicting. */}
+          <div uk-form-custom="target: > * > span:first-child" suppressHydrationWarning>
             <select
               value={state.country}
               onChange={(e) => handleChange("country", e.target.value)}
@@ -92,7 +111,13 @@ const Delivery = ({
               type="button"
               tabIndex={5}
             >
-              <span></span>
+              <span>
+                {
+                  countryData[lang as keyof typeof countryData].find(
+                    (item: any) => item.name === state.country,
+                  )?.value
+                }
+              </span>
               <span>
                 <svg
                   aria-hidden="true"
@@ -114,7 +139,7 @@ const Delivery = ({
         </div>
         <div className="input_item">
           <input
-            className={`${state.city.length && "hasValue"} ${error.city && "invalid"}`}
+            className={`${state.city.length ? "hasValue" : ""} ${error.city ? "invalid" : ""}`}
             type="text"
             value={state.city}
             onChange={(e) => handleChange("city", e.target.value)}
@@ -126,7 +151,7 @@ const Delivery = ({
       <div className="form_column">
         <div className="input_item">
           <input
-            className={`${state.address.length && "hasValue"} ${error.address && "invalid"}`}
+            className={`${state.address.length ? "hasValue" : ""} ${error.address ? "invalid" : ""}`}
             type="text"
             value={state.address}
             onChange={(e) => handleChange("address", e.target.value)}
@@ -136,7 +161,7 @@ const Delivery = ({
         </div>
         <div className="input_item">
           <input
-            className={`${state.code.length && "hasValue"} ${error.code && "invalid"}`}
+            className={`${state.code.length ? "hasValue" : ""} ${error.code ? "invalid" : ""}`}
             type="text"
             value={state.code}
             onChange={(e) => handleChange("code", e.target.value)}

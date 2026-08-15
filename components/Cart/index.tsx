@@ -2,7 +2,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { urlFor } from "@/lib/strapi";
-import { Product, Variant } from "@/src/types/product";
+import { Product, Variant } from "@/types/product";
 import { useTranslation } from "@/hooks/useTranslation";
 
 const getMin = (arr: Variant[]) => {
@@ -56,7 +56,7 @@ const Cart = ({ item, lang, currency, block, priority }: CartProps) => {
       <div className="cart_img">
         {item.image && (
           <Image
-            src={urlFor(item.image).auto().url()}
+            src={urlFor(item.image).url()}
             alt={item.title}
             width={800}
             height={400}
@@ -72,7 +72,12 @@ const Cart = ({ item, lang, currency, block, priority }: CartProps) => {
   if (block) {
     return (
       <div ref={cardRef} suppressHydrationWarning>
-        <Link href={hrefUrl} className="card_short" style={{ opacity: 1 }} suppressHydrationWarning>
+        <Link
+          href={hrefUrl}
+          className="card_short"
+          style={{ opacity: 1 }}
+          suppressHydrationWarning
+        >
           <InnerCard />
         </Link>
       </div>
@@ -82,7 +87,11 @@ const Cart = ({ item, lang, currency, block, priority }: CartProps) => {
 
     return (
       <li ref={cardRef} suppressHydrationWarning>
-        <Link href={localizedHref} className="card_short" suppressHydrationWarning>
+        <Link
+          href={localizedHref}
+          className="card_short"
+          suppressHydrationWarning
+        >
           <InnerCard />
         </Link>
       </li>
