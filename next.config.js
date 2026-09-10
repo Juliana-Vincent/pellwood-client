@@ -67,6 +67,9 @@ module.exports = (phase) => {
           protocol: 'https',
           hostname: '**.pellwood.com',
         },
+        { protocol: 'https', hostname: 'res.cloudinary.com' },
+        { protocol: 'https', hostname: 'pellwood-strapi.onrender.com' },
+        { protocol: 'http', hostname: 'localhost', port: '1337' },
       ],
     },
     async headers() {
