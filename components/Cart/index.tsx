@@ -4,6 +4,7 @@ import Image from "next/image";
 import { urlFor } from "@/lib/strapi";
 import { Product, Variant } from "@/types/product";
 import { useTranslation } from "@/hooks/useTranslation";
+import { parsePrice } from "@/helpers/priceParser";
 
 const getMin = (arr: Variant[]) => {
   let lowest = Number.POSITIVE_INFINITY;
@@ -33,7 +34,7 @@ const Cart = ({ item, lang, currency, block, priority }: CartProps) => {
   let price = "";
   if (!item?.variants?.length) {
     price =
-      lang === "en" ? `${currency} ${item.price}` : `${item.price} ${currency}`;
+      lang === "en" ? `${currency} ${parsePrice(item.price)}` : `${parsePrice(item.price)} ${currency}`;
   } else if (item?.variants?.length > 1) {
     const min = getMin(item.variants);
     price =
@@ -41,7 +42,7 @@ const Cart = ({ item, lang, currency, block, priority }: CartProps) => {
         ? `${t("from")} ${currency} ${min}`
         : `${t("from")} ${min} ${currency}`;
   } else if (item?.variants?.length === 1) {
-    const singlePrice = item.variants[0].price;
+    const singlePrice = parsePrice(item.variants[0].price);
     price =
       lang === "en"
         ? `${currency} ${singlePrice}`

@@ -15,6 +15,7 @@ import type { Article } from "@/types/article";
 import type { BasketItem } from "@/types/shop";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { GetStaticPropsContext } from "next";
+import { parsePrice } from "@/helpers/priceParser";
 
 export async function getStaticPaths() {
   return { paths: [], fallback: "blocking" as const };
@@ -152,10 +153,10 @@ const Product = ({
 
     if (!product?.variants?.length) {
       newBasketItem.variantName = product.title;
-      newBasketItem.variantPrice = product.price ?? "";
+      newBasketItem.variantPrice = parsePrice(product.price);
     } else {
       newBasketItem.variantName = select.name;
-      newBasketItem.variantPrice = select.price;
+      newBasketItem.variantPrice = parsePrice(select.price);
     }
 
     // "basket" + lang / "basketCount" + lang are built dynamically, so they can't be
@@ -209,8 +210,8 @@ const Product = ({
     ? product.variants.some((v) => v.inStock !== false)
     : true;
   const price = product.variants?.length
-    ? Math.min(...product.variants.map((v) => Number(v.price) || 0))
-    : Number(product.price) || 0;
+    ? Math.min(...product.variants.map((v) => parsePrice(v.price)))
+    : parsePrice(product.price);
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -316,10 +317,9 @@ const Product = ({
                               suppressHydrationWarning
                             >
                               {lang === "en"
-                                ? (Math.round(+item.price * 100) / 100).toFixed(
-                                    2,
-                                  )
-                                : item.price}{" "}
+                                ? parsePrice(item.price).toFixed(2)
+                                : item.price
+                              }{" "}
                               {currency}
                             </div>
                           </div>
@@ -552,8 +552,9 @@ const Variant = ({ handle, name, price, lang, currency }: VariantProps) => {
       <span className="uk-width-expand">{name}</span>
       <span className="uk-width-auto uk-text-right">
         {lang === "en"
-          ? (Math.round(Number(price) * 100) / 100).toFixed(2)
-          : price}{" "}
+          ? parsePrice(price).toFixed(2)
+          : price
+        }{" "}
         {currency}
       </span>
     </li>

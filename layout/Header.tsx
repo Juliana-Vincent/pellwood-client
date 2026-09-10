@@ -80,16 +80,11 @@ const Header = ({ loginUser }: { loginUser?: boolean }) => {
   const renderLanguageOptions = () => (
     <ul>
       <li className={lang === "cz" ? "menu_active" : undefined}>
-        <Link href={currentPath} locale="cs">
-          cs
-        </Link>
+        <Link href="/" locale="cs">cs</Link>
       </li>
       <li className={lang === "en" ? "menu_active" : undefined}>
-        <Link href={currentPath} locale="en">
-          en
-        </Link>
+        <Link href="/" locale="en">en</Link>
       </li>
-      {/* If German (de) becomes active, it can be seamlessly added here */}
     </ul>
   );
 

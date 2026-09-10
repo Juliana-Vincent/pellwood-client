@@ -2,6 +2,7 @@ import type { StrapiImage } from "@/types/image";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 
+
 export function getStrapiURL(path = '') {
   return `${STRAPI_URL}${path}`;
 }

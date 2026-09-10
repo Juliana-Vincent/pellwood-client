@@ -10,7 +10,9 @@ export const controlledProduct = (lang: string, products: any[]) => {
       if (lang === 'en') {
         if (typeof newItem.price === 'string') {
           newItem.price = newItem.price.replace(/,/g, '.');
-        } else if (newItem.variants?.length) {
+        }
+
+        if (newItem.variants?.length) {
           newItem.variants = newItem.variants.map((variant: any) => {
             const newVariant = { ...variant };
             if (typeof newVariant.price === 'string') {
