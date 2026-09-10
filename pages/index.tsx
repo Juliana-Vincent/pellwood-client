@@ -16,50 +16,54 @@ export async function getStaticProps({ locale }: GetStaticPropsContext) {
   const { lang, currency } = localize(locale);
   const strapiLocale = lang === "cz" ? "cs" : lang;
 
-  // Fetch Homepage
-  const homepageRes = await fetchAPI<HomepageData>("homepage", {
-    locale: strapiLocale,
-    populate: {
-      image: true,
-      button: true,
-      banner: { populate: { image: true } },
-      recommendedProducts: { populate: { image: true } },
-    },
-  });
+  let homepageData: Partial<HomepageData> = {};
+  let articlesData: ArticleType[] = [];
+  let cmsReachable = true;
 
-  const homepageData: Partial<HomepageData> = homepageRes.data || {};
-  const carts = homepageData.recommendedProducts || [];
+  try {
+    const homepageRes = await fetchAPI<HomepageData>("homepage", {
+      locale: strapiLocale,
+      populate: {
+        image: true,
+        button: true,
+        banner: { populate: { image: true } },
+        recommendedProducts: { populate: { image: true } },
+      },
+    });
+    homepageData = homepageRes.data || {};
+  } catch (err) {
+    cmsReachable = false;
+    console.error("Strapi unreachable (homepage):", (err as Error).message);
+  }
 
-  // Fetch Articles
-  const articlesRes = await fetchAPI<ArticleType[]>("articles", {
-    locale: strapiLocale,
-    populate: {
-      category: true,
-      image: true,
-    },
-  });
-  const articlesData = articlesRes.data || [];
+  try {
+    const articlesRes = await fetchAPI<ArticleType[]>("articles", {
+      locale: strapiLocale,
+      populate: { category: true, image: true },
+    });
+    articlesData = articlesRes.data || [];
+  } catch (err) {
+    cmsReachable = false;
+    console.error("Strapi unreachable (articles):", (err as Error).message);
+  }
 
-  const articlesFilteredFirst = articlesData.filter(
-    (item) => item?.category?.slug === "sluzby",
+  const articleFirst = shuffle(
+    articlesData.filter((item) => item?.category?.slug === "sluzby"), 0
   );
-  const articlesFilteredSeccond = articlesData.filter(
-    (item) => item?.category?.slug === "o-nas",
+  const articleSeccond = shuffle(
+    articlesData.filter((item) => item?.category?.slug === "o-nas"), 1
   );
-
-  const articleFirst = shuffle(articlesFilteredFirst, 0);
-  const articleSeccond = shuffle(articlesFilteredSeccond, 1);
 
   return {
     props: {
       homepage: homepageData,
-      carts,
+      carts: homepageData.recommendedProducts || [],
       articleFirst,
       articleSeccond,
       lang,
       currency,
     },
-    revalidate: 60,
+    revalidate: cmsReachable ? 60 : 10,
   };
 }
 

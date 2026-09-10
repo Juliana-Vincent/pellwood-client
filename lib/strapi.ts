@@ -61,7 +61,7 @@ export interface StrapiResponse<T = unknown> {
   meta?: Record<string, unknown>;
 }
 
-const FETCH_TIMEOUT_MS = 10000;
+const FETCH_TIMEOUT_MS = Number(process.env.STRAPI_TIMEOUT_MS || 45000);
 const RETRY_COUNT = 1;
 const RETRY_DELAY_MS = 300;
 
