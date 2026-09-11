@@ -27,7 +27,7 @@ export async function getStaticProps({ locale }: GetStaticPropsContext) {
         image: true,
         button: true,
         banner: { populate: { image: true } },
-        recommendedProducts: { populate: { image: true } },
+        recommendedProducts: { populate: { image: true, variants: true } },
       },
     });
     homepageData = homepageRes.data || {};

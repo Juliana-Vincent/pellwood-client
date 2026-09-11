@@ -44,6 +44,7 @@ export async function getStaticProps({
       linkedProducts: {
         populate: {
           image: true,
+          variants: true,
         },
       },
     },
