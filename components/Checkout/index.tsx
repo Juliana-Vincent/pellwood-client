@@ -80,7 +80,8 @@ const Checkout = ({
               duration={500}
               height={state.anotherAddressCheck ? "auto" : 0}
             >
-              <Delivery
+              {state.anotherAddressCheck && (
+              <Delivery section="shipping"
                 state={anotherAdress}
                 setState={
                   setAnotherAdress as React.Dispatch<React.SetStateAction<any>>
@@ -88,7 +89,7 @@ const Checkout = ({
                 error={errorAnother}
                 setError={setErrorAnother}
                 onBlur={onBlur}
-              />
+              />)}
             </AnimateHeight>
           </div>
 

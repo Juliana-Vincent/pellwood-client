@@ -15,6 +15,7 @@ interface DeliveryProps {
    *  and gave no indication why, so it's read-only wherever this is true. Checkout
    *  (the only other caller) genuinely needs it editable for a guest's email. */
   disableEmail?: boolean;
+  section?: "billing" | "shipping";
 }
 
 const Delivery = ({
@@ -24,6 +25,7 @@ const Delivery = ({
   onBlur,
   setError,
   disableEmail,
+  section = "billing",
 }: DeliveryProps) => {
   const { t, lang } = useTranslation();
 
@@ -32,53 +34,55 @@ const Delivery = ({
     setState((prev) => ({ ...prev, [name]: value }));
   };
 
+  const field = (name: keyof AddressState, token: string) => ({
+    id: `${section}-${name}`,
+    name: `${section}-${name}`,
+    autoComplete: token,
+  });
+
   return (
     <div>
       <div className="form_column">
         <div className="input_item">
-          <input
+          <input {...field("email", "email")}
             className={`${state.email.length ? "hasValue" : ""} ${error.email ? "invalid" : ""}`}
             type="email"
             onBlur={() => onBlur("email")}
             value={state.email}
             onChange={(e) => handleChange("email", e.target.value)}
-            tabIndex={1}
             readOnly={disableEmail}
             title={disableEmail ? t("emailChangeUnavailable") : undefined}
           />
-          <label>{t("formemail")}</label>
+          <label htmlFor={`${section}-email`}>{t("formemail")}</label>
         </div>
         <div className="input_item">
-          <input
+          <input {...field("phone", "tel")}
             className={`${state.phone.length ? "hasValue" : ""} ${error.phone ? "invalid" : ""}`}
             type="text"
             value={state.phone}
             onChange={(e) => handleChange("phone", e.target.value)}
-            tabIndex={2}
           />
-          <label>{t("formphone")}</label>
+          <label htmlFor={`${section}-phone`}>{t("formphone")}</label>
         </div>
       </div>
       <div className="form_column">
         <div className="input_item">
-          <input
+          <input {...field("name", "name")}
             className={`${state.name.length ? "hasValue" : ""} ${error.name ? "invalid" : ""}`}
             type="text"
             value={state.name}
             onChange={(e) => handleChange("name", e.target.value)}
-            tabIndex={3}
           />
-          <label>{t("formname")}</label>
+          <label htmlFor={`${section}-name`}>{t("formname")}</label>
         </div>
         <div className="input_item">
-          <input
+          <input {...field("surname", "family-name")}
             className={`${state.surname.length ? "hasValue" : ""} ${error.surname ? "invalid" : ""}`}
             type="text"
             value={state.surname}
             onChange={(e) => handleChange("surname", e.target.value)}
-            tabIndex={4}
           />
-          <label>{t("formsurname")}</label>
+          <label htmlFor={`${section}-surname`}>{t("formsurname")}</label>
         </div>
       </div>
       <div className="form_column">
@@ -109,7 +113,6 @@ const Delivery = ({
             <button
               className="uk-button uk-button-default"
               type="button"
-              tabIndex={5}
             >
               <span>
                 {
@@ -138,36 +141,33 @@ const Delivery = ({
           </div>
         </div>
         <div className="input_item">
-          <input
+          <input {...field("city", "address-level2")}
             className={`${state.city.length ? "hasValue" : ""} ${error.city ? "invalid" : ""}`}
             type="text"
             value={state.city}
             onChange={(e) => handleChange("city", e.target.value)}
-            tabIndex={6}
           />
-          <label>{t("formcity")}</label>
+          <label htmlFor={`${section}-city`}>{t("formcity")}</label>
         </div>
       </div>
       <div className="form_column">
         <div className="input_item">
-          <input
+          <input {...field("address", "street-address")}
             className={`${state.address.length ? "hasValue" : ""} ${error.address ? "invalid" : ""}`}
             type="text"
             value={state.address}
             onChange={(e) => handleChange("address", e.target.value)}
-            tabIndex={7}
           />
-          <label>{t("formstreet")}</label>
+          <label htmlFor={`${section}-address`}>{t("formstreet")}</label>
         </div>
         <div className="input_item">
-          <input
+          <input {...field("code", "postal-code")}
             className={`${state.code.length ? "hasValue" : ""} ${error.code ? "invalid" : ""}`}
             type="text"
             value={state.code}
             onChange={(e) => handleChange("code", e.target.value)}
-            tabIndex={8}
           />
-          <label>{t("formzip")}</label>
+          <label htmlFor={`${section}-code`}>{t("formzip")}</label>
         </div>
       </div>
     </div>

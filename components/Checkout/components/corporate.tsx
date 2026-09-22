@@ -18,7 +18,7 @@ const Corporate = ({ state, setState }: CorporateProps) => {
     <div>
       <div className="form_column">
         <div className="input_item">
-          <input
+          <input 
             className={state.companyName?.length ? "hasValue" : undefined}
             type="text"
             value={state.companyName}
