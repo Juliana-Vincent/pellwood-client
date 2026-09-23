@@ -272,7 +272,7 @@ const Product = ({
               }`}
               suppressHydrationWarning
             >
-              <div className="uk-visible@m">
+              <div className={`uk-visible@m ${product.orientedImage ? "stiky_img_product" : ""}`}>
                 <img
                   src={urlFor(product.image).url()}
                   alt={product.title}

@@ -2080,3 +2080,31 @@ hr{
 
 
 @import "media"; // Always at the end
+
+// Long products (orientedImage) are shot lying lengthwise, e.g. 3756x1130.
+// Desktop stands them upright; under 960px this div is hidden and .scale_img's
+// pan-and-zoom takes over instead (see _media.scss).
+@media (min-width: 960px) {
+  // This must match the specificity of `.article_img_wrap > div:first-child img`
+  // (0,2,2) AND come later in the file, or that rule's width/max-height win and
+  // the sizing below does nothing.
+  .article_img_wrap > div.stiky_img_product {
+    // rotate() is a paint-time transform - the layout box stays wide and short, so
+    // the rotated image contributes no height to the sticky column. Give it a stage.
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    img {
+      transform: rotate(-90deg);
+      // Pre-rotation WIDTH becomes the visual HEIGHT after rotating. This is the
+      // one number to tune against the old site.
+      width: 75vh;
+      max-width: none;
+      max-height: none;
+      height: auto;
+    }
+  }
+}
