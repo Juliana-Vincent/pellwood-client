@@ -7,7 +7,7 @@ const getBaseURL = (): string => {
   if (typeof window === 'undefined') {
     // Running on the server (Node.js)
     if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/api`
-    return process.env.APP_API || 'http://localhost:3100/api'
+    return process.env.APP_API || 'http://localhost:4502/api'
   }
   // Running in the browser
   return '/api'
