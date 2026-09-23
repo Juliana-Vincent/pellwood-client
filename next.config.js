@@ -13,7 +13,7 @@ module.exports = (phase) => {
   console.log(`isDev:${isDev}  isProd:${isProd}   isStaging:${isStaging}`)
 
   const env = {
-    APP_API: process.env.APP_API || 'http://localhost:3001/api',
+    APP_API: process.env.APP_API || 'http://localhost:3100/api',
     REACT_APP_API: '/api'
   }
 

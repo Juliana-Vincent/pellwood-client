@@ -21,7 +21,7 @@ import type { PageProps } from "@/types/shop";
 
 export const SITE_URL =
   process.env.NODE_ENV === "development"
-    ? "http://localhost:3001"
+    ? "http://localhost:3100"
     : "https://pellwood.com";
 // Unset until a GA4 property exists - the analytics <Script> tags below are only
 // rendered when this is present, instead of shipping a broken/empty gtag call.

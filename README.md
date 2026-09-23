@@ -37,7 +37,7 @@ GOOGLE_REFRESH=your_google_refresh_token
 
 # Application
 NODE_ENV=production
-PORT=3001
+PORT=3100
 ```
 
 ## Запуск в разработке
@@ -46,7 +46,7 @@ PORT=3001
 npm run dev
 ```
 
-Приложение будет доступно по адресу: http://localhost:3001
+Приложение будет доступно по адресу: http://localhost:3100
 
 ## Сборка для production
 

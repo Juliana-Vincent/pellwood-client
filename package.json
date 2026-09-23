@@ -26,9 +26,9 @@
     "vanilla-cookieconsent": "^3.0.1"
   },
   "scripts": {
-    "dev": "next dev -p 3001",
+    "dev": "next dev -p 3100",
     "build": "next build",
-    "start": "next start -p 3001",
+    "start": "next start",
     "pm2:start": "pm2 start ecosystem.config.js",
     "pm2:stop": "pm2 stop ecosystem.config.js",
     "pm2:restart": "pm2 restart ecosystem.config.js",

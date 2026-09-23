@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'pellwood',
       script: 'node_modules/next/dist/bin/next',
-      args: 'start -p 3001',
+      args: 'start',
       cwd: './',
       exec_mode: 'fork',
       instances: 1,
@@ -12,7 +12,7 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 3001
+        PORT: 3100,
       },
       error_file: './logs/pm2-error.log',
       out_file: './logs/pm2-out.log',
