@@ -1,0 +1,1 @@
+ALTER SEQUENCE "orders_idOrder_seq" RESTART WITH 1000000;
