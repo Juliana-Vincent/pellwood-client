@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { fetchAPI } from '../lib/strapi';
 import fs from 'fs';
 

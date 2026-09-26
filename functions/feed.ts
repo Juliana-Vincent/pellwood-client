@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { fetchAPI, urlFor } from '../lib/strapi';
 import fs from 'fs';
 import toXmlProduct from './toXmlProductFeed';
