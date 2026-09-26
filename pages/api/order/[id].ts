@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import dbConnect from "@/lib/dbConnect";
-import Order from "@/models/order.model";
+import prisma from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 
 export default async function handler(
@@ -12,15 +11,15 @@ export default async function handler(
     method,
   } = req;
 
-  await dbConnect();
+  const orderId = String(Array.isArray(id) ? id[0] : id ?? "");
 
-  // An order's _id is an unguessable Mongo ObjectId, but "hard to guess" isn't
+  // An order's id is an unguessable uuid, but "hard to guess" isn't
   // "authenticated" - only the order's own customer may read or remove it.
   const sessionUser = await getSessionUser(req);
   if (!sessionUser) {
     return res.status(401).json({ msg: "Not authenticated" });
   }
-  const order = await Order.findOne({ _id: id });
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order || order.email !== sessionUser.email) {
     return res.status(404).json({ msg: "Order not found" });
   }
@@ -32,20 +31,18 @@ export default async function handler(
         return res.status(200).json([order]);
       } catch (err) {
         console.error("Order GET error:", err);
-        return res.status(500).json({
-          msg: "Internal Server Error", // real error is already logged server-side above
-        });
+        return res.status(500).json({ msg: "Internal Server Error" });
       }
 
     case "DELETE":
       try {
-        const result = await Order.deleteOne({ _id: id });
-        return res.status(200).json(result);
+        // deleteMany, and the response hand-shaped, so the body keeps the
+        // { acknowledged, deletedCount } form the UI already reads.
+        const { count } = await prisma.order.deleteMany({ where: { id: orderId } });
+        return res.status(200).json({ acknowledged: true, deletedCount: count });
       } catch (err) {
         console.error("Order DELETE error:", err);
-        return res.status(500).json({
-          msg: "Internal Server Error", // real error is already logged server-side above
-        });
+        return res.status(500).json({ msg: "Internal Server Error" });
       }
 
     default:

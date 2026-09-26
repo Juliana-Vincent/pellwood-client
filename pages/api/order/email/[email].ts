@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import dbConnect from "@/lib/dbConnect";
-import Order from "@/models/order.model";
+import prisma from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 
 export default async function handler(
@@ -18,7 +17,7 @@ export default async function handler(
   }
 
   try {
-    await dbConnect();
+    const requestedEmail = String(Array.isArray(email) ? email[0] : email ?? "");
 
     // Only the logged-in owner of this address may list its order history - and we
     // use their session email, never the URL param, so nobody can page through
@@ -27,11 +26,14 @@ export default async function handler(
     if (!sessionUser) {
       return res.status(401).json({ msg: "Not authenticated" });
     }
-    if (sessionUser.email !== email) {
+    if (sessionUser.email !== requestedEmail) {
       return res.status(403).json({ msg: "Forbidden" });
     }
 
-    const orderData = await Order.find({ email });
+    const orderData = await prisma.order.findMany({
+      where: { email: sessionUser.email },
+      orderBy: [{ createdAt: "asc" }, { idOrder: "asc" }],
+    });
 
     return res.status(200).json({
       msg: "Order successfully getting",
@@ -39,8 +41,6 @@ export default async function handler(
     });
   } catch (err) {
     console.error("Order getting error:", err);
-    return res.status(500).json({
-      msg: "Internal Server Error", // real error is already logged server-side above
-    });
+    return res.status(500).json({ msg: "Internal Server Error" });
   }
 }

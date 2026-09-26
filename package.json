@@ -8,12 +8,12 @@
     "npm": ">=10.0.0"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
     "@sendgrid/mail": "^8.1.6",
     "@strapi/blocks-react-renderer": "^1.0.2",
     "axios": "^1.6.5",
     "bcryptjs": "^3.0.3",
     "googleapis": "^173.0.0",
-    "mongoose": "^8.1.0",
     "next": "16.3.0",
     "nodemailer": "^9.0.5",
     "react": "19.2.8",
@@ -39,9 +39,11 @@
     "feed": "tsx ./functions/feed.ts",
     "postbuild": "npm run sitemap && npm run feed",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "postinstall": "prisma generate && prisma skills sync || exit 0"
   },
   "devDependencies": {
+    "@prisma/client": "6.19.3",
     "@types/node": "^25.9.2",
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19.2.17",
@@ -49,8 +51,10 @@
     "@types/uikit": "^3.23.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.0",
+    "install": "0.13.0",
     "pm2": "^7.0.1",
     "postcss": "^8.5.15",
+    "prisma": "6.19.3",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"

@@ -32,7 +32,7 @@ const buildGtagPayload = (data: OrderData): GtagPurchaseEvent => {
   const shipping = parseInt(String(data.deliveryPrice)) || 0;
 
   return {
-    transaction_id: data.idOrder,
+    transaction_id: String(data.idOrder),
     affiliation: "Pellwood",
     value: Number(sumWithoutTax.toFixed(2)),
     currency: data.currency === "Kč" ? "CZK" : "EUR",

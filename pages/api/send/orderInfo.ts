@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import dbConnect from "@/lib/dbConnect";
-import Order from "@/models/order.model";
+import prisma from "@/lib/db";
 import { createTransporter } from "@/lib/mailer";
 import { sendEmail as sendEmailViaResend } from "@/lib/mailer-resend";
 import { sendEmail as sendEmailViaSendGrid } from "@/lib/mailer-sendgrid";
@@ -17,6 +16,8 @@ export default async function handler(
     res.setHeader("Allow", ["POST"]);
     return res.status(405).end(`Method ${method} Not Allowed`);
   }
+  const asObject = (value: unknown): any =>
+    value && typeof value === "object" && !Array.isArray(value) ? value : undefined;
 
   try {
     const { idOrder } = req.body;
@@ -24,23 +25,32 @@ export default async function handler(
       return res.status(400).json({ msg: "Missing idOrder", success: false });
     }
 
-    // Atomically claim the "notified" flag so a page refresh (thank-you re-runs its
-    // data fetch on every load) or a duplicate call can't send the confirmation email
-    // twice - only the request that actually flips false -> true proceeds to send.
-    // The updated order is read back in the same step and is the ONLY source for the
-    // email content below - never the request body, which is caller-controlled and
-    // would otherwise let anyone email arbitrary content to an arbitrary recipient by
-    // POSTing a guessed idOrder directly.
-    await dbConnect();
-    const claimed = await Order.findOneAndUpdate(
-      { idOrder, notified: { $ne: true } },
-      { notified: true },
-      { new: true }
-    );
-    if (!claimed) {
+    const orderNumber = Number(idOrder);
+    if (!Number.isInteger(orderNumber)) {
+      return res.status(400).json({ msg: "Invalid idOrder", success: false });
+    }
+
+    const { count } = await prisma.order.updateMany({
+      where: { idOrder: orderNumber, notified: false },
+      data: { notified: true },
+    });
+    if (count === 0) {
       return res.status(200).json({ success: true, alreadyNotified: true });
     }
-    const data = claimed.toObject();
+
+    const order = await prisma.order.findUnique({ where: { idOrder: orderNumber } });
+    if (!order) {
+      return res.status(404).json({ msg: "Order not found", success: false });
+    }
+
+    const data = {
+      ...order,
+      sum: String(order.sum),
+      idOrder: String(order.idOrder),
+      basket: Array.isArray(order.basket) ? order.basket : [],
+      anotherAdress: asObject(order.anotherAdress),
+      companyData: asObject(order.companyData),
+    };
 
     const mailOptions = {
       from: '"Objednávka dokončena - Pellwood" <info@pellwood.com>',
@@ -50,18 +60,13 @@ export default async function handler(
       html: data.currency === "Kč" ? InfoOrder(data) : InfoOrderEN(data),
     };
 
-    // Try Resend first (if API key is set)
     if (process.env.RESEND_API_KEY) {
       console.log("Using Resend for email delivery");
       await sendEmailViaResend(mailOptions);
-    }
-    // Try SendGrid second
-    else if (process.env.SENDGRID_API_KEY) {
+    } else if (process.env.SENDGRID_API_KEY) {
       console.log("Using SendGrid for email delivery");
       await sendEmailViaSendGrid(mailOptions);
-    }
-    // Fallback to nodemailer
-    else {
+    } else {
       console.log("Using Nodemailer for email delivery");
       const transporter = await createTransporter();
       await transporter.sendMail(mailOptions);
@@ -71,7 +76,7 @@ export default async function handler(
   } catch (err) {
     console.error("mail.send error:", err);
     return res.status(500).json({
-      msg: "Internal Server Error", // real error is already logged server-side above
+      msg: "Internal Server Error",
       success: false,
     });
   }

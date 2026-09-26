@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
-import dbConnect from "@/lib/dbConnect";
-import Order from "@/models/order.model";
+import prisma from "@/lib/db";
 
 export default async function handler(
   req: NextApiRequest,
@@ -15,25 +14,21 @@ export default async function handler(
   }
 
   try {
-    await dbConnect();
-
     const { refId, transId } = req.body;
 
     if (!refId || !transId) {
       return res.status(400).json({ msg: "Missing refId/transId" });
     }
 
+    const orderNumber = Number(refId);
+    if (!Number.isInteger(orderNumber)) {
+      return res.status(400).json({ msg: "Invalid refId" });
+    }
+
     if (!process.env.PAYED_ID || !process.env.PAYED_PASSWORD) {
       throw new Error("Payment gateway is not configured (PAYED_ID/PAYED_PASSWORD missing)");
     }
 
-    // Comgate's webhook body is an unauthenticated POST from the public internet - a
-    // client-forgeable request. Instead of trusting req.body.status directly (which
-    // would let anyone mark any order "PAID" by guessing/brute-forcing its refId),
-    // re-verify the payment status against Comgate's own status API using our
-    // merchant secret, and only apply what Comgate itself reports.
-    // Posted as the form body, not the query string, so the merchant secret never
-    // ends up in access logs, proxies, or monitoring.
     const statusParams = new URLSearchParams({
       merchant: process.env.PAYED_ID,
       secret: process.env.PAYED_PASSWORD,
@@ -52,10 +47,15 @@ export default async function handler(
       return res.status(400).json({ msg: "Could not verify payment with Comgate" });
     }
 
-    await Order.findOneAndUpdate(
-      { idOrder: refId },
-      { status: verifiedStatus }
-    );
+    const { count } = await prisma.order.updateMany({
+      where: { idOrder: orderNumber },
+      data: { status: verifiedStatus },
+    });
+
+    if (count === 0) {
+      console.error(`Payment verified for unknown order idOrder=${orderNumber}`);
+      return res.status(404).json({ msg: "Order not found" });
+    }
 
     return res.status(200).json({
       msg: "Payment successfully processed",
@@ -64,7 +64,7 @@ export default async function handler(
   } catch (err) {
     console.error("Payment update POST error:", err);
     return res.status(500).json({
-      msg: "Internal Server Error", // real error is already logged server-side above
+      msg: "Internal Server Error", 
     });
   }
 }

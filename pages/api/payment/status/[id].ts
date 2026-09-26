@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import dbConnect from "@/lib/dbConnect";
-import Order from "@/models/order.model";
+import prisma from "@/lib/db";
 
 export default async function handler(
   req: NextApiRequest,
@@ -17,18 +16,28 @@ export default async function handler(
   }
 
   try {
-    await dbConnect();
+    const orderNumber = Number(Array.isArray(id) ? id[0] : id);
 
-    // idOrder is a public, guessable 6-digit lookup key (it's literally in the
-    // /thank-you?refId= URL) used by guest customers who have no session yet
-    // right after checkout - so this endpoint has to stay unauthenticated, but
-    // it must never leak PII to whoever guesses/enumerates an idOrder. Project
-    // down to only the fields the thank-you page and its purchase-conversion
-    // event actually use - never name/address/phone/email/company data.
-    const orderData = await Order.find(
-      { idOrder: id },
-      "idOrder notified payOnline status sum currency deliveryPrice basket"
-    );
+    if (!Number.isInteger(orderNumber)) {
+      return res.status(200).json({
+        msg: "Order status successfully retrieved",
+        data: [],
+      });
+    }
+
+    const orderData = await prisma.order.findMany({
+      where: { idOrder: orderNumber },
+      select: {
+        idOrder: true,
+        notified: true,
+        payOnline: true,
+        status: true,
+        sum: true,
+        currency: true,
+        deliveryPrice: true,
+        basket: true,
+      },
+    });
 
     return res.status(200).json({
       msg: "Order status successfully retrieved",
@@ -37,7 +46,7 @@ export default async function handler(
   } catch (err) {
     console.error("Status GET error:", err);
     return res.status(500).json({
-      msg: "Internal Server Error", // real error is already logged server-side above
+      msg: "Internal Server Error",
     });
   }
 }

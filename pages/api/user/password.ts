@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import dbConnect from "@/lib/dbConnect";
-import User from "@/models/user.model";
+import prisma from "@/lib/db";
 import { hashPassword, hashResetToken } from "@/lib/auth";
 
 export default async function handler(
@@ -15,7 +14,6 @@ export default async function handler(
   }
 
   try {
-    await dbConnect();
     const { password, email, resetToken } = req.body;
 
     if (!password?.length || !email?.length || !resetToken?.length) {
@@ -23,20 +21,26 @@ export default async function handler(
     }
 
     const tokenHash = hashResetToken(resetToken);
-    const user = await User.findOne({
-      email,
-      resetTokenHash: tokenHash,
-      resetTokenExpires: { $gt: new Date() },
+    const user = await prisma.user.findFirst({
+      where: {
+        email,
+        resetTokenHash: tokenHash,
+        resetTokenExpires: { gt: new Date() },
+      },
     });
 
     if (!user) {
       return res.status(401).json({ msg: "Invalid or expired reset link", error: true });
     }
 
-    user.password = await hashPassword(password);
-    user.resetTokenHash = null;
-    user.resetTokenExpires = null;
-    await user.save();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: await hashPassword(password),
+        resetTokenHash: null,
+        resetTokenExpires: null,
+      },
+    });
 
     return res.status(200).json({
       msg: "User successfully found and updated",
@@ -45,7 +49,7 @@ export default async function handler(
   } catch (err) {
     console.error("user.password error:", err);
     return res.status(500).json({
-      msg: "Internal Server Error", // real error is already logged server-side above
+      msg: "Internal Server Error", 
     });
   }
 }

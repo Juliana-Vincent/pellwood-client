@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import dbConnect from "@/lib/dbConnect";
-import User from "@/models/user.model";
+import prisma from "@/lib/db";
 import { generateResetToken } from "@/lib/auth";
 import { createTransporter } from "@/lib/mailer";
 import { sendEmail as sendEmailViaResend } from "@/lib/mailer-resend";
@@ -21,16 +20,16 @@ export default async function handler(
   try {
     const { email } = req.body;
 
-    await dbConnect();
-    const user = await User.findOne({ email });
+    const user = email ? await prisma.user.findUnique({ where: { email } }) : null;
 
     // Always respond the same way regardless of whether the account exists,
     // so this endpoint can't be used to enumerate registered emails.
     if (user) {
       const { token, tokenHash, expires } = generateResetToken();
-      user.resetTokenHash = tokenHash;
-      user.resetTokenExpires = expires;
-      await user.save();
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { resetTokenHash: tokenHash, resetTokenExpires: expires },
+      });
 
       const mailOptions = {
         from: '"Obnoveni hesla - Pellwood" <info@pellwood.cz>',
@@ -54,7 +53,7 @@ export default async function handler(
   } catch (err) {
     console.error("mail.send error:", err);
     return res.status(500).json({
-      msg: "Internal Server Error", // real error is already logged server-side above
+      msg: "Internal Server Error",
       success: false,
     });
   }
