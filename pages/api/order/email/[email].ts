@@ -32,7 +32,7 @@ export default async function handler(
 
     const orders = await ordersApi.find({
       "filters[email][$eq]": sessionUser.email,
-      "sort[0]": "createdAt:asc",
+      "sort[0]": "orderDate:asc",
       "pagination[pageSize]": 100,
     });
 

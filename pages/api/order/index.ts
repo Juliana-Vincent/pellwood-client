@@ -40,6 +40,7 @@ export default async function handler(
         companyDataCheck: Boolean(user.companyDataCheck),
         anotherAdress: user.anotherAdress ?? {},
         companyData: user.companyData ?? {},
+        orderDate: new Date().toISOString(),
         currency: currency ?? "",
         note: note ?? "",
         basket,
