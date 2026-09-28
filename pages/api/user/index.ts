@@ -14,8 +14,6 @@ const UPDATABLE_FIELDS = [
   "city",
   "address",
   "code",
-  "anotherAddressCheck",
-  "companyDataCheck",
   "anotherAdress",
   "companyData",
 ] as const;
@@ -125,7 +123,11 @@ export default async function handler(
     // to insert; the unique constraint on email is what actually stops the
     // duplicate, so surface it as the same 409 rather than a 500.
     if (err instanceof StrapiError && err.status === 400) {
-      return res.status(409).json({ msg: "User now exist", error: "email" });
+      if (/unique|already exists/i.test(err.message)) {
+        return res.status(409).json({ msg: "User now exist", error: "email" });
+      }
+      console.error(`user.${method?.toLowerCase()} validation error:`, err.message);
+      return res.status(400).json({ msg: "Invalid request" });
     }
     console.error(`user.${method?.toLowerCase() || "action"} error:`, err);
     return res.status(500).json({ msg: "Internal Server Error" });
