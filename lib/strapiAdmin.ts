@@ -22,7 +22,7 @@ type QueryParams = Record<string, string | number | boolean | undefined>;
 function toQuery(params: QueryParams = {}): string {
   const parts = Object.entries(params)
     .filter(([, value]) => value !== undefined)
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
+    .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`);
   return parts.length ? `?${parts.join('&')}` : '';
 }
 
