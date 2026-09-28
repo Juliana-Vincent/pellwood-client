@@ -40,8 +40,7 @@
     "feed": "tsx ./functions/feed.ts",
     "postbuild": "npm run sitemap && npm run feed",
     "lint": "eslint .",
-    "test": "vitest run",
-    "postinstall": "prisma generate && prisma skills sync || exit 0"
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^25.9.2",
