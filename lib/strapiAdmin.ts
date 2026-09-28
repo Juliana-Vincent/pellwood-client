@@ -118,9 +118,23 @@ export function serializeOrder(order: any) {
   };
 }
 
+const CUSTOMER_STRING_FIELDS = [
+  "email", "phone", "name", "surname", "country", "city", "address", "code",
+];
+
 export function serializeCustomer(customer: any) {
   if (!customer) return customer;
   const { password, resetTokenHash, resetTokenExpires, ...safe } = customer;
+
+  // Mongoose defaulted every one of these to "". Strapi returns null for an unset
+  // field, and a null on an input's value prop makes React treat it as
+  // uncontrolled - so the checkout prefill would start warning and misbehaving.
+  for (const field of CUSTOMER_STRING_FIELDS) {
+    if (safe[field] === null || safe[field] === undefined) safe[field] = "";
+  }
+  if (safe.anotherAdress == null) safe.anotherAdress = {};
+  if (safe.companyData == null) safe.companyData = {};
+
   return { ...safe, _id: customer.documentId };
 }
 
