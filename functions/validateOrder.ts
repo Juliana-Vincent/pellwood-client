@@ -60,7 +60,8 @@ export async function computeAuthoritativeOrderTotal(
   // item - a basket referencing the same product multiple times (e.g. two
   // different variants) also collapses to a single fetch.
   const productIds = [...new Set(basket.map((item) => item.id))];
-  const productsRes = await fetchAPI("products", {
+    const productsRes = await fetchAPI("products", {
+    locale: strapiLocale,
     filters: { documentId: { $in: productIds } },
     populate: { variants: true },
   });
@@ -79,9 +80,9 @@ export async function computeAuthoritativeOrderTotal(
       if (!variant) {
         throw new Error(`Unknown variant "${item.variantName}" for product ${item.id}`);
       }
-      unitPrice = Number(variant.price) || 0;
+      unitPrice = parsePrice(variant.price) || 0;
     } else {
-      unitPrice = Number(product.price) || 0;
+      unitPrice = parsePrice(product.price) || 0;
     }
 
     itemsSum += unitPrice * (Number(item.countVariant) || 0);
@@ -101,4 +102,11 @@ export async function computeAuthoritativeOrderTotal(
     paymentPrice: paymentOption.price,
     payOnline: !!paymentOption.payOnline,
   };
+}
+
+function parsePrice(value: unknown): number {
+  if (typeof value === "number") return value;
+  if (typeof value !== "string") return 0;
+  const n = Number(value.replace(/\s/g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
 }
