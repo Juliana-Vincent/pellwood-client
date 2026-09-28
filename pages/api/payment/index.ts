@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
-import prisma from "@/lib/db";
+import { ordersApi } from "@/lib/strapiAdmin";
 
 export default async function handler(
   req: NextApiRequest,
@@ -29,6 +29,11 @@ export default async function handler(
       throw new Error("Payment gateway is not configured (PAYED_ID/PAYED_PASSWORD missing)");
     }
 
+    // Comgate's webhook body is an unauthenticated POST from the public internet - a
+    // client-forgeable request. Instead of trusting req.body.status directly (which
+    // would let anyone mark any order "PAID" by guessing/brute-forcing its refId),
+    // re-verify the payment status against Comgate's own status API using our
+    // merchant secret, and only apply what Comgate itself reports.
     const statusParams = new URLSearchParams({
       merchant: process.env.PAYED_ID,
       secret: process.env.PAYED_PASSWORD,
@@ -47,15 +52,20 @@ export default async function handler(
       return res.status(400).json({ msg: "Could not verify payment with Comgate" });
     }
 
-    const { count } = await prisma.order.updateMany({
-      where: { idOrder: orderNumber },
-      data: { status: verifiedStatus },
+    const order = await ordersApi.findFirst({
+      "filters[idOrder][$eq]": orderNumber,
     });
 
-    if (count === 0) {
+    if (!order) {
+      // Comgate verified a payment for an order we don't have. Never silent - this
+      // means money moved against a record that's missing.
       console.error(`Payment verified for unknown order idOrder=${orderNumber}`);
       return res.status(404).json({ msg: "Order not found" });
     }
+
+    // Comgate retries on failure, so this must stay idempotent - writing the same
+    // verified status twice is harmless.
+    await ordersApi.update(order.documentId, { status: verifiedStatus });
 
     return res.status(200).json({
       msg: "Payment successfully processed",
@@ -63,8 +73,6 @@ export default async function handler(
     });
   } catch (err) {
     console.error("Payment update POST error:", err);
-    return res.status(500).json({
-      msg: "Internal Server Error", 
-    });
+    return res.status(500).json({ msg: "Internal Server Error" });
   }
 }

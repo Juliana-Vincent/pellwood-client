@@ -1,5 +1,22 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import prisma from "@/lib/db";
+import { ordersApi } from "@/lib/strapiAdmin";
+
+const PUBLIC_FIELDS = [
+  "idOrder",
+  "notified",
+  "payOnline",
+  "status",
+  "currency",
+  "deliveryPrice",
+  "basket",
+] as const;
+
+function publicOrderView(order: any) {
+  const view: Record<string, any> = {};
+  for (const field of PUBLIC_FIELDS) view[field] = order[field];
+  view.sum = order.sum === null || order.sum === undefined ? "" : String(order.sum);
+  return view;
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -25,28 +42,16 @@ export default async function handler(
       });
     }
 
-    const orderData = await prisma.order.findMany({
-      where: { idOrder: orderNumber },
-      select: {
-        idOrder: true,
-        notified: true,
-        payOnline: true,
-        status: true,
-        sum: true,
-        currency: true,
-        deliveryPrice: true,
-        basket: true,
-      },
+    const rows = await ordersApi.find({
+      "filters[idOrder][$eq]": orderNumber,
     });
 
     return res.status(200).json({
       msg: "Order status successfully retrieved",
-      data: orderData,
+      data: rows.map(publicOrderView),
     });
   } catch (err) {
     console.error("Status GET error:", err);
-    return res.status(500).json({
-      msg: "Internal Server Error",
-    });
+    return res.status(500).json({ msg: "Internal Server Error" });
   }
 }
