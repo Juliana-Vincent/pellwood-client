@@ -57,6 +57,8 @@ const User = () => {
     code: false,
   });
 
+  const [saved, setSaved] = useState(false);
+
   const [anotherAdress, setAnotherAdress] = useState<AddressState>({
     email: "",
     phone: "",
@@ -86,6 +88,16 @@ const User = () => {
         });
     }
   }, [state.email]);
+
+  useEffect(() => {
+    if (!saved) return;
+    const timer = setTimeout(() => setSaved(false), 4000);
+    return () => clearTimeout(timer);
+  }, [saved]);
+
+  useEffect(() => {
+    setSaved(false);
+  }, [state, anotherAdress, companyData]);
 
   const handleChange = (name: string, value: any) => {
     setState((prevState) => ({
@@ -126,6 +138,7 @@ const User = () => {
 
     if (onBlur("email")) return;
 
+    //The server ignores it
     let saveData = {
       id: user._id || user.id,
       ...state,
@@ -140,9 +153,11 @@ const User = () => {
       });
       dataContextDispatch({ state: res.data.data, type: "user" });
       setError((prev) => ({ ...prev, submit: false }));
+      setSaved(true);
     } catch (err) {
       console.error("Failed to save account:", err);
       setError((prev) => ({ ...prev, submit: true }));
+      setSaved(false);
     }
   };
 
@@ -166,6 +181,11 @@ const User = () => {
           {error.submit && (
             <div className="uk-alert-danger" uk-alert="">
               <p>{t("errorSendOrder")}</p>
+            </div>
+          )}
+          {saved && (
+            <div className="uk-alert-success" uk-alert="">
+              <p>{t("accountSaved")}</p>
             </div>
           )}
           <Delivery

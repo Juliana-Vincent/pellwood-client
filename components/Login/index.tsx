@@ -74,6 +74,10 @@ const Login = ({ setLoginUser }: LoginProps) => {
       dataContextDispatch({ state: res.data.data, type: 'user' });
       setLoginUser(true);
       modal('#modal-login').hide();
+      if (!router.pathname.startsWith("/basket")) {
+        router.push("/user");
+      }
+      router.push("/user");
     }).catch(err => {
       // 401 means the credentials were genuinely wrong - anything else (network
       // failure, 500) isn't, and telling the customer their password is wrong when

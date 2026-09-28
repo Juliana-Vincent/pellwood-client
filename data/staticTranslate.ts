@@ -349,6 +349,11 @@ export default {
     en: "Account",
     de: "xxx"
   },
+  accountSaved: {
+    cz: "Údaje byly uloženy.",
+    en: "Your details have been saved.",
+    de: "xxx"
+  },
   account: {
     cz: "Účet",
     en: "Account",
