@@ -20,9 +20,10 @@ export default async function handler(
         delivery,
       } = req.body;
 
-      // Recompute the total server-side from real Strapi prices and the known
-      // delivery/payment options instead of trusting the client-submitted sum -
-      // that number is what gets charged via Comgate below.
+      if (payment?.payOnline && (!process.env.PAYED_ID || !process.env.PAYED_PASSWORD)) {
+        throw new Error("Payment gateway is not configured (PAYED_ID/PAYED_PASSWORD missing)");
+      }
+
       const { total, deliveryPrice, paymentPrice, payOnline } =
         await computeAuthoritativeOrderTotal(basket, delivery, payment, currency);
 
