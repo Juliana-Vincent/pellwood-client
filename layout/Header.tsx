@@ -16,11 +16,7 @@ interface MenuItem {
   slug: string;
 }
 
-// Accounts (login/register/account page) aren't a requested feature yet - the code
-// (Login, ForgotPassword, ResetPassword, /user, the auth API routes) is intentionally
-// left in place for whenever that's greenlit, just not linked to from anywhere on the
-// site. Flip this back on to re-expose the header's login/account entry point.
-const AUTH_ENABLED = false;
+const AUTH_ENABLED = true;
 
 const Header = ({ loginUser }: { loginUser?: boolean }) => {
   const router = useRouter();

@@ -71,7 +71,7 @@ const Page = ({
   const [loginUser, setLoginUser] = useState(false);
 
   useEffect(() => {
-    if (dataContextState.user) {
+    if (dataContextState.user?.email) {
       setLoginUser(true);
     }
     if (router.query?.email) {

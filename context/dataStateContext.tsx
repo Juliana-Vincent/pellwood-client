@@ -129,6 +129,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/user/me")
+      .then((r) => r.json())
+      .then((body) => {
+        if (cancelled) return;
+        dataContextDispatch({ type: "user", state: body?.data || {} });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <DataStateContext.Provider
       value={{ dataContextState, dataContextDispatch }}
