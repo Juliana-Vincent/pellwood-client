@@ -1,10 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import prisma from "@/lib/db";
+import { ordersApi } from "@/lib/strapiAdmin";
 import { createTransporter } from "@/lib/mailer";
 import { sendEmail as sendEmailViaResend } from "@/lib/mailer-resend";
 import { sendEmail as sendEmailViaSendGrid } from "@/lib/mailer-sendgrid";
 import InfoOrder from "@/mail_template/infoOrder";
 import InfoOrderEN from "@/mail_template/infoOrderEN";
+
+const asObject = (value: unknown): any =>
+  value && typeof value === "object" && !Array.isArray(value) ? value : undefined;
 
 export default async function handler(
   req: NextApiRequest,
@@ -16,8 +19,6 @@ export default async function handler(
     res.setHeader("Allow", ["POST"]);
     return res.status(405).end(`Method ${method} Not Allowed`);
   }
-  const asObject = (value: unknown): any =>
-    value && typeof value === "object" && !Array.isArray(value) ? value : undefined;
 
   try {
     const { idOrder } = req.body;
@@ -30,23 +31,31 @@ export default async function handler(
       return res.status(400).json({ msg: "Invalid idOrder", success: false });
     }
 
-    const { count } = await prisma.order.updateMany({
-      where: { idOrder: orderNumber, notified: false },
-      data: { notified: true },
+    const order = await ordersApi.findFirst({
+      "filters[idOrder][$eq]": orderNumber,
     });
-    if (count === 0) {
-      return res.status(200).json({ success: true, alreadyNotified: true });
-    }
 
-    const order = await prisma.order.findUnique({ where: { idOrder: orderNumber } });
     if (!order) {
       return res.status(404).json({ msg: "Order not found", success: false });
     }
 
+    // Guard against the thank-you page re-running on every refresh. NOTE: unlike the
+    // Mongo version this is read-then-write rather than an atomic claim - Strapi's
+    // REST API has no conditional update - so two simultaneous loads could both get
+    // through and send twice. Duplicate confirmations are annoying; silently sending
+    // none would be worse, so the order is deliberately read, claimed, then sent.
+    if (order.notified) {
+      return res.status(200).json({ success: true, alreadyNotified: true });
+    }
+    await ordersApi.update(order.documentId, { notified: true });
+
+    // The order from Strapi is the ONLY source for the email content below - never
+    // the request body, which is caller-controlled and would otherwise let anyone
+    // email arbitrary content to an arbitrary recipient by POSTing a guessed idOrder.
     const data = {
       ...order,
-      sum: String(order.sum),
       idOrder: String(order.idOrder),
+      sum: order.sum === null || order.sum === undefined ? "" : String(order.sum),
       basket: Array.isArray(order.basket) ? order.basket : [],
       anotherAdress: asObject(order.anotherAdress),
       companyData: asObject(order.companyData),
@@ -75,9 +84,6 @@ export default async function handler(
     return res.status(200).json({ success: true });
   } catch (err) {
     console.error("mail.send error:", err);
-    return res.status(500).json({
-      msg: "Internal Server Error",
-      success: false,
-    });
+    return res.status(500).json({ msg: "Internal Server Error", success: false });
   }
 }

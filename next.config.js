@@ -25,10 +25,10 @@ module.exports = (phase) => {
   // domains - just not inline-payload XSS specifically.
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://c.seznam.cz",
+    "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://c.seznam.cz https://www.zbozi.cz",
     "style-src 'self' 'unsafe-inline'",
-     `img-src 'self' data: blob: https://*.pellwood.com https://pellwood-strapi.hardart.cz${isDev ? ' http://localhost:1337' : ''}`,
-    `connect-src 'self' https://*.pellwood.com https://*.google-analytics.com https://*.analytics.google.com https://*.seznam.cz https://pellwood-strapi.hardart.cz${isDev ? ' http://localhost:1337 ws://localhost:*' : ''}`,
+    `img-src 'self' data: blob: https://*.pellwood.com https://pellwood-strapi.hardart.cz https://*.zbozi.cz${isDev ? ' http://localhost:1337' : ''}`,
+    `connect-src 'self' https://*.pellwood.com https://*.google-analytics.com https://*.analytics.google.com https://*.seznam.cz https://*.zbozi.cz https://pellwood-strapi.hardart.cz${isDev ? ' http://localhost:1337 ws://localhost:*' : ''}`,
     "frame-src 'none'",
     "frame-ancestors 'self'",
     "base-uri 'self'",
