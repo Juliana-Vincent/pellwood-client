@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
-import prisma from "@/lib/db";
+import { createOrderWithUniqueNumber, serializeOrder } from "@/lib/strapiAdmin";
 import { computeAuthoritativeOrderTotal } from "@/functions/validateOrder";
 
 export default async function handler(
@@ -20,36 +20,42 @@ export default async function handler(
         delivery,
       } = req.body;
 
+      // Recompute the total server-side from real Strapi prices and the known
+      // delivery/payment options instead of trusting the client-submitted sum -
+      // that number is what gets charged via Comgate below.
       const { total, deliveryPrice, paymentPrice, payOnline } =
         await computeAuthoritativeOrderTotal(basket, delivery, payment, currency);
 
-      const order = await prisma.order.create({
-        data: {
-          email: user.email ?? "",
-          phone: user.phone ?? "",
-          name: user.name ?? "",
-          surname: user.surname ?? "",
-          country: user.country ?? "",
-          city: user.city ?? "",
-          address: user.address ?? "",
-          code: user.code ?? "",
-          anotherAddressCheck: Boolean(user.anotherAddressCheck),
-          companyDataCheck: Boolean(user.companyDataCheck),
-          anotherAdress: user.anotherAdress ?? {},
-          companyData: user.companyData ?? {},
-          currency: currency ?? "",
-          note: note ?? "",
-          basket,
-          sum: total, // Decimal column, accepts a JS number directly
-          status: "",
-          state: "new",
-          paymentMethod: payment.value ?? "",
-          paymentPrice: String(paymentPrice ?? ""),
-          payOnline,
-          deliveryMethod: delivery.value ?? "",
-          deliveryPrice: String(deliveryPrice ?? ""),
-        },
+      const created = await createOrderWithUniqueNumber({
+        email: user.email ?? "",
+        phone: user.phone ?? "",
+        name: user.name ?? "",
+        surname: user.surname ?? "",
+        country: user.country ?? "",
+        city: user.city ?? "",
+        address: user.address ?? "",
+        code: user.code ?? "",
+        anotherAddressCheck: Boolean(user.anotherAddressCheck),
+        companyDataCheck: Boolean(user.companyDataCheck),
+        anotherAdress: user.anotherAdress ?? {},
+        companyData: user.companyData ?? {},
+        currency: currency ?? "",
+        note: note ?? "",
+        basket,
+        sum: total,
+        // Never from the request body: status is set only by the Comgate-verified
+        // webhook in /api/payment.
+        status: "",
+        state: "new",
+        paymentMethod: payment.value ?? "",
+        paymentPrice: String(paymentPrice ?? ""),
+        payOnline,
+        deliveryMethod: delivery.value ?? "",
+        deliveryPrice: String(deliveryPrice ?? ""),
+        notified: false,
       });
+
+      const order = serializeOrder(created);
 
       let resDataParse: Record<string, string> = {};
 
@@ -71,6 +77,8 @@ export default async function handler(
           secret: process.env.PAYED_PASSWORD,
         };
 
+        // Posted as the form body, not the query string, so the merchant secret
+        // never ends up in access logs, proxies, or monitoring.
         const params = new URLSearchParams(paymentData);
 
         const resPayment = await axios.post(
@@ -102,6 +110,9 @@ export default async function handler(
         })),
       };
 
+      // Fire-and-forget, with a timeout - this is third-party conversion tracking, not
+      // part of placing the order, so a slow/unreachable zbozi.cz must never block (or
+      // fail) checkout for the customer, who already has a saved order at this point.
       axios
         .post(
           `https://www.zbozi.cz/action/153477/conversion/backend`,
@@ -123,6 +134,13 @@ export default async function handler(
       });
     }
   }
+
+  // There used to be an unauthenticated PUT here that let anyone flip any order's
+  // state (or create junk orders via upsert) by guessing an id - it had no caller
+  // anywhere in the client, so it was pure attack surface with no feature behind
+  // it. Order status is set exclusively by the Comgate-verified webhook in
+  // /api/payment. If an admin-triggered status override is ever needed, it must be
+  // built with real admin authentication, not reintroduced here unauthenticated.
 
   res.setHeader("Allow", ["POST"]);
   return res.status(405).end(`Method ${method} Not Allowed`);

@@ -108,3 +108,30 @@ function collection(name: string) {
 
 export const ordersApi = collection('orders');
 export const customersApi = collection('customers');
+
+export function serializeOrder(order: any) {
+  if (!order) return order;
+  return {
+    ...order,
+    _id: order.documentId,
+    sum: order.sum === null || order.sum === undefined ? '' : String(order.sum),
+  };
+}
+
+export function serializeCustomer(customer: any) {
+  if (!customer) return customer;
+  const { password, resetTokenHash, resetTokenExpires, ...safe } = customer;
+  return { ...safe, _id: customer.documentId };
+}
+
+export async function createOrderWithUniqueNumber(data: Record<string, any>) {
+  for (let attempt = 0; ; attempt++) {
+    const idOrder = 1000000 + Math.floor(Math.random() * 9000000);
+    try {
+      return await ordersApi.create({ ...data, idOrder });
+    } catch (err) {
+      if (err instanceof StrapiError && err.status === 400 && attempt < 4) continue;
+      throw err;
+    }
+  }
+}
