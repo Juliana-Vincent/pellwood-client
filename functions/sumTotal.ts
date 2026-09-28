@@ -1,5 +1,6 @@
 import { computePricing } from "@/functions/computePricing";
 import type { PricingRules } from "@/functions/pricingRules";
+import { parsePrice } from "@/functions/parsePrice";
 
 export interface BasketItem {
   variantPrice: number | string;
@@ -18,7 +19,7 @@ const sumTotal = (
   rules?: PricingRules
 ) => {
   const itemsSum = basket.reduce((total, item) => {
-    const price = Number(item.variantPrice) || 0;
+    const price = parsePrice(item.variantPrice) || 0;
     const count = Number(item.countVariant) || 0;
     return total + (price * count);
   }, 0);

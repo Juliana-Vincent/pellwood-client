@@ -3,6 +3,7 @@ import { resolveDeliveryData, resolvePaymentData } from "@/functions/shippingOpt
 import { resolvePricingRules } from "@/functions/pricingRules";
 import { computePricing } from "@/functions/computePricing";
 import type { Setting } from "@/types/setting";
+import { parsePrice } from "@/functions/parsePrice";
 
 interface BasketItemInput {
   id: string;
@@ -102,11 +103,4 @@ export async function computeAuthoritativeOrderTotal(
     paymentPrice: paymentOption.price,
     payOnline: !!paymentOption.payOnline,
   };
-}
-
-function parsePrice(value: unknown): number {
-  if (typeof value === "number") return value;
-  if (typeof value !== "string") return 0;
-  const n = Number(value.replace(/\s/g, "").replace(",", "."));
-  return Number.isFinite(n) ? n : 0;
 }
