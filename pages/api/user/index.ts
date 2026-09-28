@@ -1,8 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import prisma from "@/lib/db";
+import { customersApi, serializeCustomer, StrapiError } from "@/lib/strapiAdmin";
 import { hashPassword, createSessionToken, buildSessionCookie } from "@/lib/auth";
 import { getSessionUser } from "@/lib/session";
 
+// Only these fields may ever be set or updated from a request body - never
+// password (handled separately below), resetTokenHash/resetTokenExpires, or
+// anything else a client might slip in.
 const UPDATABLE_FIELDS = [
   "phone",
   "name",
@@ -29,11 +32,6 @@ function pickWritableFields(data: any): Record<string, any> {
   return out;
 }
 
-function toSafeUser(user: Record<string, any>) {
-  const { password: _pw, resetTokenHash, resetTokenExpires, ...safeUser } = user;
-  return safeUser;
-}
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -56,25 +54,20 @@ export default async function handler(
         });
       }
 
-      const existUser = await prisma.user.findUnique({ where: { email } });
+      const existUser = await customersApi.findFirst({ "filters[email][$eq]": email });
 
       if (existUser) {
-        return res.status(409).json({
-          msg: "User now exist",
-          error: "email",
-        });
+        return res.status(409).json({ msg: "User now exist", error: "email" });
       }
 
-      const userData = await prisma.user.create({
-        data: {
-          email,
-          password: await hashPassword(password),
-        },
+      const userData = await customersApi.create({
+        email,
+        password: await hashPassword(password),
       });
-      res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(userData.id)));
+      res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(userData.documentId)));
       return res.status(201).json({
         msg: "User successfully created",
-        data: toSafeUser(userData),
+        data: serializeCustomer(userData),
       });
     }
 
@@ -83,6 +76,9 @@ export default async function handler(
       let userData;
 
       if (type === "update") {
+        // The record to update is always the session's own user - never a client-
+        // supplied id - otherwise any authenticated user could overwrite anyone
+        // else's account by passing a different id.
         const sessionUser = await getSessionUser(req);
         if (!sessionUser) {
           return res.status(401).json({ msg: "Not authenticated" });
@@ -93,10 +89,7 @@ export default async function handler(
           update.password = await hashPassword(data.password);
         }
 
-        userData = await prisma.user.update({
-          where: { id: sessionUser.id },
-          data: update,
-        });
+        userData = await customersApi.update(sessionUser.documentId, update);
       } else if (type === "create") {
         if (!data?.email?.length || !data?.password?.length) {
           return res.status(400).json({
@@ -104,18 +97,18 @@ export default async function handler(
             error: [!data?.email?.length && "email", !data?.password?.length && "password"].filter(Boolean),
           });
         }
-        const existUser = await prisma.user.findUnique({ where: { email: data.email } });
+        const existUser = await customersApi.findFirst({ "filters[email][$eq]": data.email });
         if (existUser) {
           return res.status(409).json({ msg: "User now exist", error: "email" });
         }
-        userData = await prisma.user.create({
-          data: {
-            ...pickWritableFields(data),
-            email: data.email,
-            password: await hashPassword(data.password),
-          },
+        // Whitelisted, not spread: `...data` let a client set any field the schema
+        // happened to define, including resetTokenHash.
+        userData = await customersApi.create({
+          ...pickWritableFields(data),
+          email: data.email,
+          password: await hashPassword(data.password),
         });
-        res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(userData.id)));
+        res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(userData.documentId)));
       }
 
       if (!userData) {
@@ -124,16 +117,17 @@ export default async function handler(
 
       return res.status(200).json({
         msg: "User successfully processed",
-        data: toSafeUser(userData),
+        data: serializeCustomer(userData),
       });
     }
   } catch (err: any) {
-    if (err?.code === "P2002") {
+    // Two simultaneous signups with the same address both pass the lookup and race
+    // to insert; the unique constraint on email is what actually stops the
+    // duplicate, so surface it as the same 409 rather than a 500.
+    if (err instanceof StrapiError && err.status === 400) {
       return res.status(409).json({ msg: "User now exist", error: "email" });
     }
     console.error(`user.${method?.toLowerCase() || "action"} error:`, err);
-    return res.status(500).json({
-      msg: "Internal Server Error", 
-    });
+    return res.status(500).json({ msg: "Internal Server Error" });
   }
 }

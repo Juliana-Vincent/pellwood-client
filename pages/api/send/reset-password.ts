@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import prisma from "@/lib/db";
+import { customersApi } from "@/lib/strapiAdmin";
 import { generateResetToken } from "@/lib/auth";
 import { createTransporter } from "@/lib/mailer";
 import { sendEmail as sendEmailViaResend } from "@/lib/mailer-resend";
@@ -20,15 +20,17 @@ export default async function handler(
   try {
     const { email } = req.body;
 
-    const user = email ? await prisma.user.findUnique({ where: { email } }) : null;
+    const user = email
+      ? await customersApi.findFirst({ "filters[email][$eq]": email })
+      : null;
 
     // Always respond the same way regardless of whether the account exists,
     // so this endpoint can't be used to enumerate registered emails.
     if (user) {
       const { token, tokenHash, expires } = generateResetToken();
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { resetTokenHash: tokenHash, resetTokenExpires: expires },
+      await customersApi.update(user.documentId, {
+        resetTokenHash: tokenHash,
+        resetTokenExpires: expires.toISOString(),
       });
 
       const mailOptions = {
@@ -52,9 +54,6 @@ export default async function handler(
     return res.status(200).json({ success: true });
   } catch (err) {
     console.error("mail.send error:", err);
-    return res.status(500).json({
-      msg: "Internal Server Error",
-      success: false,
-    });
+    return res.status(500).json({ msg: "Internal Server Error", success: false });
   }
 }

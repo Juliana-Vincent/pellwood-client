@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import prisma from "@/lib/db";
+import { customersApi } from "@/lib/strapiAdmin";
 import { hashPassword, hashResetToken } from "@/lib/auth";
 
 export default async function handler(
@@ -21,25 +21,24 @@ export default async function handler(
     }
 
     const tokenHash = hashResetToken(resetToken);
-    const user = await prisma.user.findFirst({
-      where: {
-        email,
-        resetTokenHash: tokenHash,
-        resetTokenExpires: { gt: new Date() },
-      },
+    // Deliberately email AND token AND unexpired, so a valid token for the wrong
+    // address is still rejected.
+    const user = await customersApi.findFirst({
+      "filters[email][$eq]": email,
+      "filters[resetTokenHash][$eq]": tokenHash,
+      "filters[resetTokenExpires][$gt]": new Date().toISOString(),
     });
 
     if (!user) {
       return res.status(401).json({ msg: "Invalid or expired reset link", error: true });
     }
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        password: await hashPassword(password),
-        resetTokenHash: null,
-        resetTokenExpires: null,
-      },
+    // Clearing the token in the same write that sets the password means the link
+    // can't be reused.
+    await customersApi.update(user.documentId, {
+      password: await hashPassword(password),
+      resetTokenHash: null,
+      resetTokenExpires: null,
     });
 
     return res.status(200).json({
@@ -48,8 +47,6 @@ export default async function handler(
     });
   } catch (err) {
     console.error("user.password error:", err);
-    return res.status(500).json({
-      msg: "Internal Server Error", 
-    });
+    return res.status(500).json({ msg: "Internal Server Error" });
   }
 }

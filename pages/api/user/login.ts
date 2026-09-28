@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import prisma from "@/lib/db";
+import { customersApi, serializeCustomer } from "@/lib/strapiAdmin";
 import { verifyPassword, createSessionToken, buildSessionCookie } from "@/lib/auth";
 
 export default async function handler(
@@ -16,24 +16,23 @@ export default async function handler(
   try {
     const { email, password } = req.body;
 
-    const user = email ? await prisma.user.findUnique({ where: { email } }) : null;
+    const user = email
+      ? await customersApi.findFirst({ "filters[email][$eq]": email })
+      : null;
     const passwordMatches = user ? await verifyPassword(password, user.password) : false;
 
     if (user && passwordMatches) {
-      const { password: _pw, resetTokenHash, resetTokenExpires, ...safeUser } = user;
-      res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(user.id)));
+      res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(user.documentId)));
       return res.status(200).json({
         msg: "User successfully found",
         error: false,
-        data: safeUser,
+        data: serializeCustomer(user),
       });
     }
 
     return res.status(401).json({ msg: "error", error: true });
   } catch (err) {
     console.error("user.login error:", err);
-    return res.status(500).json({
-      msg: "Internal Server Error",
-    });
+    return res.status(500).json({ msg: "Internal Server Error" });
   }
 }
