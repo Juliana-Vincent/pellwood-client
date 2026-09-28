@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import prisma from "@/lib/db";
+import { ordersApi, serializeOrder } from "@/lib/strapiAdmin";
 import { getSessionUser } from "@/lib/session";
 
 export default async function handler(
@@ -17,23 +17,19 @@ export default async function handler(
   }
 
   try {
-    // An id is unguessable, but "hard to guess" isn't "authenticated" -
-    // only the order's own customer may read it (mirrors api/order/[id].ts).
     const sessionUser = await getSessionUser(req);
     if (!sessionUser) {
       return res.status(401).json({ msg: "Not authenticated" });
     }
 
-    // findMany instead of findUnique to guarantee we return an array,
-    // ensuring we don't break existing UI expectations.
-    const orderData = await prisma.order.findMany({
-      where: {
-        id: String(Array.isArray(id) ? id[0] : id ?? ""),
-        email: sessionUser.email,
-      },
-    });
+    const orderId = String(Array.isArray(id) ? id[0] : id ?? "");
+    const order = await ordersApi.findOne(orderId);
 
-    return res.status(200).json(orderData);
+    if (!order || order.email !== sessionUser.email) {
+      return res.status(200).json([]);
+    }
+
+    return res.status(200).json([serializeOrder(order)]);
   } catch (err) {
     console.error("Order getting error:", err);
     return res.status(500).json({ msg: "Internal Server Error" });

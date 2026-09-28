@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import prisma from "@/lib/db";
+import { ordersApi, serializeOrder } from "@/lib/strapiAdmin";
 import { getSessionUser } from "@/lib/session";
 
 export default async function handler(
@@ -30,14 +30,15 @@ export default async function handler(
       return res.status(403).json({ msg: "Forbidden" });
     }
 
-    const orderData = await prisma.order.findMany({
-      where: { email: sessionUser.email },
-      orderBy: [{ createdAt: "asc" }, { idOrder: "asc" }],
+    const orders = await ordersApi.find({
+      "filters[email][$eq]": sessionUser.email,
+      "sort[0]": "createdAt:asc",
+      "pagination[pageSize]": 100,
     });
 
     return res.status(200).json({
       msg: "Order successfully getting",
-      data: orderData,
+      data: orders.map(serializeOrder),
     });
   } catch (err) {
     console.error("Order getting error:", err);
