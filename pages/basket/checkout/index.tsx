@@ -147,10 +147,28 @@ const Basket = ({ settings }: BasketProps) => {
     code: false,
   });
 
+  const [prefilled, setPrefilled] = useState(false);
+
   useEffect(() => {
-    setUser(dataContextState.user);
-    setState((prev) => ({ ...prev, ...dataContextState.user }));
-  }, [dataContextState.user]);
+    const sessionUser = dataContextState.user;
+    if (prefilled || !dataContextState.hydrated || !sessionUser?.email) return;
+
+    setUser(sessionUser);
+    setState((prev) => ({
+      ...prev,
+      email: sessionUser.email || prev.email,
+      phone: sessionUser.phone || prev.phone,
+      name: sessionUser.name || prev.name,
+      surname: sessionUser.surname || prev.surname,
+      country: sessionUser.country || prev.country,
+      city: sessionUser.city || prev.city,
+      address: sessionUser.address || prev.address,
+      code: sessionUser.code || prev.code,
+    }));
+    setAnotherAdress((prev) => ({ ...prev, ...(sessionUser.anotherAdress || {}) }));
+    setCompanyData((prev) => ({ ...prev, ...(sessionUser.companyData || {}) }));
+    setPrefilled(true);
+  }, [prefilled, dataContextState.hydrated, dataContextState.user]);
 
   useEffect(() => {
     sumTotal(0, 0, basket, setSumBefore, setSale, setSum, typedLang, pricingRules);
