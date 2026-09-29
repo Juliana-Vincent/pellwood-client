@@ -58,9 +58,13 @@ export default async function handler(
       });
 
       const order = serializeOrder(created);
+
       const host = req.headers["x-forwarded-host"] || req.headers.host;
       const proto = req.headers["x-forwarded-proto"] || "https";
-      const returnUrl = `${proto}://${host}${currency === "Kč" ? "" : "/en"}/thank-you`;
+      const localePrefix = currency === "Kč" ? "" : "/en";
+
+      const returnUrl =
+        proto + "://" + host + localePrefix + "/thank-you?refId=${refId}&transId=${id}";
 
       let resDataParse: Record<string, string> = {};
 
