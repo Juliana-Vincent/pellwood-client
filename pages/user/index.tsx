@@ -84,6 +84,28 @@ const User = () => {
     dic: "",
     ...user.companyData,
   });
+  
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    if (prefilled || !dataContextState.hydrated || !user?.email) return;
+
+    setState((prev) => ({
+      ...prev,
+      email: user.email || "",
+      phone: user.phone || "",
+      name: user.name || "",
+      surname: user.surname || "",
+      country: user.country || "",
+      city: user.city || "",
+      address: user.address || "",
+      code: user.code || "",
+    }));
+    setAnotherAdress((prev) => ({ ...prev, ...(user.anotherAdress || {}) }));
+    setCompanyData((prev) => ({ ...prev, ...(user.companyData || {}) }));
+    setPrefilled(true);
+    // `prefilled` guards against a later dispatch - the /api/user/me
+    // reconciliation, say - overwriting edits the customer has already started.
+  }, [prefilled, dataContextState.hydrated, user]);
 
   useEffect(() => {
     if (state.email) {
