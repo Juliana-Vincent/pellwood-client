@@ -4,7 +4,7 @@ import Image from "next/image";
 import { urlFor } from "@/lib/strapi";
 import { Product, Variant } from "@/types/product";
 import { useTranslation } from "@/hooks/useTranslation";
-import { parsePrice } from "@/helpers/priceParser";
+import { parsePrice } from "@/functions/parsePrice";
 
 const getMin = (arr: Variant[]) => {
   let lowest = Number.POSITIVE_INFINITY;

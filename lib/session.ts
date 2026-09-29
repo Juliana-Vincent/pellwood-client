@@ -1,4 +1,3 @@
-import type { NextApiRequest } from 'next';
 import { customersApi } from '@/lib/strapiAdmin';
 import { readSessionTokenFromCookieHeader, verifySessionToken } from '@/lib/auth';
 
@@ -7,7 +6,7 @@ import { readSessionTokenFromCookieHeader, verifySessionToken } from '@/lib/auth
  * Returns null when there's no valid session - callers decide whether that's a
  * 401 or just "treat as guest".
  */
-export async function getSessionUser(req: NextApiRequest) {
+export async function getSessionUser(req: { headers: { cookie?: string | null } }) {
   const token = readSessionTokenFromCookieHeader(req.headers.cookie);
   const userId = verifySessionToken(token);
   if (!userId) return null;

@@ -205,7 +205,7 @@ const Login = ({ setLoginUser }: LoginProps) => {
             <hr />
             
             <p>{t('notyetaccount')}</p>
-            <button className="tm-button tm-bare-button uk-width-1-1" onClick={onRegister}>
+            <button type='button' className="tm-button tm-bare-button uk-width-1-1" onClick={onRegister}>
               <span>{t('registration')}</span>
             </button>
           </form>

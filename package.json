@@ -8,7 +8,6 @@
     "npm": ">=10.0.0"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.10.0",
     "@sendgrid/mail": "^8.1.6",
     "@strapi/blocks-react-renderer": "^1.0.2",
     "axios": "^1.6.5",

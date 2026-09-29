@@ -1,9 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import AnimateHeight from "react-animate-height";
-// Reuses the same delivery/company-data form components as checkout instead of the
-// account page's own older copies (components/User/*), which duplicated this UI and
-// had drifted enough to carry a since-fixed prop-mutation bug the checkout versions
-// never had.
+import type { GetServerSidePropsContext } from "next";
+import { getSessionUser } from "@/lib/session";
 import Delivery from "@/components/Checkout/components/delivery";
 import Corporate from "@/components/Checkout/components/corporate";
 import { DataStateContext } from "@/context/dataStateContext";
@@ -18,10 +16,20 @@ import type {
   CheckoutErrors,
 } from "@/types/shop";
 
-// See src/pages/basket/index.tsx for why this trivial getServerSideProps is required:
-// pages with no data-fetching function fail to hydrate on a direct/fresh load on this
-// Next.js/Turbopack version, which would silently break the login/account forms here.
-export async function getServerSideProps() {
+export async function getServerSideProps({ req, locale }: GetServerSidePropsContext) {
+  const sessionUser = await getSessionUser(req);
+
+  if (!sessionUser) {
+    return {
+      redirect: {
+        destination: locale === "en" ? "/en" : "/",
+        // locale: false because the prefix is already in the destination above - without it Next would add its own and produce /en/en.
+        locale: false,
+        permanent: false,
+      },
+    };
+  }
+
   return { props: {} };
 }
 
@@ -172,7 +180,7 @@ const User = () => {
   };
 
   return (
-    <Page className="basket user">
+    <Page className="basket user" title={t("yourAccount")} noCrawl>
       <div className="tm-basket-content-wrap">
         <div className="tm-basket-content">
           <div className="tm-basket-head">
