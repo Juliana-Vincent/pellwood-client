@@ -12,12 +12,7 @@ import type { GtagPurchaseEvent } from "@/functions/gtag";
 export async function getServerSideProps({ query, locale }: GetServerSidePropsContext) {
   const { lang } = localize(locale);
   if (!query.refId) {
-    return {
-      redirect: {
-        destination: "/not-found",
-        permanent: false,
-      },
-    };
+    return { notFound: true };
   }
 
   const res = await AxiosAPI.get(`/payment/status/${query.refId}`);
@@ -25,12 +20,7 @@ export async function getServerSideProps({ query, locale }: GetServerSidePropsCo
   const order = res.data?.data?.[0];
 
   if (!order) {
-    return {
-      redirect: {
-        destination: "/not-found",
-        permanent: false,
-      },
-    };
+    return { notFound: true };
   }
 
   // Fire the confirmation email and the purchase conversion event only the first time
@@ -78,15 +68,15 @@ interface ThankYouProps {
 }
 
 const ThankYou = ({ status, dataGtag }: ThankYouProps) => {
-  const { dataContextDispatch } = useContext(DataStateContext);
+  const { dataContextState, dataContextDispatch } = useContext(DataStateContext);
   const { t, lang } = useTranslation();
 
   useEffect(() => {
-    // "basket" + lang / "basketCount" + lang are built dynamically, so they can't be
-    // statically narrowed to the DataAction union - same pattern as layout/Canvas.tsx.
+    if (!dataContextState.hydrated) return;
+
     dataContextDispatch({ state: [], type: ("basket" + lang) as "basketcz" | "basketen" });
     dataContextDispatch({ state: 0, type: ("basketCount" + lang) as "basketCountcz" | "basketCounten" });
-  }, [status, lang, dataContextDispatch]);
+  }, [dataContextState.hydrated, status, lang, dataContextDispatch]);
 
   return (
     <Page className="thank-you-page base-page" purchase={dataGtag}>

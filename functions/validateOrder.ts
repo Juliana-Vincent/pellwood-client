@@ -69,10 +69,17 @@ export async function computeAuthoritativeOrderTotal(
   const productsById = new Map((productsRes.data || []).map((p: any) => [p.documentId, p]));
 
   let itemsSum = 0;
+  const verifiedBasket: any[] = [];
+
   for (const item of basket) {
     const product = productsById.get(item.id) as any;
     if (!product) {
       throw new Error(`Unknown product in basket: ${item.id}`);
+    }
+    
+    const quantity = Number(item.countVariant);
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) {
+      throw new Error(`Invalid quantity for product ${item.id}: ${item.countVariant}`);
     }
 
     let unitPrice: number;
@@ -81,12 +88,14 @@ export async function computeAuthoritativeOrderTotal(
       if (!variant) {
         throw new Error(`Unknown variant "${item.variantName}" for product ${item.id}`);
       }
-      unitPrice = parsePrice(variant.price) || 0;
+      unitPrice = parsePrice(variant.price);
     } else {
-      unitPrice = parsePrice(product.price) || 0;
+      unitPrice = parsePrice(product.price);
     }
 
-    itemsSum += unitPrice * (Number(item.countVariant) || 0);
+    itemsSum += unitPrice * quantity;
+
+    verifiedBasket.push({ ...item, variantPrice: unitPrice, countVariant: quantity });
   }
 
   const deliveryOption = resolveDeliveryData(settingData, lang).find((d) => d.value === delivery?.value);
@@ -102,5 +111,6 @@ export async function computeAuthoritativeOrderTotal(
     deliveryPrice: deliveryOption.price,
     paymentPrice: paymentOption.price,
     payOnline: !!paymentOption.payOnline,
+    basket: verifiedBasket,
   };
 }

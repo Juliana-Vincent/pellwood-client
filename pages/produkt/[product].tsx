@@ -16,6 +16,8 @@ import type { BasketItem } from "@/types/shop";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { GetStaticPropsContext } from "next";
 import { parsePrice } from "@/helpers/priceParser";
+import QuantityInput from "@/components/QuantityInput";
+import { clampQuantity, MAX_QUANTITY } from "@/helpers/quantity";
 
 export async function getStaticPaths() {
   return { paths: [], fallback: "blocking" as const };
@@ -109,6 +111,7 @@ const Product = ({
   const { dataContextState, dataContextDispatch } = useContext(
     DataStateContext,
   );
+  const [quantityNotice, setQuantityNotice] = useState(false);
 
   const [select, setSelect] = useState({
     name: t("selectvariant"),
@@ -191,7 +194,7 @@ const Product = ({
         // to know they need to recompute.
         basket = basket.map((item, index) =>
           index === indexBasket
-            ? { ...item, countVariant: +item.countVariant + count }
+            ? { ...item,                 countVariant: clampQuantity(+item.countVariant + count).value, }
             : item,
         );
       } else {
@@ -336,14 +339,6 @@ const Product = ({
                     <div className="uk-flex uk-flex-between">
                       <div className="uk-width-1-1 uk-width-auto@m">
                         <div className="custom-select-wrap">
-                          {/* UIkit's uk-dropdown auto-init scans and mutates these two elements
-                              (adds aria-haspopup/aria-expanded to the button, an extra uk-drop
-                              class to the dropdown) in the window between initial paint and
-                              React's hydration walk - a real, understood conflict between
-                              UIkit's DOM-scanning auto-init and React's hydration model, not a
-                              bug in this component. suppressHydrationWarning is placed on
-                              exactly these two nodes (and no others) because they're the only
-                              ones UIkit actually touches here. */}
                           <button
                             className={`custom-select uk-button uk-button-default ${
                               error.select ? "error" : ""
@@ -380,41 +375,18 @@ const Product = ({
                           </div>
                         </div>
                       </div>
-                      <div
-                        className={`custom_number quantity ${
-                          error.count ? "error" : ""
-                        }`}
-                      >
-                        <input
-                          type="number"
-                          min="1"
-                          max="1000"
-                          step="1"
-                          onChange={(e) => setCount(+e.target.value)}
-                          value={count}
-                        />
-                        <div className="quantity-nav">
-                          <div
-                            className="quantity-button quantity-up"
-                            onClick={() => setCount(count + 1)}
-                          >
-                            +
-                          </div>
-                          <div
-                            className="quantity-button quantity-down"
-                            onClick={() => {
-                              if (count > 0) {
-                                return setCount(count - 1);
-                              } else {
-                                return false;
-                              }
-                            }}
-                          >
-                            -
-                          </div>
-                        </div>
-                      </div>
+                      <QuantityInput
+                        value={count}
+                        onChange={setCount}
+                        onClamp={setQuantityNotice}
+                        error={error.count}
+                      />
                     </div>
+                    {quantityNotice && (
+                      <div className="uk-alert-danger" uk-alert="">
+                        <p>{t("quantityLimit")}</p>
+                      </div>
+                    )}
                     <button
                       className="uk-width-1-1 uk-margin-top tm-button tm-black-button"
                       onClick={() => onBuy()}
@@ -438,42 +410,19 @@ const Product = ({
                       suppressHydrationWarning
                     >
                       <div className="uk-width-1-3" suppressHydrationWarning>
-                        <div
-                          className={`custom_number quantity ${
-                            error.count ? "error" : ""
-                          }`}
-                        >
-                          <input
-                            type="number"
-                            min="1"
-                            max="1000"
-                            step="1"
-                            onChange={(e) => setCount(+e.target.value)}
-                            value={count}
-                          />
-                          <div className="quantity-nav">
-                            <div
-                              className="quantity-button quantity-up"
-                              onClick={() => setCount(count + 1)}
-                            >
-                              +
-                            </div>
-                            <div
-                              className="quantity-button quantity-down"
-                              onClick={() => {
-                                if (count > 0) {
-                                  return setCount(count - 1);
-                                } else {
-                                  return false;
-                                }
-                              }}
-                            >
-                              -
-                            </div>
-                          </div>
-                        </div>
+                      <QuantityInput
+                        value={count}
+                        onChange={setCount}
+                        onClamp={setQuantityNotice}
+                        error={error.count}
+                      />
                       </div>
                       <div className="uk-width-2-3" suppressHydrationWarning>
+                        {quantityNotice && (
+                          <div className="uk-alert-danger" uk-alert="">
+                            <p>{t("quantityLimit")}</p>
+                          </div>
+                        )}
                         <button
                           className="uk-width-1-1 tm-button tm-black-button"
                           onClick={() => onBuy()}
@@ -492,11 +441,6 @@ const Product = ({
                 )}
                 <div className="status">
                   <div>
-                    {/* Inlined directly (instead of <img uk-svg>) so the fill="currentColor"
-                        path actually picks up the .status svg { color } CSS rule - an <img>
-                        can't reach into an external SVG document's fill, which is exactly why
-                        uk-svg existed: it swaps the <img> for inline markup client-side, which
-                        is also what was causing a hydration mismatch on this exact element. */}
                     <svg aria-hidden="true" focusable="false" viewBox="0 0 512 512">
                       <path
                         fill="currentColor"

@@ -24,7 +24,7 @@ export default async function handler(
         throw new Error("Payment gateway is not configured (PAYED_ID/PAYED_PASSWORD missing)");
       }
 
-      const { total, deliveryPrice, paymentPrice, payOnline } =
+      const { total, deliveryPrice, paymentPrice, payOnline, basket: verifiedBasket } =
         await computeAuthoritativeOrderTotal(basket, delivery, payment, currency);
 
       const created = await createOrderWithUniqueNumber({
@@ -43,11 +43,11 @@ export default async function handler(
         orderDate: new Date().toISOString(),
         currency: currency ?? "",
         note: note ?? "",
-        basket,
+        basket: verifiedBasket,
         sum: total,
         // Never from the request body: status is set only by the Comgate-verified
         // webhook in /api/payment.
-        status: "",
+        status: payOnline ? "PENDING" : "",
         state: "new",
         paymentMethod: payment.value ?? "",
         paymentPrice: String(paymentPrice ?? ""),
@@ -58,6 +58,9 @@ export default async function handler(
       });
 
       const order = serializeOrder(created);
+      const host = req.headers["x-forwarded-host"] || req.headers.host;
+      const proto = req.headers["x-forwarded-proto"] || "https";
+      const returnUrl = `${proto}://${host}${currency === "Kč" ? "" : "/en"}/thank-you`;
 
       let resDataParse: Record<string, string> = {};
 
@@ -72,11 +75,14 @@ export default async function handler(
           curr: currency === "Kč" ? "CZK" : "EUR",
           label: `${user.name}-${user.surname}`,
           refId: String(order.idOrder),
-          cat: "DIGITAL",
+          cat: "PHYSICAL",
           method: "ALL",
           prepareOnly: "true",
           email: user.email,
           secret: process.env.PAYED_PASSWORD,
+          url_paid: returnUrl,
+          url_cancelled: returnUrl,
+          url_pending: returnUrl,
         };
 
         // Posted as the form body, not the query string, so the merchant secret
@@ -104,7 +110,7 @@ export default async function handler(
         deliveryPrice: parseInt(String(order.deliveryPrice)) || 0,
         paymentType: order.paymentMethod,
         otherCosts: parseInt(String(order.paymentPrice)) || 0,
-        cart: basket.map((item: any) => ({
+        cart: verifiedBasket.map((item: any) => ({
           itemId: item.id,
           productName: `${item.nameProduct}${item.variantName ? " - " + item.variantName : ""}`,
           unitPrice: Number(item.variantPrice) || 0,

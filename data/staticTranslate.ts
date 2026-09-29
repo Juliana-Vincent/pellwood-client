@@ -94,6 +94,11 @@ export default {
     en: "Order summary",
     de: "xxx"
   },
+  quantityLimit:{
+    cs: "Množství musí být celé číslo od 1 do 1000.",
+    en: "Quantity must be a whole number from 1 to 1000.",
+    de: "xxx"
+  },
   payment: {
     cz: "Platba",
     en: "Payment",

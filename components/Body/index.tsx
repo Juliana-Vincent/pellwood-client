@@ -1,7 +1,9 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { DataStateContext } from "@/context/dataStateContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { BasketItem } from "@/types/shop";
+import QuantityInput from "@/components/QuantityInput";
+import { clampQuantity } from "@/helpers/quantity";
 
 interface BodyProps {
   setSum: (sum: number | string) => void;
@@ -15,6 +17,19 @@ const BodyWrap = ({ setSum, basket, setBasket }: BodyProps) => {
   const { dataContextState, dataContextDispatch } = useContext(
     DataStateContext,
   ) as any;
+    const [quantityNotice, setQuantityNotice] = useState(false);
+
+  const setCount = (index: number, raw: unknown) => {
+    const { value, clamped } = clampQuantity(raw);
+    setQuantityNotice(clamped);
+
+    const newBasket = [...basket];
+    newBasket[index] = { ...newBasket[index], countVariant: value };
+
+    setBasket(newBasket);
+    dataContextDispatch({ state: newBasket, type: "basket" + lang });
+    sumBasket(newBasket);
+  };
 
   const sumBasket = (newBasket: BasketItem[]) => {
     const sumAll = newBasket.reduce((acc, item) => {
@@ -46,17 +61,6 @@ const BodyWrap = ({ setSum, basket, setBasket }: BodyProps) => {
     sumBasket(newBasket);
   };
 
-  const handleChange = (index: number, value: string) => {
-    const newBasket = [...basket];
-    const item = { ...newBasket[index] };
-    item.countVariant = Number(value) || 1;
-    newBasket[index] = item;
-
-    setBasket(newBasket);
-    dataContextDispatch({ state: newBasket, type: "basket" + lang });
-    sumBasket(newBasket);
-  };
-
   const deleteItem = (e: React.MouseEvent, index: number) => {
     e.preventDefault();
 
@@ -74,6 +78,11 @@ const BodyWrap = ({ setSum, basket, setBasket }: BodyProps) => {
 
   return (
     <div className="tm-basket-body">
+      {quantityNotice && (
+        <div className="uk-alert-danger" uk-alert="">
+          <p>{t("quantityLimit")}</p>
+        </div>
+      )}
       <table className="uk-table uk-table-divider uk-table-middle">
         <thead>
           <tr>
@@ -116,30 +125,10 @@ const BodyWrap = ({ setSum, basket, setBasket }: BodyProps) => {
                 </div>
               </td>
               <td>
-                <div className="custom_number quantity">
-                  <input
-                    type="number"
-                    min="1"
-                    max="1000"
-                    step="1"
-                    value={item.countVariant}
-                    onChange={(e) => handleChange(index, e.target.value)}
-                  />
-                  <div className="quantity-nav">
-                    <div
-                      className="quantity-button quantity-up"
-                      onClick={() => changeCount(index, "up")}
-                    >
-                      +
-                    </div>
-                    <div
-                      className="quantity-button quantity-down"
-                      onClick={() => changeCount(index, "down")}
-                    >
-                      -
-                    </div>
-                  </div>
-                </div>
+                <QuantityInput
+                  value={Number(item.countVariant)}
+                  onChange={(value) => setCount(index, value)}
+                />
               </td>
               <td>
                 <span className="basket-body-price">
