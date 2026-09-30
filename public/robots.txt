@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://pellwood.com/sitemap.xml
