@@ -43,6 +43,7 @@ export async function getStaticProps({
       variants: true,
       parametrs: true,
       category: true,
+      localizations: true,
       linkedProducts: {
         populate: {
           image: true,
@@ -77,6 +78,15 @@ export async function getStaticProps({
     (item) => item?.category?.slug === "o-nas",
   );
 
+  const localizations = ((product as any).localizations || []) as Array<{
+    locale: string;
+    slug: string;
+  }>;
+  const csSlug =
+    lang === "cz" ? product.slug : localizations.find((l) => l.locale === "cs")?.slug || null;
+  const enSlug =
+    lang === "en" ? product.slug : localizations.find((l) => l.locale === "en")?.slug || null;
+
   return {
     props: {
       carts: linkedCarts.filter((item) => item?.title),
@@ -84,6 +94,10 @@ export async function getStaticProps({
       articleSeccond: shuffle(articlesFilteredSeccond, 1),
       product: product,
       productId: product.documentId,
+      alternates: {
+        cs: csSlug ? `/produkt/${csSlug}` : null,
+        en: enSlug ? `/produkt/${enSlug}` : null,
+      },
     },
     revalidate: 60,
   };
@@ -95,6 +109,10 @@ interface ProductPageProps {
   articleSeccond: Article[];
   product: ProductType;
   productId: string;
+  alternates: {
+    cs: string | null;
+    en: string | null;
+  };
 }
 
 const Product = ({
@@ -103,6 +121,7 @@ const Product = ({
   articleSeccond,
   product,
   productId,
+  alternates,
 }: ProductPageProps) => {
   const router = useRouter();
   const { t, lang, currency } = useTranslation();
@@ -252,6 +271,7 @@ const Product = ({
       description={product.SEOdescription || ""}
       title={product.title}
       image={urlFor(product.image).url()}
+      alternates={alternates}
     >
       <script
         type="application/ld+json"

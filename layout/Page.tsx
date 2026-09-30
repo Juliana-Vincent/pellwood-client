@@ -46,6 +46,7 @@ const Page = ({
   noCrawl,
   tags,
   purchase = false,
+  alternates = { cs: null, en: null },
 }: PageProps) => {
   const router = useRouter();
   const theTitle = title
@@ -55,17 +56,15 @@ const Page = ({
     ? description.substring(0, 155)
     : defaultDescription;
   const theImage = image ? image : defaultImage;
-  const canonical =
-    router.locale === "en"
-      ? SITE_URL + "/" + router.locale + router.asPath.split("?")[0]
-      : SITE_URL + router.asPath.split("?")[0];
 
-  // router.asPath is locale-agnostic under Pages Router i18n (never carries the
-  // /en prefix itself, same as the canonical logic above relies on), so both
-  // language variants of the current page can be built from it directly.
   const pathNoQuery = router.asPath.split("?")[0];
-  const csUrl = `${SITE_URL}${pathNoQuery}`;
-  const enUrl = `${SITE_URL}/en${pathNoQuery === "/" ? "" : pathNoQuery}`;
+  const csPath = alternates ? alternates.cs : pathNoQuery;
+  const enPath = alternates ? alternates.en : pathNoQuery;
+
+  const csUrl = csPath ? `${SITE_URL}${csPath}` : null;
+  const enUrl = enPath ? `${SITE_URL}/en${enPath === "/" ? "" : enPath}` : null;
+
+  const canonical = router.locale === "en" ? enUrl : csUrl;
 
   const { dataContextState } = useContext(DataStateContext);
   const [loginUser, setLoginUser] = useState(false);
@@ -77,11 +76,6 @@ const Page = ({
     if (router.query?.email) {
       modal("#reset-password").show();
     }
-    // router.query is often still {} on the very first render (the Pages Router
-    // fills it in shortly after for dynamic/client-navigated routes), so an empty
-    // dep array could miss a ?email= that arrives a tick later and never open the
-    // reset-password modal. router.query.email specifically (not the whole query
-    // object, which is a new reference every render) is what the effect reads.
   }, [dataContextState.user, router.query?.email]);
 
   return (
@@ -124,10 +118,10 @@ const Page = ({
 
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{theTitle}</title>
-        <link rel="canonical" href={canonical} />
-        <link rel="alternate" hrefLang="cs" href={csUrl} />
-        <link rel="alternate" hrefLang="en" href={enUrl} />
-        <link rel="alternate" hrefLang="x-default" href={csUrl} />
+        {!noCrawl && canonical && <link rel="canonical" href={canonical} />}
+        {!noCrawl && csUrl && <link rel="alternate" hrefLang="cs" href={csUrl} />}
+        {!noCrawl && enUrl && <link rel="alternate" hrefLang="en" href={enUrl} />}
+        {!noCrawl && csUrl && <link rel="alternate" hrefLang="x-default" href={csUrl} />}
         <meta itemProp="name" content={theTitle} />
         <meta itemProp="description" content={theDescription} />
         <meta itemProp="image" content={theImage} />
@@ -209,7 +203,7 @@ const Page = ({
           }}
         />
       )}
-      <Header loginUser={loginUser} />
+      <Header loginUser={loginUser} csHref={csPath || "/"} enHref={enPath || "/"} />
       <main id={id} className={className}>
         {children}
       </main>

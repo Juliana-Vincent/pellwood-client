@@ -173,4 +173,5 @@ export interface PageProps {
   noCrawl?: boolean;
   tags?: string;
   purchase?: any;
+  alternates?: { cs?: string | null; en?: string | null };
 }

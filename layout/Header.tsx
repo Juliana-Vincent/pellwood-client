@@ -18,7 +18,15 @@ interface MenuItem {
 
 const AUTH_ENABLED = true;
 
-const Header = ({ loginUser }: { loginUser?: boolean }) => {
+const Header = ({
+  loginUser,
+  csHref = "/",
+  enHref = "/",
+}: {
+  loginUser?: boolean;
+  csHref?: string;
+  enHref?: string;
+}) => {
   const router = useRouter();
   const { t, lang } = useTranslation();
 
@@ -56,30 +64,20 @@ const Header = ({ loginUser }: { loginUser?: boolean }) => {
     };
   }, [lang]);
 
-  // Derived state directly from context (no need for a redundant useState/useEffect sync)
   const countKey = `basketCount${lang}` as keyof DataState;
   const basketCount = (dataContextState?.[countKey] as number) || 0;
 
-  // Derived directly from context (not the loginUser prop, which is only ever set
-  // true on mount and never reset on logout) so this never goes stale after the
-  // customer logs in or out.
   const isLoggedIn = !!(dataContextState?.user as any)?.email;
 
-  // router.asPath can render as a bare trailing "?" with no actual query on some
-  // passes (confirmed via a live hydration-mismatch diff: SSR gives "/", the client
-  // re-render gives "/?") - normalize that away so the Link's href always agrees
-  // between server and client instead of triggering a hydration mismatch here on
-  // every single page.
   const currentPath = router.asPath.replace(/\?$/, "");
 
-  // Extracted Language Nav to prevent duplicate JSX code block
   const renderLanguageOptions = () => (
     <ul>
       <li className={lang === "cz" ? "menu_active" : undefined}>
-        <Link href="/" locale="cs">cs</Link>
+        <Link href={csHref} locale="cs">cs</Link>
       </li>
       <li className={lang === "en" ? "menu_active" : undefined}>
-        <Link href="/" locale="en">en</Link>
+        <Link href={enHref} locale="en">en</Link>
       </li>
     </ul>
   );
