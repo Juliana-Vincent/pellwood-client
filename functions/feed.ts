@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { fetchAPI, urlFor } from '../lib/strapi';
+import { fetchAllAPI, urlFor } from '../lib/strapi';
 import fs from 'fs';
 import toXmlProduct from './toXmlProductFeed';
 import toXmlHeureka from './toXmlHeurekaFeed';
@@ -47,13 +47,10 @@ const feedModel = (lang: string, products: any[]): FeedItem[] => {
 
 const generateFeed = async () => {
   try {
-    const [czRes, enRes] = await Promise.all([
-      fetchAPI('products', { locale: 'cs', populate: ['image', 'variants', 'parametrs'], pagination: { limit: 1000 } }),
-      fetchAPI('products', { locale: 'en', populate: ['image', 'variants', 'parametrs'], pagination: { limit: 1000 } })
+    const [czProducts, enProducts] = await Promise.all([
+      fetchAllAPI<any>('products', { locale: 'cs', populate: ['image', 'variants', 'parametrs'] }),
+      fetchAllAPI<any>('products', { locale: 'en', populate: ['image', 'variants', 'parametrs'] })
     ]);
-
-    const czProducts = czRes.data || [];
-    const enProducts = enRes.data || [];
 
     const czArr = feedModel('cz', czProducts);
     const enArr = feedModel('en', enProducts);

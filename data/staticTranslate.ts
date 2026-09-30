@@ -557,5 +557,10 @@ export default {
     cz: "Nastavení cookies",
     en: "Cookie settings",
     de: "xxx"
-  }
+  },
+  noProductsFound: {
+    cz: "Nic jsme nenašli. Zkuste jiný výraz.",
+    en: "Nothing found. Try a different term.",
+    de: "Nichts gefunden. Versuchen Sie einen anderen Begriff.",
+  },
 }

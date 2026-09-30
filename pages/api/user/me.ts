@@ -12,6 +12,7 @@ export default async function handler(
     res.setHeader("Allow", ["GET"]);
     return res.status(405).end(`Method ${method} Not Allowed`);
   }
+  res.setHeader("Cache-Control", "no-store, max-age=0");
 
   try {
     // Returns only the session's own customer - this is the safe replacement for

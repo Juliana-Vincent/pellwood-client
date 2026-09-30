@@ -4,7 +4,7 @@ import Page from "@/layout/Page";
 import RandomArticles from "@/components/RandomArticles/index";
 import Cart from "@/components/Cart/index";
 import SubMenu from "@/components/SubMenu/index";
-import { fetchAPI } from "@/lib/strapi";
+import { fetchAPI, fetchAllAPI } from "@/lib/strapi";
 import ModalFilter from "@/components/ModalFilter/index";
 import localize from "@/data/localize";
 import changeUrl from "@/helpers/changeUrl";
@@ -48,21 +48,14 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     parametersArr = { lengthMin, lengthMax, diameterMin, diameterMax };
   }
 
-  // The filter sliders' min/max bounds need every product's parameters, but nothing
-  // else about them - populate only parametrs here instead of also pulling
-  // category/image/variants for products that are just being scanned for a number.
   const strapiLocale2 = lang === "cz" ? "cs" : lang;
-  const rangeRes = await fetchAPI<Product[]>("products", {
+  const rangeProducts = await fetchAllAPI<Product>("products", {
     locale: strapiLocale2,
     populate: { parametrs: true },
-    pagination: { limit: 500 },
   });
-  const range = getRangeParameter(rangeRes.data || []);
-  const rangeState = getRangeParameter(rangeRes.data || [], parametersArr);
+  const range = getRangeParameter(rangeProducts);
+  const rangeState = getRangeParameter(rangeProducts, parametersArr);
 
-  // Only the page actually being rendered is fetched (with full populate), pushed
-  // down to Strapi as real filters/pagination where possible - see
-  // fetchCatalogProducts for why the diameter/length range filter can't be.
   const productsSliced = await fetchCatalogProducts({
     lang,
     category,
@@ -76,21 +69,18 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   });
   const products = await controledProduct(lang, productsSliced);
 
-  // 3. Fetch categories
   const categoriesRes = await fetchAPI<Category[]>("categories", {
     locale: strapiLocale,
     sort: ["sort:asc"],
   });
   const categoriesData = categoriesRes.data || [];
 
-  // 4. Fetch articles
   const articlesRes = await fetchAPI<Article[]>("articles", {
     locale: strapiLocale,
     populate: { category: true, image: true },
   });
   const articlesData = articlesRes.data || [];
 
-  // 5. Fetch settings
   const settingsRes = await fetchAPI<Setting>("setting", {
     locale: strapiLocale,
   });
@@ -150,7 +140,7 @@ const Catalog = ({
   const [firstLoad, setFirstLoad] = useState(false);
   const [reset, setReset] = useState(false);
   const [product, setProduct] = useState(productData);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(productData.length >= 6);
   const [filtered, setFiltered] = useState(ifFiltered);
   const [search, setSearch] = useState(searchQuery || "");
 
@@ -339,6 +329,19 @@ const Catalog = ({
                 ))}
               </ul>
             </InfiniteScroll>
+          )}
+          {!product.length && (
+            <div className="uk-text-center uk-padding">
+              <p>{t("noProductsFound")}</p>
+              {filtered && (
+                <button
+                  className="tm-button tm-black-button"
+                  onClick={(e) => cancelFilter(e)}
+                >
+                  {t("cancelFilters")}
+                </button>
+              )}
+            </div>
           )}
         </div>
       </section>

@@ -1,4 +1,5 @@
-import { fetchAPI } from "@/lib/strapi";
+import { fetchAPI, fetchAllAPI } from "@/lib/strapi";
+import { normalizeText, searchTokens } from "@/helpers/normalizeText";
 
 interface FetchCatalogParams {
   lang: string;
@@ -8,9 +9,7 @@ interface FetchCatalogParams {
   diameterMax?: string | number | false;
   lengthMin?: string | number | false;
   lengthMax?: string | number | false;
-  /** Zero-based index of the first item to return within the filtered result set. */
   offset: number;
-  /** How many items to return starting at offset. */
   limit: number;
 }
 
@@ -19,17 +18,18 @@ const findParam = (parametrs: any[] | undefined, titles: string[]) =>
 
 const parseParamValue = (value: string) => parseFloat(String(value).replace(",", "."));
 
-/**
- * Single source of truth for the product catalog listing, shared between the
- * initial getServerSideProps render and the client-side "load more"/filter calls -
- * they used to duplicate this filtering logic independently.
- *
- * Category and search map cleanly onto Strapi filters, so that case is pushed
- * server-side with real pagination instead of pulling up to 1000 products on every
- * request. Strapi can't filter on values inside a repeatable component though, so a
- * diameter/length range filter still has to be evaluated in-memory - that path
- * fetches a bounded working set (not the whole catalog) and paginates in JS.
- */
+/** Everything a customer might reasonably type to find this product. */
+const searchHaystack = (product: any): string =>
+  normalizeText(
+    [
+      product.title,
+      product.category?.title,
+      ...(product.variants || []).map((v: any) => v.title),
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+
 export async function fetchCatalogProducts({
   lang,
   category,
@@ -45,13 +45,16 @@ export async function fetchCatalogProducts({
   const populate = { category: true, image: true, variants: true, parametrs: true };
   const hasRangeFilter = !!(diameterMin && diameterMax) || !!(lengthMin && lengthMax);
 
-  if (!hasRangeFilter) {
+  // Search and the range filter both have to run in memory. The range values live
+  // in a repeatable component and need parsing; search needs accent folding,
+  // punctuation folding and multi-token matching, none of which Strapi's
+  // $containsi can do ("x line 4 pary" must match "X-Line 4 páry").
+  const needsInMemory = hasRangeFilter || !!search;
+
+  if (!needsInMemory) {
     const filters: Record<string, any> = {};
     if (category && category !== "all") {
       filters.category = { documentId: { $eq: category } };
-    }
-    if (search) {
-      filters.title = { $containsi: search };
     }
 
     const res = await fetchAPI("products", {
@@ -63,28 +66,29 @@ export async function fetchCatalogProducts({
     return res.data || [];
   }
 
-  // A reasonable cap on the working set for the in-memory range-filter fallback -
-  // note Strapi's own pagination[limit] may already be capped server-side (commonly
-  // a few hundred by default), so this can silently work against a partial catalog
-  // until that's raised or the range filter is moved into a Strapi controller.
-  const WORKING_SET_LIMIT = 500;
-
-  const res = await fetchAPI("products", {
+  let products: any[] = await fetchAllAPI("products", {
     locale: strapiLocale,
     populate,
-    pagination: { limit: WORKING_SET_LIMIT },
   });
-  let products = res.data || [];
 
   if (category && category !== "all") {
     products = products.filter(
       (p: any) => p.category && (p.category.documentId === category || p.category.slug === category),
     );
   }
+
   if (search) {
-    const s = String(search).toLowerCase();
-    products = products.filter((p: any) => p.title && p.title.toLowerCase().includes(s));
+    // Every token must appear, in any order: "4 pary x line" finds the same
+    // products as "x line 4 pary".
+    const tokens = searchTokens(String(search));
+    if (tokens.length) {
+      products = products.filter((p: any) => {
+        const haystack = searchHaystack(p);
+        return tokens.every((token) => haystack.includes(token));
+      });
+    }
   }
+
   if (diameterMin && diameterMax) {
     products = products.filter((p: any) => {
       const d = findParam(p.parametrs, ["Průměr", "Diameter"]);

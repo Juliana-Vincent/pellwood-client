@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { fetchAPI } from '../lib/strapi';
+import { fetchAllAPI } from '../lib/strapi';
 import fs from 'fs';
 
 const BASE_URL = 'https://pellwood.com';
@@ -12,17 +12,11 @@ const buildUrl = (path: string) => {
 
 async function generateSitemap() {
   try {
-    const [productsRes, archivesRes, articlesRes] = await Promise.all([
-      fetchAPI('products', { locale: 'cs', populate: ['localizations'] }),
-      // The /kategorie/[category] route reads from the `archives` content type (which
-      // has a slug), not `categories` (which doesn't) - use the same source here.
-      fetchAPI('archives', { locale: 'cs', populate: ['localizations'] }),
-      fetchAPI('articles', { locale: 'cs', populate: ['localizations', 'category', 'localizations.category'] })
+    const [products, archives, articles] = await Promise.all([
+      fetchAllAPI<any>('products', { locale: 'cs', populate: ['localizations'] }),
+      fetchAllAPI<any>('archives', { locale: 'cs', populate: ['localizations'] }),
+      fetchAllAPI<any>('articles', { locale: 'cs', populate: ['localizations', 'category', 'localizations.category'] })
     ]);
-
-    const products = productsRes.data || [];
-    const archives = archivesRes.data || [];
-    const articles = articlesRes.data || [];
 
     const urls: string[] = [
       buildUrl('/'),

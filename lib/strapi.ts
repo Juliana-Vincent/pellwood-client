@@ -77,15 +77,12 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Respons
   }
 }
 
-// Helper to fetch data from Strapi API
+const ALL_PAGE_SIZE = 100;
+const ALL_MAX_PAGES = 50;
 export async function fetchAPI<T = any>(
   path: string,
   urlParamsObject: StrapiQueryParams = {}
 ): Promise<StrapiResponse<T>> {
-  // No default populate - relations/components are only fetched when a call site
-  // explicitly asks for them, instead of every request pulling every relation by
-  // default (populate: '*' recurses into components too, e.g. every product's
-  // linkedProducts).
   const searchParams = buildQuery(urlParamsObject);
   const queryString = searchParams.toString();
 
@@ -128,10 +125,31 @@ export async function fetchAPI<T = any>(
       throw lastError;
     }
   }
-
-  // Unreachable - the loop above always returns or throws - but keeps TypeScript
-  // happy about every code path returning a value.
   throw lastError;
+}
+
+export async function fetchAllAPI<T = any>(
+  path: string,
+  urlParamsObject: StrapiQueryParams = {},
+): Promise<T[]> {
+  const all: T[] = [];
+
+  for (let page = 1; page <= ALL_MAX_PAGES; page++) {
+    const res = await fetchAPI<T[]>(path, {
+      ...urlParamsObject,
+      pagination: { page, pageSize: ALL_PAGE_SIZE },
+    });
+
+    const batch = res.data || [];
+    all.push(...batch);
+
+    const pagination = (res.meta as any)?.pagination;
+    if (!batch.length) break;
+    if (pagination?.pageCount && page >= pagination.pageCount) break;
+    if (!pagination?.pageCount && batch.length < ALL_PAGE_SIZE) break;
+  }
+
+  return all;
 }
 
 interface StrapiImageHandle {

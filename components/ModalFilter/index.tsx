@@ -102,6 +102,12 @@ const ModalFilter: FC<ModalFilterProps> = ({
                   placeholder={`${t('search')}...`}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleFilter();
+                    }
+                  }}
                 />
               </label>
               {!!search?.length && (
