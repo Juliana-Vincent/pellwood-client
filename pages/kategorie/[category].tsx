@@ -28,6 +28,7 @@ export async function getStaticProps({
         $eq: params?.category,
       },
     },
+    populate: { localizations: true },
   });
 
   const archiveData = archiveRes.data || [];
@@ -53,11 +54,25 @@ export async function getStaticProps({
 
   const articles = articlesRes.data || [];
 
+  const archive = archiveData[0];
+  const localizations = ((archive as any).localizations || []) as Array<{
+    locale: string;
+    slug: string;
+  }>;
+  const csSlug =
+    lang === "cz" ? archive.slug : localizations.find((l) => l.locale === "cs")?.slug || null;
+  const enSlug =
+    lang === "en" ? archive.slug : localizations.find((l) => l.locale === "en")?.slug || null;
+
   return {
     props: {
       articles,
-      archives: archiveData[0],
+      archives: archive,
       lang,
+      alternates: {
+        cs: csSlug ? `/kategorie/${csSlug}` : null,
+        en: enSlug ? `/kategorie/${enSlug}` : null,
+      },
     },
     revalidate: 60,
   };
@@ -67,9 +82,10 @@ interface BlogShortProps {
   articles: ArticleType[];
   archives: Archive;
   lang: string;
+  alternates: { cs: string | null; en: string | null };
 }
 
-const BlogShort = ({ articles, archives, lang }: BlogShortProps) => {
+const BlogShort = ({ articles, archives, lang, alternates }: BlogShortProps) => {
   const { t } = useTranslation();
   const localePrefix = lang === "en" ? "/en" : "";
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -78,13 +94,16 @@ const BlogShort = ({ articles, archives, lang }: BlogShortProps) => {
   ]);
 
   return (
-    <Page id="blog" title={archives.title}>
+    <Page id="blog" title={archives.title} alternates={alternates}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <section className="head_category head_category_articles">
         <div className="uk-container uk-container-expand">
+          <div className="content_head_wrap">
+            <h1>{archives.title}</h1>
+          </div>
           <SubMenu data={articles} articles />
         </div>
       </section>
