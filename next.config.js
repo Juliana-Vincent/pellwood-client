@@ -80,11 +80,6 @@ module.exports = (phase) => {
         },
       ]
     },
-    async rewrites() {
-      return [
-        { source: '/robots.txt', destination: '/api/robots', locale: false },
-      ]
-    },
     sassOptions: {
       quietDeps: true,
       silenceDeprecations: ['import', 'color-functions', 'global-builtin', 'slash-div'],

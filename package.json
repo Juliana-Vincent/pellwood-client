@@ -37,7 +37,8 @@
     "pm2:monit": "pm2 monit",
     "sitemap": "tsx ./functions/sitemap-generator.ts",
     "feed": "tsx ./functions/feed.ts",
-    "postbuild": "npm run sitemap && npm run feed",
+    "robots": "tsx ./functions/robots-generator.ts",
+    "postbuild": "npm run sitemap && npm run feed && npm run robots",
     "lint": "eslint .",
     "test": "vitest run"
   },
