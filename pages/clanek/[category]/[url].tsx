@@ -153,8 +153,10 @@ const Article = ({ chapters, alternates }: ArticleProps) => {
               <div className="content_wrap grey" suppressHydrationWarning>
                 <div>
                   <div className="content">
-                    {!index && <h1 className="head_1">{item.title}</h1>}
-                    {!!index && <h2 className="head_1">{item.title}</h2>}
+                    {!index && <h1 className="head_1">{chapters.title}</h1>}
+                    {(!!index || item.title !== chapters.title) && (
+                      <h2 className="head_1">{item.title}</h2>
+                    )}
                     <BlockContent blocks={item.text} />
                   </div>
                 </div>
