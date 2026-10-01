@@ -24,6 +24,11 @@ export async function getStaticProps({
     },
     populate: {
       category: true,
+      localizations: {
+        populate: {
+          category: true,
+        },
+      },
       chapters: {
         populate: {
           image: true,
@@ -32,7 +37,7 @@ export async function getStaticProps({
     },
   });
 
-  const articles = articlesRes.data || [];
+    const articles = articlesRes.data || [];
 
   if (!articles.length) {
     return {
@@ -40,9 +45,40 @@ export async function getStaticProps({
     };
   }
 
+  const article = articles[0];
+
+  const expectedCategory = article.category?.slug || "archive";
+  if (params?.category !== expectedCategory) {
+    const prefix = locale === "en" ? "/en" : "";
+    return {
+      redirect: {
+        destination: `${prefix}/clanek/${expectedCategory}/${article.slug}`,
+        locale: false,
+        permanent: true,
+      },
+    };
+  }
+
+  const localizations = ((article as any).localizations || []) as Array<{
+    locale: string;
+    slug: string;
+    category?: { slug: string };
+  }>;
+  const findLoc = (code: string) => localizations.find((l) => l.locale === code) || null;
+
+  const csEntry = lang === "cz" ? article : findLoc("cs");
+  const enEntry = lang === "en" ? article : findLoc("en");
+
+  const pathFor = (entry: any) =>
+    entry ? `/clanek/${entry.category?.slug || "archive"}/${entry.slug}` : null;
+
   return {
     props: {
-      chapters: articles[0],
+      chapters: article,
+      alternates: {
+        cs: pathFor(csEntry),
+        en: pathFor(enEntry),
+      },
     },
     revalidate: 60,
   };
@@ -54,9 +90,11 @@ export async function getStaticPaths() {
 
 interface ArticleProps {
   chapters: ArticleType;
+    alternates: { cs: string | null; en: string | null };
+
 }
 
-const Article = ({ chapters }: ArticleProps) => {
+const Article = ({ chapters, alternates }: ArticleProps) => {
   const { t, lang } = useTranslation();
   const localePrefix = lang === "en" ? "/en" : "";
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -76,6 +114,7 @@ const Article = ({ chapters }: ArticleProps) => {
     <Page
       id="blog"
       title={chapters.title}
+      alternates={alternates}
       image={
         chapters?.chapters?.[0]?.image
           ? urlFor(chapters.chapters[0].image).url()
