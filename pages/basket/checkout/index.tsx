@@ -7,7 +7,7 @@ import Checkout from "@/components/Checkout";
 import Total from "@/components/Total";
 import AcceptInfo from "@/components/AcceptInfo";
 import ButtonsSubmit from "@/components/ButtonsSubmit";
-import validationForm, { validationEmail } from "@/functions/validationForm";
+import validationForm, { validateName, validationAddress, validationCode, validationEmail, validationPhone } from "@/functions/validationForm";
 import sumTotal from "@/functions/sumTotal";
 import { fetchAPI } from "@/lib/strapi";
 import localize from "@/data/localize";
@@ -30,12 +30,6 @@ import {
 import type { Setting } from "@/types/setting";
 import type { GetServerSidePropsContext } from "next";
 
-// This page always needs a real data-fetching function anyway (see src/pages/basket/
-// index.tsx for why - pages with none fail to hydrate on a direct/fresh load on this
-// Next.js/Turbopack version), so it doubles as the fetch for CMS-configured shipping/
-// pricing settings. Falls back to the hardcoded shippingOptions.ts/pricingRules.ts
-// defaults (via resolveDeliveryData/resolvePaymentData/resolvePricingRules, called
-// below with settings=null) if Strapi is unreachable - checkout must not go down with it.
 export async function getServerSideProps({ locale }: GetServerSidePropsContext) {
   const { lang } = localize(locale);
   const strapiLocale = lang === "cz" ? "cs" : lang;
@@ -208,15 +202,29 @@ const Basket = ({ settings }: BasketProps) => {
       city: !state.city.length,
       surname: !state.surname.length,
       name: !state.name.length,
-      phone: !state.phone.length,
-      code: !state.code.length,
+      phone: !validationPhone(state.phone),
+      code: !validationCode(state.code, state.country),
       email: !validationEmail(state.email),
       delivery: !deliveryMethod.value.length,
       payment: !paymentMethod.value.length,
     };
 
-    setError(nextErrors);
-    if (Object.values(nextErrors).some(Boolean)) {
+    const anotherInvalid = state.anotherAddressCheck
+      ? {
+          name: !validateName(anotherAdress.name),
+          surname: !validateName(anotherAdress.surname),
+          address: !anotherAdress.address.length || !validationAddress(anotherAdress.address),
+          city: !validateName(anotherAdress.city),
+          code: !validationCode(anotherAdress.code, anotherAdress.country || state.country),
+        }
+      : {};
+      
+    setErrorAnother((prev) => ({
+      ...Object.fromEntries(Object.keys(prev).map((key) => [key, false])),
+      ...anotherInvalid,
+    }) as CheckoutErrors);
+
+    if (Object.values(nextErrors).some(Boolean) || Object.values(anotherInvalid).some(Boolean)) {
       return;
     }
 
@@ -317,7 +325,8 @@ const Basket = ({ settings }: BasketProps) => {
             <AcceptInfo />
           </div>
           <div className="tm-basket-footer tm-footer-single total-end-footer">
-            {Object.values(error).indexOf(true) >= 0 && (
+            {(Object.values(error).indexOf(true) >= 0 ||
+              Object.values(errorAnother).indexOf(true) >= 0) && (
               <div
                 className="uk-alert-danger uk-width-1-1 uk-text-center"
                 uk-alert=""

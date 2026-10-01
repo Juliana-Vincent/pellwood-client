@@ -7,7 +7,7 @@ import Corporate from "@/components/Checkout/components/corporate";
 import { DataStateContext } from "@/context/dataStateContext";
 import { AxiosAPI } from "@/restClient";
 import Page from "@/layout/Page";
-import validationForm from "@/functions/validationForm";
+import validationForm, { validationCode, validationPhone } from "@/functions/validationForm";
 import { useRouter } from "next/router";
 import { useTranslation } from "@/hooks/useTranslation";
 import type {
@@ -84,7 +84,7 @@ const User = () => {
     dic: "",
     ...user.companyData,
   });
-  
+
   const [prefilled, setPrefilled] = useState(false);
   useEffect(() => {
     if (prefilled || !dataContextState.hydrated || !user?.email) return;
@@ -158,10 +158,10 @@ const User = () => {
     } else if (!state.name.length) {
       setError({ ...error, name: true });
       return;
-    } else if (!state.phone.length) {
+    } else if (!validationPhone(state.phone)) {
       setError({ ...error, phone: true });
       return;
-    } else if (!state.code.length) {
+    } else if (!validationCode(state.code, state.country)) {
       setError({ ...error, code: true });
       return;
     }

@@ -1,7 +1,22 @@
+import { countryCode } from "@/helpers/countryCode";
+
 export const validateName = (name: string): boolean => {
-  // Uses modern Unicode \p{L} to seamlessly match any letter (including accents)
   const regex = /^[\p{L}\s,.'-]+$/u;
   return regex.test(name || '');
+};
+
+const POSTCODE_RULES: Record<string, RegExp> = {
+  cz: /^\d{3}\s?\d{2}$/,
+  sk: /^\d{3}\s?\d{2}$/,
+  de: /^\d{5}$/,
+  at: /^\d{4}$/,
+};
+
+export const validationCode = (code: string, country?: string): boolean => {
+  const value = String(code || "").trim();
+  if (!value) return false;
+  const rule = POSTCODE_RULES[countryCode(country)];
+  return rule ? rule.test(value) : /^[\p{L}0-9\s-]{3,10}$/u.test(value);
 };
 
 export const validationEmail = (email: string): boolean => {
@@ -10,13 +25,13 @@ export const validationEmail = (email: string): boolean => {
 };
 
 export const validationPhone = (phone: string): boolean => {
-  // Removed buggy /g flag
-  const re = /^[+]*[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/;
-  return re.test(phone || '');
+  const value = String(phone || "").trim();
+  if (!/^\+?[\d\s\-./()]+$/.test(value)) return false;
+  const digits = value.replace(/\D/g, "");
+  return digits.length >= 9 && digits.length <= 15;
 };
 
 export const validationAddress = (address: string): boolean => {
-  // Added Unicode support for Czech street names, removed buggy /g flag, added dot for abbreviations
   const re = /^[\p{L}0-9\s,.'-]*$/u;
   return re.test(address || '');
 };
@@ -41,11 +56,13 @@ const validationForm = (
     isInvalid = !validationPhone(value);
   } else if (type === 'address') {
     isInvalid = !validationAddress(value);
+  } else if (type === 'code') {
+    isInvalid = !validationCode(value, state.country);
   }
 
   if (isInvalid) {
     setError({ ...error, [type]: true });
-    return true; // true means "has error"
+    return true; 
   }
 
   return false;

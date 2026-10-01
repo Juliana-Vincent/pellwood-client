@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import { createOrderWithUniqueNumber, serializeOrder } from "@/lib/strapiAdmin";
 import { computeAuthoritativeOrderTotal } from "@/functions/validateOrder";
+import { validationEmail, validationPhone, validationCode } from "@/functions/validationForm";
 
 export default async function handler(
   req: NextApiRequest,
@@ -24,8 +25,15 @@ export default async function handler(
         throw new Error("Payment gateway is not configured (PAYED_ID/PAYED_PASSWORD missing)");
       }
 
-      const { total, deliveryPrice, paymentPrice, payOnline, basket: verifiedBasket } =
-        await computeAuthoritativeOrderTotal(basket, delivery, payment, currency, user?.country);
+      if (!validationEmail(user?.email) || !validationPhone(user?.phone)
+          || !validationCode(user?.code, user?.country)) {
+        return res.status(400).json({ error: "Invalid contact details" });
+      }
+
+      const { total, deliveryPrice, paymentPrice, payOnline, basket: verifiedBasket } = await computeAuthoritativeOrderTotal(
+          basket, delivery, payment, currency,
+          user?.anotherAdress?.country || user?.country,
+        );
 
       const created = await createOrderWithUniqueNumber({
         email: user.email ?? "",
