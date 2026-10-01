@@ -26,12 +26,10 @@ export default () => {
     loadFooter();
   }, [lang]);
 
-  const handleCookies = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const handleCookies = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    const cc = (window as any).CookieConsent;
-    if (cc) {
-      cc.showSettings(200);
-    }
+    const cc = await import("vanilla-cookieconsent");
+    cc.showPreferences();
   };
 
   return (
