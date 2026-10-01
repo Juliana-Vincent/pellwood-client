@@ -172,7 +172,12 @@ const Page = ({
           />
         </>
       )}
-      <Script strategy="lazyOnload" src="https://c.seznam.cz/js/rc.js"></Script>
+      <Script
+        strategy="lazyOnload"
+        type="text/plain"
+        data-category="targeting"
+        src="https://c.seznam.cz/js/rc.js"
+      />
       {purchase && GA_MEASUREMENT_ID && (
         <Script
           strategy="afterInteractive"
