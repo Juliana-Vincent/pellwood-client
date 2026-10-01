@@ -167,6 +167,7 @@ const Checkout = ({
             deliveryOptions={deliveryOptions}
             paymentOptions={paymentOptions}
             deliveryFreeThreshold={deliveryFreeThreshold}
+            country={state.country}
           />
         </fieldset>
       </form>

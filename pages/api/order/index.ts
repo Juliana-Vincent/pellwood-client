@@ -25,7 +25,7 @@ export default async function handler(
       }
 
       const { total, deliveryPrice, paymentPrice, payOnline, basket: verifiedBasket } =
-        await computeAuthoritativeOrderTotal(basket, delivery, payment, currency);
+        await computeAuthoritativeOrderTotal(basket, delivery, payment, currency, user?.country);
 
       const created = await createOrderWithUniqueNumber({
         email: user.email ?? "",

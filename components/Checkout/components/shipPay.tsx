@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { deliveryData, paymentData, ShippingOption } from "@/functions/shippingOptions";
 import { DELIVERY_FREE_THRESHOLD } from "@/functions/pricingRules";
@@ -7,6 +7,7 @@ import {
   PaymentMethodState,
   CheckoutErrors,
 } from "@/types/shop";
+import { servesCountry } from "@/helpers/countryCode";
 
 interface ShipPayProps {
   delivery: DeliveryMethodState;
@@ -16,6 +17,7 @@ interface ShipPayProps {
   error: CheckoutErrors;
   setError: React.Dispatch<React.SetStateAction<CheckoutErrors>>;
   sumBefore: number | string;
+  country?: string;
   /** CMS-configured option lists/threshold, resolved by the caller - default to the
    *  hardcoded shippingOptions.ts/pricingRules.ts values if not passed. */
   deliveryOptions?: ShippingOption[];
@@ -34,6 +36,7 @@ const ShipPay = ({
   deliveryOptions,
   paymentOptions,
   deliveryFreeThreshold,
+  country
 }: ShipPayProps) => {
   const { t, lang } = useTranslation();
 
@@ -55,7 +58,15 @@ const ShipPay = ({
     }
   };
 
-  const resolvedDelivery = deliveryOptions ?? deliveryData[lang as keyof typeof deliveryData];
+    const resolvedDelivery = (deliveryOptions ?? deliveryData[lang as keyof typeof deliveryData])
+    .filter((option) => servesCountry(option, country));
+
+    useEffect(() => {
+    if (!delivery.value) return;
+    if (resolvedDelivery.some((option) => option.value === delivery.value)) return;
+    setDelivery({ value: "", price: "", payOnline: false });
+  }, [country]);
+
   const resolvedPayment = paymentOptions ?? paymentData[lang as keyof typeof paymentData];
   const freeThreshold = deliveryFreeThreshold ?? DELIVERY_FREE_THRESHOLD[lang as "cz" | "en"];
 
@@ -99,6 +110,9 @@ const ShipPay = ({
                 </div>
               );
             },
+          )}
+          {!resolvedDelivery.length && (
+            <p>{t("noDeliveryForCountry")}</p>
           )}
           {error.delivery && (
             <div className="uk-alert-danger" uk-alert="">

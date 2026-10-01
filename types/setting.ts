@@ -28,4 +28,5 @@ export interface CmsShippingOption {
   label: string | null;
   price: number | null;
   payOnline?: boolean | null;
+  countries?: string | null;
 }

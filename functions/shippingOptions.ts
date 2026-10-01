@@ -1,23 +1,16 @@
 import type { CmsShippingOption, Setting } from "@/types/setting";
 
-// Canonical delivery/payment option list, shared between the checkout UI
-// (components/Checkout/components/shipPay.tsx) and the server-side order total
-// validation (functions/validateOrder.ts), so the server can check a submitted
-// price against the same options the customer was actually shown.
-//
-// This is also the fallback used when Strapi's Setting.deliveryOptions/paymentOptions
-// are empty (not configured yet for a locale) or unreachable - see resolveDeliveryData/
-// resolvePaymentData below, which are what call sites should actually use.
 export interface ShippingOption {
   value: string;
   price: string;
   payOnline?: boolean;
+  countries?: string[]; // undefined = available everywhere
 }
 
 export const deliveryData: Record<"cz" | "en", ShippingOption[]> = {
   cz: [
-    { value: "PPL standartní doručení v ČR", price: "150 Kč" },
-    { value: "PPL na Slovensko", price: "200 Kč" },
+    { value: "PPL standartní doručení v ČR", price: "150 Kč", countries: ["cz"] },
+    { value: "PPL na Slovensko", price: "200 Kč", countries: ["sk"] },
   ],
   en: [{ value: "DHL", price: "10 €" }],
 };
@@ -56,10 +49,12 @@ const fromCms = (options: CmsShippingOption[], lang: "cz" | "en"): ShippingOptio
       value: item.label,
       price: formatPrice(item.price ?? 0, lang),
       payOnline: !!item.payOnline,
+      countries: item.countries
+      ? String(item.countries).split(",").map((c) => c.trim().toLowerCase()).filter(Boolean)
+      : undefined,
     }));
 
-/** Strapi Setting.deliveryOptions for this locale, or the hardcoded default if unset
- *  or every configured row is incomplete. */
+
 export function resolveDeliveryData(
   setting: Partial<Setting> | undefined,
   lang: "cz" | "en"

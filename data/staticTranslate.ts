@@ -563,4 +563,9 @@ export default {
     en: "Nothing found. Try a different term.",
     de: "Nichts gefunden. Versuchen Sie einen anderen Begriff.",
   },
+  noDeliveryForCountry: {
+    cz: "Pro vybranou zemi není dostupná žádná doprava.ntry",
+    en: "No delivery is available for the selected country.",
+    de: "xxx",
+  }
 }

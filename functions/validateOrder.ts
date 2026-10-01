@@ -4,6 +4,8 @@ import { resolvePricingRules } from "@/functions/pricingRules";
 import { computePricing } from "@/functions/computePricing";
 import type { Setting } from "@/types/setting";
 import { parsePrice } from "@/functions/parsePrice";
+import { servesCountry } from "@/helpers/countryCode";
+import order from "@/pages/api/order";
 
 interface BasketItemInput {
   id: string;
@@ -30,7 +32,9 @@ export async function computeAuthoritativeOrderTotal(
   basket: BasketItemInput[],
   delivery: DeliveryPaymentInput,
   payment: DeliveryPaymentInput,
-  currency: string
+  currency: string,
+  country?: string,
+
 ) {
   const lang: "cz" | "en" = currency === "Kč" ? "cz" : "en";
   const strapiLocale = lang === "cz" ? "cs" : "en";
@@ -101,6 +105,13 @@ export async function computeAuthoritativeOrderTotal(
   const deliveryOption = resolveDeliveryData(settingData, lang).find((d) => d.value === delivery?.value);
   const paymentOption = resolvePaymentData(settingData, lang).find((p) => p.value === payment?.value);
   if (!deliveryOption) throw new Error("Unknown delivery method");
+
+  if (!servesCountry(deliveryOption, country)) {
+    throw new Error(
+      `Delivery "${deliveryOption.value}" is not available for country ${country}`,
+    );
+  }
+  
   if (!paymentOption) throw new Error("Unknown payment method");
 
   const rules = resolvePricingRules(settingData, lang);
