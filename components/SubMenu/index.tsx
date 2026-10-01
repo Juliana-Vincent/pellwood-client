@@ -40,11 +40,11 @@ const SubMenu = ({ data, articles = false, setReset }: SubMenuProps) => {
               return (
                 <li
                   key={key}
-                  className={`sub_menu_item${router.query.category === item.documentId ? " active_sub" : ""}`}
+                  className={`sub_menu_item${router.query.category === (item.slug || item.documentId) ? " active_sub" : ""}`}
                 >
                   <a
                     href="#"
-                    onClick={(e) => handleChangeUrl(e, item.documentId)}
+                    onClick={(e) => handleChangeUrl(e, item.slug || item.documentId)}
                   >
                     {item.title}
                   </a>

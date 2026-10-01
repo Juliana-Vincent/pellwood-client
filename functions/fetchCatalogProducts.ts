@@ -54,7 +54,7 @@ export async function fetchCatalogProducts({
   if (!needsInMemory) {
     const filters: Record<string, any> = {};
     if (category && category !== "all") {
-      filters.category = { documentId: { $eq: category } };
+      filters.category = { $or: [{ slug: { $eq: category } }, { documentId: { $eq: category } }] };    
     }
 
     const res = await fetchAPI("products", {
