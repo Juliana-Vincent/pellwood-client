@@ -218,6 +218,8 @@ const Basket = ({ settings }: BasketProps) => {
           code: !validationCode(anotherAdress.code, anotherAdress.country || state.country),
         }
       : {};
+
+    setError(nextErrors);
       
     setErrorAnother((prev) => ({
       ...Object.fromEntries(Object.keys(prev).map((key) => [key, false])),
