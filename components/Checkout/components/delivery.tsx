@@ -58,7 +58,8 @@ const Delivery = ({
         <div className="input_item">
           <input {...field("phone", "tel")}
             className={`${state.phone.length ? "hasValue" : ""} ${error.phone ? "invalid" : ""}`}
-            type="text"
+            type="tel"
+            inputMode="tel"
             value={state.phone}
             onChange={(e) => handleChange("phone", e.target.value)}
           />

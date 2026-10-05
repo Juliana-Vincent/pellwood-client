@@ -27,7 +27,12 @@ export const SITE_URL =
 // rendered when this is present, instead of shipping a broken/empty gtag call.
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 const defaultTitle = "PELLWOOD";
-const defaultDescription = "Paličky";
+// The fallback meta description was the Czech word "Paličky" on every page,
+// including all the English ones.
+const defaultDescriptions: Record<string, string> = {
+  cs: "Prémiové bubenické paličky s garantovanou váhou.",
+  en: "Premium drumsticks with a guaranteed weight.",
+};
 const defaultImage = `${SITE_URL}/assets/logo.svg`;
 const defaultSep = " | ";
 
@@ -58,7 +63,7 @@ const Page = ({
     : defaultTitle;
   const theDescription = description
     ? description.substring(0, 155)
-    : defaultDescription;
+    : defaultDescriptions[router.locale || "cs"] || defaultDescriptions.cs;
   const theImage = image ? image : defaultImage;
 
   const pathNoQuery = router.asPath.split("?")[0];

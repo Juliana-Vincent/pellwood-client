@@ -173,7 +173,14 @@ const Product = ({
       return;
     }
 
-    router.push(router.asPath + "?buy=true");
+    // asPath already carries the query, so concatenating produced
+    // ?buy=true?buy=true?buy=true. Setting it as a query value is idempotent, and
+    // scroll:false stops the page jumping to the top on every add.
+    router.push(
+      { pathname: router.pathname, query: { ...router.query, buy: "true" } },
+      undefined,
+      { scroll: false },
+    );
 
     const newBasketItem: BasketItem = {
       id: productId,

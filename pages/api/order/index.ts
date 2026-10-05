@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import crypto from "crypto";
 import { createOrderWithUniqueNumber, serializeOrder, ordersApi } from "@/lib/strapiAdmin";
-import { computeAuthoritativeOrderTotal } from "@/functions/validateOrder";
+import { computeAuthoritativeOrderTotal, OrderValidationError } from "@/functions/validateOrder";
 import { validationEmail, validationPhone, validationCode } from "@/functions/validationForm";
 
 export default async function handler(
@@ -206,6 +206,12 @@ export default async function handler(
         data: payOnline ? resDataParse : order,
       });
     } catch (err) {
+      // A rejected basket is the customer's problem to fix, not a server fault.
+      // Answering 500 made a correct refusal look like a crash.
+      if (err instanceof OrderValidationError) {
+        console.warn("Order rejected:", err.message);
+        return res.status(400).json({ msg: err.message, error: "INVALID_ORDER" });
+      }
       console.error("Order POST error:", err);
       return res.status(500).json({
         msg: "Internal Server Error",

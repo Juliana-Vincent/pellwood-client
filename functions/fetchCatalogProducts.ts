@@ -43,6 +43,14 @@ export async function fetchCatalogProducts({
 }: FetchCatalogParams): Promise<any[]> {
   const strapiLocale = lang === "cz" ? "cs" : lang;
   const populate = { category: true, image: true, variants: true, parametrs: true };
+
+  // Paginating without an explicit sort is the bug behind "the catalogue only ever
+  // shows 100 of 115 products". Postgres is free to return rows in a different
+  // order for each query, so consecutive pages of the infinite scroll overlapped
+  // and skipped; the dedupe in pages/produkty/index.tsx then dropped the overlaps,
+  // and the skipped products never appeared at all - always the same ones. The
+  // secondary key breaks ties when `sort` is unset, which keeps the order stable.
+  const sort = ["sort:asc", "title:asc"];
   const hasRangeFilter = !!(diameterMin && diameterMax) || !!(lengthMin && lengthMax);
 
   // Search and the range filter both have to run in memory. The range values live
@@ -61,6 +69,7 @@ export async function fetchCatalogProducts({
       locale: strapiLocale,
       populate,
       filters,
+      sort,
       pagination: { start: offset, limit },
     });
     return res.data || [];
@@ -69,6 +78,7 @@ export async function fetchCatalogProducts({
   let products: any[] = await fetchAllAPI("products", {
     locale: strapiLocale,
     populate,
+    sort,
   });
 
   if (category && category !== "all") {

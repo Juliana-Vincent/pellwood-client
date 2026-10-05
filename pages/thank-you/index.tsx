@@ -98,7 +98,7 @@ const ThankYou = ({ status, dataGtag }: ThankYouProps) => {
   }, [dataContextState.hydrated, status, lang, dataContextDispatch]);
 
   return (
-    <Page className="thank-you-page base-page" purchase={dataGtag} noCrawl>
+    <Page className="thank-you-page base-page" title={t("thankOrder")} purchase={dataGtag} noCrawl>
       <h1>{t("thankOrder")}</h1>
       <p>{t("thankInfo")}</p>
       {!!status.length && status === "PENDING" && (

@@ -24,6 +24,17 @@ interface DeliveryPaymentInput {
 // per submission - cap it well above anything a real customer would hit.
 const MAX_BASKET_ITEMS = 100;
 
+// Everything this module rejects is a bad request, not a server fault. Throwing a
+// plain Error meant /api/order answered 500, which reads as "the site crashed" to
+// the customer and to anyone reading the logs - the order was in fact correctly
+// refused.
+export class OrderValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "OrderValidationError";
+  }
+}
+
 // Recomputes the order total from authoritative Strapi product prices and the
 // known delivery/payment option list, instead of trusting whatever the client
 // posted. The discount/threshold formula itself lives in computePricing.ts, shared
@@ -55,10 +66,10 @@ export async function computeAuthoritativeOrderTotal(
   }
 
   if (!Array.isArray(basket) || !basket.length) {
-    throw new Error("Basket is empty");
+    throw new OrderValidationError("Basket is empty");
   }
   if (basket.length > MAX_BASKET_ITEMS) {
-    throw new Error("Basket has too many line items");
+    throw new OrderValidationError("Basket has too many line items");
   }
 
   // One request for every distinct product in the basket instead of one per line
@@ -82,19 +93,19 @@ export async function computeAuthoritativeOrderTotal(
   for (const item of basket) {
     const product = productsById.get(item.id) as any;
     if (!product) {
-      throw new Error(`Unknown product in basket: ${item.id}`);
+      throw new OrderValidationError(`Unknown product in basket: ${item.id}`);
     }
     
     const quantity = Number(item.countVariant);
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) {
-      throw new Error(`Invalid quantity for product ${item.id}: ${item.countVariant}`);
+      throw new OrderValidationError(`Invalid quantity for product ${item.id}: ${item.countVariant}`);
     }
 
     let unitPrice: number;
     if (product.variants?.length) {
       const variant = product.variants.find((v: any) => v.title === item.variantName);
       if (!variant) {
-        throw new Error(`Unknown variant "${item.variantName}" for product ${item.id}`);
+        throw new OrderValidationError(`Unknown variant "${item.variantName}" for product ${item.id}`);
       }
       unitPrice = parsePrice(variant.price);
     } else {
@@ -106,7 +117,7 @@ export async function computeAuthoritativeOrderTotal(
     // product is sold for nothing: the basket subtotal is 0 and the customer is
     // charged the shipping fee alone.
     if (!(unitPrice > 0)) {
-      throw new Error(
+      throw new OrderValidationError(
         `Product ${item.id}${item.variantName ? ` / "${item.variantName}"` : ""} has no usable price`
       );
     }
@@ -118,15 +129,15 @@ export async function computeAuthoritativeOrderTotal(
 
   const deliveryOption = resolveDeliveryData(settingData, lang).find((d) => d.value === delivery?.value);
   const paymentOption = resolvePaymentData(settingData, lang).find((p) => p.value === payment?.value);
-  if (!deliveryOption) throw new Error("Unknown delivery method");
+  if (!deliveryOption) throw new OrderValidationError("Unknown delivery method");
 
   if (!servesCountry(deliveryOption, country)) {
-    throw new Error(
+    throw new OrderValidationError(
       `Delivery "${deliveryOption.value}" is not available for country ${country}`,
     );
   }
   
-  if (!paymentOption) throw new Error("Unknown payment method");
+  if (!paymentOption) throw new OrderValidationError("Unknown payment method");
 
   const rules = resolvePricingRules(settingData, lang);
   const { total, deliveryCharged } = computePricing(
