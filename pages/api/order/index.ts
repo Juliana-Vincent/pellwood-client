@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
+import crypto from "crypto";
 import { createOrderWithUniqueNumber, serializeOrder } from "@/lib/strapiAdmin";
 import { computeAuthoritativeOrderTotal } from "@/functions/validateOrder";
 import { validationEmail, validationPhone, validationCode } from "@/functions/validationForm";
@@ -30,10 +31,24 @@ export default async function handler(
         return res.status(400).json({ error: "Invalid contact details" });
       }
 
+      // The parcel goes to the alternate address only when the customer actually
+      // ticked the box. The client always POSTs `anotherAdress`, and its country
+      // defaults to the locale's country, so `anotherAdress.country || country`
+      // silently ignored the real shipping country on every order.
+      const shippingCountry =
+        user?.anotherAddressCheck && user?.anotherAdress?.country
+          ? user.anotherAdress.country
+          : user?.country;
+
       const { total, deliveryPrice, paymentPrice, payOnline, basket: verifiedBasket } = await computeAuthoritativeOrderTotal(
-          basket, delivery, payment, currency,
-          user?.anotherAdress?.country || user?.country,
+          basket, delivery, payment, currency, shippingCountry,
         );
+
+      // Order numbers are short and sequentially guessable, so they can't be the
+      // only thing standing between a stranger and an order's contents. This token
+      // travels in the thank-you URL and is required to view the order or to
+      // trigger its confirmation email.
+      const accessToken = crypto.randomBytes(16).toString("hex");
 
       const created = await createOrderWithUniqueNumber({
         email: user.email ?? "",
@@ -63,6 +78,8 @@ export default async function handler(
         deliveryMethod: delivery.value ?? "",
         deliveryPrice: String(deliveryPrice ?? ""),
         notified: false,
+        conversionSent: false,
+        accessToken,
       });
 
       const order = serializeOrder(created);
@@ -71,8 +88,11 @@ export default async function handler(
       const proto = req.headers["x-forwarded-proto"] || "https";
       const localePrefix = currency === "Kč" ? "" : "/en";
 
+      // ${refId} and ${id} stay literal on purpose - Comgate substitutes them.
+      // The access token is ours, so it is interpolated now.
       const returnUrl =
-        proto + "://" + host + localePrefix + "/thank-you?refId=${refId}&transId=${id}";
+        proto + "://" + host + localePrefix +
+        "/thank-you?refId=${refId}&transId=${id}&t=" + accessToken;
 
       let resDataParse: Record<string, string> = {};
 

@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { customersApi, serializeCustomer, StrapiError } from "@/lib/strapiAdmin";
-import { hashPassword, createSessionToken, buildSessionCookie } from "@/lib/auth";
+import { hashPassword, verifyPassword, createSessionToken, buildSessionCookie } from "@/lib/auth";
 import { getSessionUser } from "@/lib/session";
 
 // Only these fields may ever be set or updated from a request body - never
@@ -84,6 +84,19 @@ export default async function handler(
 
         const update = pickWritableFields(data);
         if (data?.password) {
+          // A session alone must not be enough to change the password. Sessions are
+          // stateless 30-day tokens that nothing can revoke, so without this check a
+          // single captured cookie could lock the owner out of their own account
+          // permanently - and their own password reset would not evict it.
+          if (!data?.currentPassword) {
+            return res.status(400).json({ msg: "Current password required", error: "currentPassword" });
+          }
+          const current = await customersApi.findFirst({
+            "filters[email][$eq]": sessionUser.email,
+          });
+          if (!current?.password || !(await verifyPassword(data.currentPassword, current.password))) {
+            return res.status(403).json({ msg: "Current password is incorrect", error: "currentPassword" });
+          }
           update.password = await hashPassword(data.password);
         }
 

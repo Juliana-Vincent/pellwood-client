@@ -142,6 +142,7 @@ const Basket = ({ settings }: BasketProps) => {
   });
 
   const [prefilled, setPrefilled] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const sessionUser = dataContextState.user;
@@ -191,6 +192,11 @@ const Basket = ({ settings }: BasketProps) => {
   };
 
   const sendOrder = async () => {
+    // The button is disabled while a submit is in flight, but a double-click can
+    // land two handlers before React re-renders, and each one creates a real order
+    // and a real payment session.
+    if (submitting) return;
+
     // Validate every field in one pass and report all of them together - the old
     // code returned on the very first failing check, so a customer with several
     // empty fields only ever saw one error at a time and had to resubmit
@@ -259,15 +265,22 @@ const Basket = ({ settings }: BasketProps) => {
       );
     }
 
+    setSubmitting(true);
+
     await AxiosAPI.post(`/order`, dataOrder)
       .then((res) => {
         if (dataOrder.payment.payOnline) {
           window.location.href = decodeURIComponent(res.data.data.redirect);
         } else {
-          window.location.href = `/thank-you?refId=${res.data.data.idOrder}&dobirka=true`;
+          // The thank-you page requires the order's access token - the order number
+          // alone is guessable, so it can't be what authorises seeing the order.
+          window.location.href =
+            `/thank-you?refId=${res.data.data.idOrder}&dobirka=true` +
+            `&t=${encodeURIComponent(res.data.data.accessToken || "")}`;
         }
       })
       .catch((err) => {
+        setSubmitting(false);
         // A DB hiccup, a Strapi price mismatch, a network blip - whatever the cause,
         // the customer needs to know their order was NOT placed rather than staring
         // at an unresponsive button. Reuses the same banner shown for validation
@@ -336,7 +349,7 @@ const Basket = ({ settings }: BasketProps) => {
                 <p>{t("errorSendOrder")}</p>
               </div>
             )}
-            <ButtonsSubmit sendOrder={sendOrder} />
+            <ButtonsSubmit sendOrder={sendOrder} submitting={submitting} />
           </div>
         </div>
       </div>

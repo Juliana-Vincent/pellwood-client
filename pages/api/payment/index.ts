@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import { ordersApi } from "@/lib/strapiAdmin";
+import { sendOrderConfirmation } from "@/lib/orderEmail";
 
 export default async function handler(
   req: NextApiRequest,
@@ -66,6 +67,19 @@ export default async function handler(
     // Comgate retries on failure, so this must stay idempotent - writing the same
     // verified status twice is harmless.
     await ordersApi.update(order.documentId, { status: verifiedStatus });
+
+    // The confirmation email belongs here, not on the thank-you page. Comgate's
+    // browser redirect races this webhook, and when the redirect wins the order is
+    // still PENDING - so sending from the page meant the customer either got an
+    // email for a payment that hadn't settled, or (once the flag was burned) no
+    // email at all. Sending on the verified PAID transition is the only point at
+    // which the payment is known to have succeeded. sendOrderConfirmation is
+    // idempotent, and a mail failure must not make Comgate retry the webhook.
+    if (verifiedStatus === "PAID") {
+      sendOrderConfirmation(orderNumber).catch((err) =>
+        console.error("Order confirmation email failed:", err)
+      );
+    }
 
     return res.status(200).json({
       msg: "Payment successfully processed",
