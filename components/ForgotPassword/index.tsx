@@ -48,6 +48,18 @@ const ForgotPassword = () => {
       });
   };
 
+  // `done` was never cleared and the component stays mounted, so after one use
+  // the modal showed only the success message until a full page reload. UIkit
+  // fires "hidden" on the modal element when it closes; reset there.
+  useEffect(() => {
+    if (!mounted) return;
+    const el = document.getElementById("forgot-password");
+    if (!el) return;
+    const reset = () => setDone(false);
+    el.addEventListener("hidden", reset);
+    return () => el.removeEventListener("hidden", reset);
+  }, [mounted]);
+
   if (!mounted) return null;
 
   return (

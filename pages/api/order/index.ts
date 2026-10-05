@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import crypto from "crypto";
-import { createOrderWithUniqueNumber, serializeOrder } from "@/lib/strapiAdmin";
+import { createOrderWithUniqueNumber, serializeOrder, ordersApi } from "@/lib/strapiAdmin";
 import { computeAuthoritativeOrderTotal } from "@/functions/validateOrder";
 import { validationEmail, validationPhone, validationCode } from "@/functions/validationForm";
 
@@ -145,6 +145,28 @@ export default async function handler(
         const responseParams = new URLSearchParams(resPayment.data);
         for (const [key, value] of responseParams.entries()) {
           resDataParse[key] = value;
+        }
+
+        // Comgate answers 200 with code != 0 on failure, and then there is no
+        // `redirect` key - the client was doing
+        // window.location.href = decodeURIComponent(undefined), landing the
+        // customer on /undefined with a PENDING order nobody will ever pay.
+        if (resDataParse.code !== "0" || !resDataParse.redirect) {
+          console.error(
+            `Comgate refused payment for order ${order.idOrder}:`,
+            resDataParse.code,
+            resDataParse.message
+          );
+          // The order row already exists (its number is what Comgate was asked to
+          // reference), so mark it rather than leaving an orphan stuck at PENDING.
+          await ordersApi
+            .update(order.documentId, { status: "CANCELLED" })
+            .catch((err) => console.error("Could not mark order cancelled:", err));
+
+          return res.status(502).json({
+            msg: "Payment gateway refused the payment",
+            error: "PAYMENT_GATEWAY",
+          });
         }
       }
 

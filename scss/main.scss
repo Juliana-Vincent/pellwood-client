@@ -71,6 +71,18 @@
 	width: 100%;
 }
 
+// The tick is green by default. An out-of-stock product uses the same row, so
+// grey it out rather than reassuring the customer with a green check.
+.status-out{
+	svg, img{
+		fill: #999 !important;
+		color: #999 !important;
+	}
+	span{
+		opacity: .7;
+	}
+}
+
 .status{
 	display: -webkit-flex;
 	display: -ms-flex;

@@ -36,7 +36,12 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   const query = context.query || {};
   const category = (query.category as string) || "all";
-  const size = parseInt((query.size as string) || "6");
+  // `size` comes straight from the URL and flowed into Strapi's pagination
+  // untouched, so /produkty?size=abc sent pagination[limit]=NaN. Clamp it.
+  const parsedSize = parseInt((query.size as string) || "6", 10);
+  const size = Number.isFinite(parsedSize)
+    ? Math.min(Math.max(parsedSize, 6), 120)
+    : 6;
   const search = (query.search as string) || "";
   const diameterMin = (query.diameterMin as string) || false;
   const diameterMax = (query.diameterMax as string) || false;
@@ -160,6 +165,7 @@ const Catalog = ({
   }, [router.query]);
 
   const changeData = async (queryUrl: ParsedUrlQuery) => {
+    try {
     const sizeBefore = parseInt((queryUrl.size as string) || "6") - 6 || 0;
     const count = parseInt((queryUrl.size as string) || "6");
     const category = queryUrl.category as string;
@@ -200,6 +206,12 @@ const Catalog = ({
         (p) => !existingIds.has(p.documentId || p.id),
       );
       setProduct([...product, ...newData]);
+    }
+    } catch (err) {
+      // Without this the rejection was unhandled and hasMore stayed true, so the
+      // loader at the bottom of the catalogue span forever with no explanation.
+      console.error("Failed to load more products:", err);
+      setHasMore(false);
     }
   };
 

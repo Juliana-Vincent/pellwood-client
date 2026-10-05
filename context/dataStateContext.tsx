@@ -107,26 +107,40 @@ export function DataProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    try {
-      const bcz = readStorage("basketcz");
-      if (bcz) dataContextDispatch({ type: "basketcz", state: JSON.parse(bcz) });
+    // Each key is restored independently. Sharing one try meant a single corrupt
+    // value - a half-written count, a stale key from an older build - aborted
+    // everything after it, typically leaving the basket restored but its counter
+    // at 0, which then hid the basket entirely (the mini-cart reads the counter).
+    const restore = <T,>(key: string, type: DataAction["type"]): T | undefined => {
+      try {
+        const raw = readStorage(key);
+        if (!raw) return undefined;
+        const parsed = JSON.parse(raw);
+        dataContextDispatch({ type, state: parsed } as DataAction);
+        return parsed as T;
+      } catch (e) {
+        console.error(`Failed to restore stored "${key}"`, e);
+        return undefined;
+      }
+    };
 
-      const bccz = readStorage("basketCountcz");
-      if (bccz) dataContextDispatch({ type: "basketCountcz", state: JSON.parse(bccz) });
+    const basketCz = restore<any[]>("basketcz", "basketcz");
+    const countCz = restore<number>("basketCountcz", "basketCountcz");
+    const basketEn = restore<any[]>("basketen", "basketen");
+    const countEn = restore<number>("basketCounten", "basketCounten");
+    restore("user", "user");
 
-      const ben = readStorage("basketen");
-      if (ben) dataContextDispatch({ type: "basketen", state: JSON.parse(ben) });
-
-      const bcen = readStorage("basketCounten");
-      if (bcen) dataContextDispatch({ type: "basketCounten", state: JSON.parse(bcen) });
-
-      const u = readStorage("user");
-      if (u) dataContextDispatch({ type: "user", state: JSON.parse(u) });
-    } catch (e) {
-      console.error("Failed to parse stored cart/user data", e);
-    } finally {
-      dataContextDispatch({ type: "hydrated", state: true });
+    // The array and its counter are stored as two independent keys and can drift
+    // apart on their own. The array is the source of truth; repair the counter
+    // from it rather than trusting a stale number.
+    if (Array.isArray(basketCz) && countCz !== basketCz.length) {
+      dataContextDispatch({ type: "basketCountcz", state: basketCz.length });
     }
+    if (Array.isArray(basketEn) && countEn !== basketEn.length) {
+      dataContextDispatch({ type: "basketCounten", state: basketEn.length });
+    }
+
+    dataContextDispatch({ type: "hydrated", state: true });
   }, []);
 
   useEffect(() => {

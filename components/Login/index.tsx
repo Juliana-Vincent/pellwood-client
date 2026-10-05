@@ -173,6 +173,15 @@ const Login = ({ setLoginUser }: LoginProps) => {
               </div>
             )}
 
+            {/* The short-password branch sets error.password = true, which no
+                banner matched - the field turned red, nothing was said, and no
+                request was sent. */}
+            {error.password === true && (
+              <div className="uk-alert-danger" uk-alert="">
+                <p>{t('passwordTooShort')}</p>
+              </div>
+            )}
+
             <div className="uk-margin input_item">
               <input
                 className={`${email.length ? 'hasValue' : ''} ${!!error.email ? 'invalid' : ''}`}

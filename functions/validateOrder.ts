@@ -65,10 +65,14 @@ export async function computeAuthoritativeOrderTotal(
   // item - a basket referencing the same product multiple times (e.g. two
   // different variants) also collapses to a single fetch.
   const productIds = [...new Set(basket.map((item) => item.id))];
-    const productsRes = await fetchAPI("products", {
+  // Without an explicit page size Strapi applies its default of 25, so a basket
+  // with more than 25 distinct products silently lost the rest and then threw
+  // "Unknown product in basket" as a generic 500. MAX_BASKET_ITEMS is 100.
+  const productsRes = await fetchAPI("products", {
     locale: strapiLocale,
     filters: { documentId: { $in: productIds } },
     populate: { variants: true },
+    pagination: { pageSize: MAX_BASKET_ITEMS },
   });
   const productsById = new Map((productsRes.data || []).map((p: any) => [p.documentId, p]));
 

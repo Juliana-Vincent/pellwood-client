@@ -568,6 +568,26 @@ export default {
     en: "No delivery is available for the selected country.",
     de: "xxx",
   },
+  passwordTooShort: {
+    cz: "Heslo musí mít alespoň 8 znaků.",
+    en: "Password must be at least 8 characters.",
+    de: "xxx",
+  },
+  outOfStock: {
+    cz: "Momentálně nedostupné",
+    en: "Currently unavailable",
+    de: "xxx",
+  },
+  notFoundTitle: {
+    cz: "Chyba 404 :(",
+    en: "Error 404 :(",
+    de: "xxx",
+  },
+  notFoundText: {
+    cz: "Jejda! Tuto stránku nelze nalézt. Zdá se, že na této stránce nebylo nic nalezeno.",
+    en: "Oops! This page could not be found. It looks like nothing was found here.",
+    de: "xxx",
+  },
   priceChanged: {
     cz: "Ceny v košíku se změnily. Zkontrolujte prosím objednávku a odešlete ji znovu.",
     en: "Prices in your basket have changed. Please review your order and submit again.",

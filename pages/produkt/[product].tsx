@@ -135,6 +135,7 @@ const Product = ({
   // A variant with no price can't be bought - it must not appear in the dropdown,
   // where selecting it added a 0-price line to the basket.
   const pricedVariants = (product?.variants || []).filter((v) => !!v.price);
+  const productImage = product.image ? urlFor(product.image).url() : "";
 
   // `chosen` rather than comparing the label against t("selectvariant"). Switching
   // locale on a product page keeps this state while the translation changes, so the
@@ -305,22 +306,20 @@ const Product = ({
               suppressHydrationWarning
             >
               <div className={`uk-visible@m ${product.orientedImage ? "stiky_img_product" : ""}`}>
-                <img
-                  src={urlFor(product.image).url()}
-                  alt={product.title}
-                  fetchPriority="high"
-                />
+                {/* An <img> with src="" makes the browser re-request the current
+                    document as an image and render a broken-image box. */}
+                {!!productImage && (
+                  <img src={productImage} alt={product.title} fetchPriority="high" />
+                )}
               </div>
               <div
                 className={`uk-hidden@m ${
                   product.orientedImage ? "orianted-img" : ""
                 }`}
               >
-                <img
-                  src={urlFor(product.image).url()}
-                  alt={product.title}
-                  fetchPriority="high"
-                />
+                {!!productImage && (
+                  <img src={productImage} alt={product.title} fetchPriority="high" />
+                )}
               </div>
             </div>
           </div>
@@ -472,7 +471,7 @@ const Product = ({
                     </div>
                   </div>
                 )}
-                <div className="status">
+                <div className={`status${inStock ? "" : " status-out"}`}>
                   <div>
                     <svg aria-hidden="true" focusable="false" viewBox="0 0 512 512">
                       <path
@@ -481,7 +480,7 @@ const Product = ({
                       />
                     </svg>
                   </div>
-                  <span>{t("stock")}</span>
+                  <span>{inStock ? t("stock") : t("outOfStock")}</span>
                 </div>
                 <div className="description_product">
                   <BlockContent blocks={product.text} />
