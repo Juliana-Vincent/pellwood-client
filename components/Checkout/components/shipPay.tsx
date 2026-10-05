@@ -67,7 +67,11 @@ const ShipPay = ({
     setDelivery({ value: "", price: "", payOnline: false });
   }, [country]);
 
-  const resolvedPayment = paymentOptions ?? paymentData[lang as keyof typeof paymentData];
+  // Payment can be country-dependent too - cash on delivery is typically domestic
+  // only. A row with no countries set serves everywhere, so this is inert until
+  // someone fills the field in Strapi.
+  const resolvedPayment = (paymentOptions ?? paymentData[lang as keyof typeof paymentData])
+    .filter((option) => servesCountry(option, country));
   const freeThreshold = deliveryFreeThreshold ?? DELIVERY_FREE_THRESHOLD[lang as "cz" | "en"];
 
   const sum = typeof sumBefore === "string" ? parseFloat(sumBefore) : sumBefore;

@@ -1,4 +1,4 @@
-import countryData from "@/data/country";
+import { getCountries } from "@/data/country";
 import { useTranslation } from "@/hooks/useTranslation";
 import { AddressState, CheckoutErrors } from "@/types/shop";
 import React from "react";
@@ -103,24 +103,18 @@ const Delivery = ({
               value={state.country}
               onChange={(e) => handleChange("country", e.target.value)}
             >
-              {countryData[lang as keyof typeof countryData].map(
-                (item: any, index: number) => (
-                  <option key={index} value={item.name}>
-                    {item.value}
-                  </option>
-                ),
-              )}
+              {getCountries(lang).map((item, index) => (
+                <option key={index} value={item.name}>
+                  {item.value}
+                </option>
+              ))}
             </select>
             <button
               className="uk-button uk-button-default"
               type="button"
             >
               <span>
-                {
-                  countryData[lang as keyof typeof countryData].find(
-                    (item: any) => item.name === state.country,
-                  )?.value
-                }
+                {getCountries(lang).find((item) => item.name === state.country)?.value}
               </span>
               <span>
                 <svg
