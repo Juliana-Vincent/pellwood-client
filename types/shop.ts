@@ -46,6 +46,9 @@ export interface CheckoutProps {
   paymentMethod: PaymentMethodState;
   setPaymentMethod: React.Dispatch<React.SetStateAction<PaymentMethodState>>;
   onBlur: (e: any) => void;
+  /** Blur validation for the alternate delivery address - must be bound to
+   *  anotherAdress/errorAnother, not the billing state. */
+  onBlurAnother?: (e: any) => void;
   deliveryOptions?: ShippingOption[];
   paymentOptions?: ShippingOption[];
   deliveryFreeThreshold?: number;

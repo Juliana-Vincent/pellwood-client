@@ -15,6 +15,7 @@ export default async function handler(
     try {
       const {
         note,
+        sum,
         currency,
         user,
         basket,
@@ -43,6 +44,21 @@ export default async function handler(
       const { total, deliveryPrice, paymentPrice, payOnline, basket: verifiedBasket } = await computeAuthoritativeOrderTotal(
           basket, delivery, payment, currency, shippingCountry,
         );
+
+      // The basket lives in localStorage with each item's price frozen at
+      // add-to-cart time and no expiry, while this total is re-derived from live
+      // Strapi. A tab left open overnight - or reopened days later - can therefore
+      // show one number and be charged another, with no warning. Refuse, and hand
+      // back the re-priced basket so the customer sees the new total before
+      // deciding.
+      const shownTotal = Number(sum);
+      if (Number.isFinite(shownTotal) && Math.abs(shownTotal - total) > 0.01) {
+        return res.status(409).json({
+          msg: "Basket prices have changed",
+          error: "PRICE_CHANGED",
+          data: { total, basket: verifiedBasket },
+        });
+      }
 
       // Order numbers are short and sequentially guessable, so they can't be the
       // only thing standing between a stranger and an order's contents. This token

@@ -106,10 +106,15 @@ const Canvas = () => {
           </span>
         </div>
         
-        {basketCount > 0 && sum > 0 ? (
+        {/* Gated on the item count alone. `sum` is the computed total, and when it
+            came out 0 or NaN - a variant with an empty price in Strapi, or one
+            corrupt stored item - this hid the item list AND the only links to
+            /basket and /basket/checkout, leaving the customer with a basket badge
+            and no way to reach the basket. */}
+        {basketCount > 0 ? (
           <div>
             {basket.length > 0 && basket.map((item, index) => (
-              <div key={item.id || index} className="tm-canvas-basket-item-wrap">
+              <div key={`${item.id}-${item.variantName}-${index}`} className="tm-canvas-basket-item-wrap">
                 <div className="tm-basket-item">
                   <div data-src={item.imgUrl} className="tm-basket-img-wrap uk-background-contain" uk-img=""></div>
                   <div className="tm-basket-item-info">

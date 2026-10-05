@@ -25,8 +25,12 @@ export interface GtagPurchaseEvent {
 
 const buildGtagPayload = (data: OrderData): GtagPurchaseEvent => {
   const sum = Number(data.sum) || 0;
-  const tax = sum * 0.21;
-  const sumWithoutTax = sum - tax;
+  // Prices on this site include 21% VAT ("Všechny ceny jsou včetně DPH 21 %"), so
+  // the net is sum / 1.21 - not sum - sum*0.21, which treated the total as if VAT
+  // were still to be added and understated every order's reported value by 4.4%.
+  const VAT_RATE = 0.21;
+  const sumWithoutTax = Math.round((sum / (1 + VAT_RATE)) * 100) / 100;
+  const tax = Math.round((sum - sumWithoutTax) * 100) / 100;
 
   // Gracefully handles numbers and strings like "100 Kč", "ZDARMA", "FREE"
   const shipping = parseInt(String(data.deliveryPrice)) || 0;

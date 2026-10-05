@@ -31,6 +31,7 @@ const Checkout = ({
   paymentMethod,
   setPaymentMethod,
   onBlur,
+  onBlurAnother,
   deliveryOptions,
   paymentOptions,
   deliveryFreeThreshold,
@@ -88,7 +89,7 @@ const Checkout = ({
                 }
                 error={errorAnother}
                 setError={setErrorAnother}
-                onBlur={onBlur}
+                onBlur={onBlurAnother || onBlur}
               />)}
             </AnimateHeight>
           </div>

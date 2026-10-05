@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { clampQuantity, MIN_QUANTITY, MAX_QUANTITY } from "@/helpers/quantity";
 
 interface QuantityInputProps {
@@ -8,8 +9,14 @@ interface QuantityInputProps {
 }
 
 const QuantityInput = ({ value, onChange, onClamp, error }: QuantityInputProps) => {
+  // The field is controlled, so an empty intermediate state was rewritten to 1 as
+  // the customer typed: selecting the value, deleting it and typing "5" produced
+  // 15. `draft` holds the half-typed text until blur, when it is clamped.
+  const [draft, setDraft] = useState<string | null>(null);
+
   const apply = (raw: unknown) => {
     const { value: next, clamped } = clampQuantity(raw);
+    setDraft(null);
     onChange(next);
     if (onClamp) onClamp(clamped);
   };
@@ -21,8 +28,18 @@ const QuantityInput = ({ value, onChange, onClamp, error }: QuantityInputProps) 
         min={MIN_QUANTITY}
         max={MAX_QUANTITY}
         step="1"
-        value={value}
-        onChange={(e) => apply(e.target.value)}
+        value={draft ?? value}
+        onChange={(e) => {
+          const raw = e.target.value;
+          if (raw === "") {
+            setDraft("");
+            return;
+          }
+          apply(raw);
+        }}
+        onBlur={() => {
+          if (draft !== null) apply(draft);
+        }}
       />
       <div className="quantity-nav">
         <div className="quantity-button quantity-up" onClick={() => apply(Number(value) + 1)}>

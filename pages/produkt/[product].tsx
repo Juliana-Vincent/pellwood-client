@@ -132,6 +132,10 @@ const Product = ({
   );
   const [quantityNotice, setQuantityNotice] = useState(false);
 
+  // A variant with no price can't be bought - it must not appear in the dropdown,
+  // where selecting it added a 0-price line to the basket.
+  const pricedVariants = (product?.variants || []).filter((v) => !!v.price);
+
   const [select, setSelect] = useState({
     name: t("selectvariant"),
     price: "",
@@ -354,7 +358,11 @@ const Product = ({
                   </div>
                 )}
 
-                {!!product?.variants?.[0]?.price && (
+                {/* Gated on "any variant has a price", not on the FIRST one having
+                    one. With variants like [{5A, no price}, {7A, 350}] the product
+                    page rendered the title, image, price table and stock badge with
+                    no buy control anywhere and no explanation. */}
+                {!!pricedVariants.length && (
                   <div className="order_block">
                     <div className="uk-flex uk-flex-between">
                       <div className="uk-width-1-1 uk-width-auto@m">
@@ -381,7 +389,7 @@ const Product = ({
                             suppressHydrationWarning
                           >
                             <ul className="uk-nav uk-dropdown-nav">
-                              {(product?.variants || []).map((item, index) => (
+                              {pricedVariants.map((item, index) => (
                                 <Variant
                                   key={index}
                                   lang={lang}

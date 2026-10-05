@@ -143,6 +143,7 @@ const Basket = ({ settings }: BasketProps) => {
 
   const [prefilled, setPrefilled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [priceChanged, setPriceChanged] = useState(false);
 
   useEffect(() => {
     const sessionUser = dataContextState.user;
@@ -191,11 +192,23 @@ const Basket = ({ settings }: BasketProps) => {
     return false;
   };
 
+  // The alternate-address section needs its own handler. It was being given the
+  // billing one, which closes over the billing state and setError - so leaving a
+  // shipping field empty turned the *billing* field of the same name red, while
+  // the field actually at fault looked fine.
+  const onBlurAnother = (type: any) => {
+    if (validationForm(type, anotherAdress, errorAnother, setErrorAnother as any)) {
+      return true;
+    }
+    return false;
+  };
+
   const sendOrder = async () => {
     // The button is disabled while a submit is in flight, but a double-click can
     // land two handlers before React re-renders, and each one creates a real order
     // and a real payment session.
     if (submitting) return;
+    setPriceChanged(false);
 
     // Validate every field in one pass and report all of them together - the old
     // code returned on the very first failing check, so a customer with several
@@ -281,6 +294,23 @@ const Basket = ({ settings }: BasketProps) => {
       })
       .catch((err) => {
         setSubmitting(false);
+
+        // The server re-priced the basket from Strapi and it no longer matches what
+        // this page is showing. Replace the stored basket with the re-priced one so
+        // the totals on screen become the ones that would actually be charged, and
+        // let the customer look before submitting again.
+        if (err.response?.status === 409) {
+          const verified = err.response?.data?.data?.basket;
+          if (Array.isArray(verified)) {
+            dataContextDispatch({
+              state: verified,
+              type: basketKey as "basketcz" | "basketen",
+            });
+          }
+          setPriceChanged(true);
+          return;
+        }
+
         // A DB hiccup, a Strapi price mismatch, a network blip - whatever the cause,
         // the customer needs to know their order was NOT placed rather than staring
         // at an unresponsive button. Reuses the same banner shown for validation
@@ -317,6 +347,7 @@ const Basket = ({ settings }: BasketProps) => {
             setPaymentMethod={setPaymentMethod}
             sumBefore={sumBefore}
             onBlur={onBlur}
+            onBlurAnother={onBlurAnother}
             deliveryOptions={deliveryOptions}
             paymentOptions={paymentOptions}
             deliveryFreeThreshold={pricingRules.deliveryFreeThreshold}
@@ -340,6 +371,14 @@ const Basket = ({ settings }: BasketProps) => {
             <AcceptInfo />
           </div>
           <div className="tm-basket-footer tm-footer-single total-end-footer">
+            {priceChanged && (
+              <div
+                className="uk-alert-warning uk-width-1-1 uk-text-center"
+                uk-alert=""
+              >
+                <p>{t("priceChanged")}</p>
+              </div>
+            )}
             {(Object.values(error).indexOf(true) >= 0 ||
               Object.values(errorAnother).indexOf(true) >= 0) && (
               <div

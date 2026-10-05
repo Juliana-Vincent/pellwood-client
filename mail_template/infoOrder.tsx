@@ -296,7 +296,7 @@ a[x-apple-data-detectors] {
                      <tr style="border-collapse:collapse">
                       <td align="right" class="es-m-txt-l" style="padding:0;Margin:0">
                         <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-size:14px;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:21px;color:#333333">
-                          ${+data.sum > 1500 ? "ZDARMA" : data.deliveryPrice}
+                          ${data.deliveryPrice}
                         </p>
                       </td>
                      </tr>

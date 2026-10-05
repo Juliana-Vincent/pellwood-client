@@ -97,6 +97,16 @@ export async function computeAuthoritativeOrderTotal(
       unitPrice = parsePrice(product.price);
     }
 
+    // parsePrice returns 0 for anything it can't read - an empty price field in
+    // Strapi, or a value typed with its unit ("8,9 Kč"). Without this, such a
+    // product is sold for nothing: the basket subtotal is 0 and the customer is
+    // charged the shipping fee alone.
+    if (!(unitPrice > 0)) {
+      throw new Error(
+        `Product ${item.id}${item.variantName ? ` / "${item.variantName}"` : ""} has no usable price`
+      );
+    }
+
     itemsSum += unitPrice * quantity;
 
     verifiedBasket.push({ ...item, variantPrice: unitPrice, countVariant: quantity });
@@ -115,11 +125,19 @@ export async function computeAuthoritativeOrderTotal(
   if (!paymentOption) throw new Error("Unknown payment method");
 
   const rules = resolvePricingRules(settingData, lang);
-  const { total } = computePricing(itemsSum, deliveryOption.price, paymentOption.price, lang, rules);
+  const { total, deliveryCharged } = computePricing(
+    itemsSum, deliveryOption.price, paymentOption.price, lang, rules,
+  );
+
+  // Store what the customer was actually charged for delivery, not the option's
+  // list price. Everything downstream reads this field as "shipping": the
+  // confirmation email, the GA4 purchase event and the zbozi.cz conversion all
+  // reported 150 Kč of shipping on orders that shipped free.
+  const freeLabel = lang === "cz" ? "ZDARMA" : "FREE";
 
   return {
     total,
-    deliveryPrice: deliveryOption.price,
+    deliveryPrice: deliveryCharged > 0 ? deliveryOption.price : freeLabel,
     paymentPrice: paymentOption.price,
     payOnline: !!paymentOption.payOnline,
     basket: verifiedBasket,

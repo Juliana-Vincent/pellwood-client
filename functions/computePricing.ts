@@ -8,6 +8,11 @@ export interface PricingResult {
   sale: number;
   /** Final total: discounted items + delivery (unless free) + payment surcharge. */
   total: number;
+  /** What delivery actually added to the total - 0 when the free-shipping
+   *  threshold waived it. Every consumer that reports "shipping" (the
+   *  confirmation email, GA4, the zbozi.cz conversion) needs this rather than the
+   *  option's list price, which says 150 Kč even on a free-shipping order. */
+  deliveryCharged: number;
 }
 
 /**
@@ -46,8 +51,10 @@ export function computePricing(
   const sumBefore = sumAll;
 
   const deliveryThreshold = rules?.deliveryFreeThreshold ?? DELIVERY_FREE_THRESHOLD[lang];
+  let deliveryCharged = 0;
   if (sumAll <= deliveryThreshold) {
-    sumAll += optionPriceToNumber(String(deliveryPrice));
+    deliveryCharged = optionPriceToNumber(String(deliveryPrice));
+    sumAll += deliveryCharged;
   }
   sumAll += optionPriceToNumber(String(paymentPrice));
 
@@ -55,5 +62,6 @@ export function computePricing(
     sumBefore: round(sumBefore),
     sale: round(sale),
     total: round(sumAll),
+    deliveryCharged: round(deliveryCharged),
   };
 }

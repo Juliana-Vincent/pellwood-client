@@ -440,7 +440,7 @@ export default {
     de: "xxx"
   },
   loginErrorWrong: {
-    cz: "Neplatý e-mail nebo heslo.",
+    cz: "Neplatný e-mail nebo heslo.",
     en: "Invalid email or password.",
     de: "xxx"
   },
@@ -564,8 +564,13 @@ export default {
     de: "Nichts gefunden. Versuchen Sie einen anderen Begriff.",
   },
   noDeliveryForCountry: {
-    cz: "Pro vybranou zemi není dostupná žádná doprava.ntry",
+    cz: "Pro vybranou zemi není dostupná žádná doprava.",
     en: "No delivery is available for the selected country.",
+    de: "xxx",
+  },
+  priceChanged: {
+    cz: "Ceny v košíku se změnily. Zkontrolujte prosím objednávku a odešlete ji znovu.",
+    en: "Prices in your basket have changed. Please review your order and submit again.",
     de: "xxx",
   }
 }

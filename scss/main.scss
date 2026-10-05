@@ -738,6 +738,16 @@ legend{
 	}
 }
 
+// main is min-height:100vh and .base-page adds 260px of padding top and bottom,
+// which on a page with six lines of content leaves most of a viewport empty
+// before the footer. Scoped to the thank-you page so 404 and the other
+// .base-page screens keep the designer's spacing.
+.thank-you-page{
+	min-height: auto;
+	padding-top: 160px;
+	padding-bottom: 160px;
+}
+
 .uk-alert-danger{
 	p{
 		color: red!important;

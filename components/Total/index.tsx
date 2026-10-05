@@ -45,7 +45,7 @@ const Total = ({
           </div>
           <div className="tm-canvas-basket-item-wrap">
             {(basket || []).map((item, index) => (
-              <div key={item.id || index} className="tm-basket-item">
+              <div key={`${item.id}-${item.variantName}-${index}`} className="tm-basket-item">
                 <div
                   data-src={item.imgUrl}
                   className="tm-basket-img-wrap uk-background-contain"
