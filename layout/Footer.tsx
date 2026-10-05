@@ -69,7 +69,7 @@ export default () => {
       </div>
       <div className="copyright">
         <span>Made in Brno by </span>
-        <a href="mailto:danielkokes@gmail.com,dmytro@pechunka.com" aria-label="Contact developers">
+        <a href="https://hardart.cz/" target="_blank" rel="noopener noreferrer" aria-label="Hardart studio">
           <img
             src="/assets/hardart.svg"
             height="18"

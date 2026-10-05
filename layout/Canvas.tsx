@@ -6,6 +6,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useRouter } from 'next/router';
 import { resolvePricingRules, PricingRules } from '../functions/pricingRules';
 import { computePricing } from '../functions/computePricing';
+import { formatPrice } from '../helpers/formatPrice';
 import { fetchAPI } from '../lib/strapi';
 
 const Canvas = () => {
@@ -145,7 +146,7 @@ const Canvas = () => {
                   <div className="tm-basket-item-info">
                     <h3 className="tm-basket-item-head">{item.nameProduct}</h3>
                     <span>{item.variantName}</span>
-                    <span>{typeof item.variantPrice === 'string' ? item.variantPrice : `${item.variantPrice} ${currency}`}</span>
+                    <span>{formatPrice(item.variantPrice, lang)}</span>
                     <div className="tm-canvas-basket-item-count">
                       <span>{item.countVariant} {t('pc')}</span>
                       <button
@@ -188,12 +189,12 @@ const Canvas = () => {
                   {sale > 0 && (
                     <tr>
                       <td>{t('sale')}</td>
-                      <td>-{sale} {currency}</td>
+                      <td>-{formatPrice(sale, lang)}</td>
                     </tr>
                   )}
                   <tr>
                     <td>{t('totalprice')}</td>
-                    <td>{sum} {currency}</td>
+                    <td>{formatPrice(sum, lang)}</td>
                   </tr>
                 </tbody>
               </table>

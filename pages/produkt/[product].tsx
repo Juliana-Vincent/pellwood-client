@@ -16,6 +16,7 @@ import type { BasketItem } from "@/types/shop";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { GetStaticPropsContext } from "next";
 import { parsePrice } from "@/functions/parsePrice";
+import { formatPrice } from "@/helpers/formatPrice";
 import QuantityInput from "@/components/QuantityInput";
 import { clampQuantity, MAX_QUANTITY } from "@/helpers/quantity";
 
@@ -355,11 +356,7 @@ const Product = ({
                               className="short_price"
                               suppressHydrationWarning
                             >
-                              {lang === "en"
-                                ? parsePrice(item.price).toFixed(2)
-                                : item.price
-                              }{" "}
-                              {currency}
+                              {formatPrice(item.price, lang)}
                             </div>
                           </div>
                         );
@@ -440,8 +437,7 @@ const Product = ({
                 {!product?.variants?.length && (
                   <div className="tm-single-order">
                     <div className="tm-single-price uk-text-center uk-margin-bottom">
-                      {currency === "$" && currency} {product.price}{" "}
-                      {currency !== "$" && currency}
+                      {formatPrice(product.price, lang)}
                     </div>
                     <div
                       className="uk-grid-small uk-grid uk-grid-stack"
@@ -535,11 +531,7 @@ const Variant = ({ handle, name, price, lang, currency }: VariantProps) => {
     >
       <span className="uk-width-expand">{name}</span>
       <span className="uk-width-auto uk-text-right">
-        {lang === "en"
-          ? parsePrice(price).toFixed(2)
-          : price
-        }{" "}
-        {currency}
+        {formatPrice(price, lang)}
       </span>
     </li>
   );

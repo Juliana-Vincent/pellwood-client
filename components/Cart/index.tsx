@@ -4,6 +4,7 @@ import Image from "next/image";
 import { urlFor } from "@/lib/strapi";
 import { Product, Variant } from "@/types/product";
 import { useTranslation } from "@/hooks/useTranslation";
+import { formatPrice } from "@/helpers/formatPrice";
 import { parsePrice } from "@/functions/parsePrice";
 
 const getMin = (arr: Variant[]) => {
@@ -31,22 +32,16 @@ const Cart = ({ item, lang, currency, block, priority }: CartProps) => {
   const { t } = useTranslation();
   const cardRef = useRef<HTMLElement | any>(null);
 
+  // All three branches used to place the currency symbol themselves, and put it
+  // before the number for EN - which is why the homepage and catalogue read
+  // "€ 14.5" while every other page read "8.90 €". Intl decides placement now.
   let price = "";
   if (!item?.variants?.length) {
-    price =
-      lang === "en" ? `${currency} ${parsePrice(item.price)}` : `${parsePrice(item.price)} ${currency}`;
+    price = formatPrice(item.price, lang);
   } else if (item?.variants?.length > 1) {
-    const min = getMin(item.variants);
-    price =
-      lang === "en"
-        ? `${t("from")} ${currency} ${min}`
-        : `${t("from")} ${min} ${currency}`;
+    price = `${t("from")} ${formatPrice(getMin(item.variants), lang)}`;
   } else if (item?.variants?.length === 1) {
-    const singlePrice = parsePrice(item.variants[0].price);
-    price =
-      lang === "en"
-        ? `${currency} ${singlePrice}`
-        : `${singlePrice} ${currency}`;
+    price = formatPrice(item.variants[0].price, lang);
   }
 
   const hrefUrl = `/produkt/${item.slug}`;
