@@ -2,6 +2,9 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { customersApi, serializeCustomer, StrapiError } from "@/lib/strapiAdmin";
 import { hashPassword, verifyPassword, createSessionToken, buildSessionCookie } from "@/lib/auth";
 import { getSessionUser } from "@/lib/session";
+import { checkAuthRateLimit } from "@/lib/rateLimit";
+
+const MIN_PASSWORD_LENGTH = 8;
 
 // Only these fields may ever be set or updated from a request body - never
 // password (handled separately below), resetTokenHash/resetTokenExpires, or
@@ -41,6 +44,15 @@ export default async function handler(
     return res.status(405).end(`Method ${method} Not Allowed`);
   }
 
+  // Registration answers 409 for an address that already has an account, which is
+  // a direct yes/no oracle for any email. The 409 is genuinely useful to a real
+  // customer, so keep it and make bulk probing impractical instead.
+  const retryAfter = checkAuthRateLimit(req, "user-write", 20, 300);
+  if (retryAfter) {
+    res.setHeader("Retry-After", String(retryAfter));
+    return res.status(429).json({ msg: "Too many attempts", error: true });
+  }
+
   try {
     if (method === "POST") {
       const { email, password } = req.body;
@@ -62,7 +74,7 @@ export default async function handler(
         email,
         password: await hashPassword(password),
       });
-      res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(userData.documentId)));
+      res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(userData.documentId, Number(userData.tokenVersion) || 0)));
       return res.status(201).json({
         msg: "User successfully created",
         data: serializeCustomer(userData),
@@ -97,7 +109,15 @@ export default async function handler(
           if (!current?.password || !(await verifyPassword(data.currentPassword, current.password))) {
             return res.status(403).json({ msg: "Current password is incorrect", error: "currentPassword" });
           }
+          if (data.password.length < MIN_PASSWORD_LENGTH) {
+            return res.status(400).json({
+              msg: `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
+              error: "password",
+            });
+          }
           update.password = await hashPassword(data.password);
+          // Changing the password retires sessions issued before it.
+          update.tokenVersion = (Number(current.tokenVersion) || 0) + 1;
         }
 
         userData = await customersApi.update(sessionUser.documentId, update);
@@ -108,6 +128,13 @@ export default async function handler(
             error: [!data?.email?.length && "email", !data?.password?.length && "password"].filter(Boolean),
           });
         }
+        if (data.password.length < MIN_PASSWORD_LENGTH) {
+          return res.status(400).json({
+            msg: `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
+            error: "password",
+          });
+        }
+
         const existUser = await customersApi.findFirst({ "filters[email][$eq]": data.email });
         if (existUser) {
           return res.status(409).json({ msg: "User now exist", error: "email" });
@@ -119,7 +146,7 @@ export default async function handler(
           email: data.email,
           password: await hashPassword(data.password),
         });
-        res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(userData.documentId)));
+        res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(userData.documentId, Number(userData.tokenVersion) || 0)));
       }
 
       if (!userData) {

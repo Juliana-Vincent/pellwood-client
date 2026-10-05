@@ -39,14 +39,27 @@ function requireSessionSecret(): string {
   return SESSION_SECRET;
 }
 
-export function createSessionToken(userId: string): string {
-  const payload = JSON.stringify({ uid: userId, exp: Date.now() + SESSION_MAX_AGE_SECONDS * 1000 });
+// `tokenVersion` is what makes a session revocable. The token is stateless, so
+// without a claim that can be compared against something stored, nothing - not
+// logging out, not changing the password, not completing a password reset - could
+// stop an already-issued token being replayed for its full 30 days.
+export function createSessionToken(userId: string, tokenVersion: number = 0): string {
+  const payload = JSON.stringify({
+    uid: userId,
+    v: tokenVersion,
+    exp: Date.now() + SESSION_MAX_AGE_SECONDS * 1000,
+  });
   const payloadB64 = Buffer.from(payload).toString('base64url');
   const sig = crypto.createHmac('sha256', requireSessionSecret()).update(payloadB64).digest('base64url');
   return `${payloadB64}.${sig}`;
 }
 
-export function verifySessionToken(token?: string | null): string | null {
+export interface SessionClaims {
+  uid: string;
+  v: number;
+}
+
+export function verifySessionToken(token?: string | null): SessionClaims | null {
   if (!token || !SESSION_SECRET) return null;
   const [payloadB64, sig] = token.split('.');
   if (!payloadB64 || !sig) return null;
@@ -61,7 +74,9 @@ export function verifySessionToken(token?: string | null): string | null {
   try {
     const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
     if (!payload?.uid || !payload?.exp || payload.exp < Date.now()) return null;
-    return String(payload.uid);
+    // Tokens issued before tokenVersion existed carry no `v`; treat them as 0,
+    // which matches the schema default, so nobody is logged out by this change.
+    return { uid: String(payload.uid), v: Number(payload.v) || 0 };
   } catch {
     return null;
   }

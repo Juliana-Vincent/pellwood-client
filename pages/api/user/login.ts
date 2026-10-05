@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { customersApi, serializeCustomer } from "@/lib/strapiAdmin";
 import { verifyPassword, createSessionToken, buildSessionCookie } from "@/lib/auth";
+import { checkAuthRateLimit } from "@/lib/rateLimit";
 
 export default async function handler(
   req: NextApiRequest,
@@ -13,6 +14,12 @@ export default async function handler(
     return res.status(405).end(`Method ${method} Not Allowed`);
   }
 
+  const retryAfter = checkAuthRateLimit(req, "login", 10, 300);
+  if (retryAfter) {
+    res.setHeader("Retry-After", String(retryAfter));
+    return res.status(429).json({ msg: "Too many attempts", error: true });
+  }
+
   try {
     const { email, password } = req.body;
 
@@ -22,7 +29,7 @@ export default async function handler(
     const passwordMatches = user ? await verifyPassword(password, user.password) : false;
 
     if (user && passwordMatches) {
-      res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(user.documentId)));
+      res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(user.documentId, Number(user.tokenVersion) || 0)));
       return res.status(200).json({
         msg: "User successfully found",
         error: false,

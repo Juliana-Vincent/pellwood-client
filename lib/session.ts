@@ -8,9 +8,16 @@ import { readSessionTokenFromCookieHeader, verifySessionToken } from '@/lib/auth
  */
 export async function getSessionUser(req: { headers: { cookie?: string | null } }) {
   const token = readSessionTokenFromCookieHeader(req.headers.cookie);
-  const userId = verifySessionToken(token);
-  if (!userId) return null;
+  const claims = verifySessionToken(token);
+  if (!claims) return null;
 
-  const user = await customersApi.findOne(userId);
-  return user || null;
+  const user = await customersApi.findOne(claims.uid);
+  if (!user) return null;
+
+  // A signature alone isn't enough: logging out, changing the password or
+  // completing a reset bumps tokenVersion, which retires every token issued
+  // before it.
+  if ((Number(user.tokenVersion) || 0) !== claims.v) return null;
+
+  return user;
 }

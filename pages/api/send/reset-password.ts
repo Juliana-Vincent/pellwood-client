@@ -5,6 +5,7 @@ import { createTransporter } from "@/lib/mailer";
 import { sendEmail as sendEmailViaResend } from "@/lib/mailer-resend";
 import { sendEmail as sendEmailViaSendGrid } from "@/lib/mailer-sendgrid";
 import ResetPassword from "@/mail_template/resetPassword";
+import { checkAuthRateLimit } from "@/lib/rateLimit";
 
 export default async function handler(
   req: NextApiRequest,
@@ -15,6 +16,16 @@ export default async function handler(
   if (method !== "POST") {
     res.setHeader("Allow", ["POST"]);
     return res.status(405).end(`Method ${method} Not Allowed`);
+  }
+
+  // The response body is constant, but the work behind it is not: for a real
+  // account this awaits a Strapi write and an email send before replying, so
+  // response time still distinguishes a registered address from an unknown one.
+  // Rate limiting is what keeps that from being usable at scale.
+  const retryAfter = checkAuthRateLimit(req, "reset-request", 5, 300);
+  if (retryAfter) {
+    res.setHeader("Retry-After", String(retryAfter));
+    return res.status(429).json({ msg: "Too many attempts", error: true });
   }
 
   try {
