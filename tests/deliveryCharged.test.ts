@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { computePricing } from "@/functions/computePricing";
 import { parsePrice } from "@/functions/parsePrice";
 import gtag from "@/functions/gtag";
+import { feedPrice } from "@/helpers/feedPrice";
 
 // These cover the three places where what the customer was *shown* and what the
 // order record *claimed* had drifted apart. None of it was covered before.
@@ -74,5 +75,13 @@ describe("gtag VAT", () => {
     } as any);
 
     expect(event.shipping).toBe(0);
+  });
+});
+
+describe("feed price format", () => {
+  it("emits a dot decimal separator, which Google Merchant requires", () => {
+    // Strapi stores EN prices with the Czech comma; "4,50 EUR" is rejected.
+    expect(feedPrice("4,50", "en")).toBe("4.50 EUR");
+    expect(feedPrice("1250", "cz")).toBe("1250.00 CZK");
   });
 });

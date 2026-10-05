@@ -1,6 +1,9 @@
 import { FeedItem } from './types';
 import { escapeXml } from '../helpers/escapeXml';
 
+// EAN must be a real GTIN. This used to publish `mpn` - a Strapi documentId with
+// its dashes stripped plus a couple of loop indices - which Heureka validates and
+// rejects. PRODUCTNO is the field for a manufacturer's own part number.
 const toXmlHeureka = (data: FeedItem[]): string => {
   const shopItems = data.map((item) => {
     const params = (item.parametrs || []).map(p => `
@@ -22,7 +25,7 @@ const toXmlHeureka = (data: FeedItem[]): string => {
     <PRICE_VAT>${priceNum}</PRICE_VAT>${params ? '\n' + params : ''}
     <MANUFACTURER>Pellwood</MANUFACTURER>
     <DELIVERY_DATE>0</DELIVERY_DATE>
-    <EAN>${escapeXml(item.mpn)}</EAN>
+    <PRODUCTNO>${escapeXml(item.mpn)}</PRODUCTNO>
     <CATEGORYTEXT>Paličky</CATEGORYTEXT>
     <CATEGORY>
       <CATEGORY_ID>1535</CATEGORY_ID>

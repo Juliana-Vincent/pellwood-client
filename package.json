@@ -22,6 +22,7 @@
     "react-infinite-scroll-component": "^6.1.0",
     "resend": "^6.6.0",
     "sass": "^1.70.0",
+    "tsx": "^4.22.4",
     "uikit": "^3.18.3",
     "vanilla-cookieconsent": "^3.0.1"
   },
@@ -50,10 +51,8 @@
     "@types/uikit": "^3.23.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.0",
-    "install": "0.13.0",
     "pm2": "^7.0.1",
     "postcss": "^8.5.15",
-    "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   },

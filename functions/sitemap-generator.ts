@@ -63,6 +63,7 @@ ${urls.join('\n')}
 
   } catch (e) {
     console.error('Error generating sitemap:', e);
+    process.exitCode = 1;
   }
 }
 

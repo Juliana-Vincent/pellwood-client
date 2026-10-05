@@ -5,6 +5,7 @@ import toXmlProduct from './toXmlProductFeed';
 import toXmlHeureka from './toXmlHeurekaFeed';
 import toXmlZbozi from './toXmlZboziFeed';
 import { FeedItem } from './types';
+import { feedPrice, slugify } from '../helpers/feedPrice';
 
 const feedModel = (lang: string, products: any[]): FeedItem[] => {
   const arr: FeedItem[] = [];
@@ -20,11 +21,15 @@ const feedModel = (lang: string, products: any[]): FeedItem[] => {
           title: `${prod.title} - ${variants[a].title}`,
           description: prod.SEOdescription || '',
           parametrs: prod.parametrs || [],
-          link: `https://pellwood.com/${lang === 'cz' ? '' : 'en/'}produkt/${prod.slug}?${variants[a].title.toLowerCase().replace(/\s+/g, '-')}`,
+          link: `https://pellwood.com/${lang === 'cz' ? '' : 'en/'}produkt/${prod.slug}?variant=${slugify(variants[a].title)}`,
           image_link: urlFor(prod.image).url(),
-          mpn: String(variants[a].id).replace(/-/g, '') + i + a,
+          // Derived from the product and variant, not from loop indices - an
+          // index-based identifier changed whenever product ordering changed in
+          // Strapi, so the comparison sites saw every item as brand new each time
+          // and lost its pairing history.
+          mpn: `${prod.documentId}-${slugify(variants[a].title)}`,
           availability: 'in_stock',
-          price: `${variants[a].price} ${lang === 'cz' ? 'CZK' : 'EUR'}`
+          price: feedPrice(variants[a].price, lang)
         });
       }
     } else if (prod.price) {
@@ -36,8 +41,8 @@ const feedModel = (lang: string, products: any[]): FeedItem[] => {
         image_link: urlFor(prod.image).url(),
         parametrs: prod.parametrs || [],
         availability: 'in_stock',
-        mpn: prod.documentId.replace(/-/g, '') + lang + (i + 3),
-        price: `${prod.price} ${lang === 'cz' ? 'CZK' : 'EUR'}`
+        mpn: prod.documentId,
+        price: feedPrice(prod.price, lang)
       });
     }
   }
@@ -68,7 +73,11 @@ const generateFeed = async () => {
     console.log(`Xml write in --> ./public/zbozi-feed-cz.xml`);
 
   } catch (e) {
-    console.error(e);
+    // Must not exit 0. postbuild chains sitemap && feed && robots, so swallowing
+    // this left robots.txt advertising a sitemap that may not exist and shipped
+    // stale (or missing) feeds while the deploy reported success.
+    console.error('Error generating feeds:', e);
+    process.exitCode = 1;
   }
 }
 
