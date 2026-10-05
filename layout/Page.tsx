@@ -225,23 +225,24 @@ const Page = ({
         />
       )}
       <Header loginUser={loginUser} csHref={csPath || "/"} enHref={enPath || "/"} />
-      <main id={id} className={className}>
-        {/* Switching language carries the basket over and re-prices it from the
-            other locale's catalogue; say so rather than letting the numbers change
-            under the customer. */}
-        {basketNotice && (
-          <div className="uk-container uk-container-expand uk-margin-top">
-            <div className="uk-alert-warning" uk-alert="">
-              <a className="uk-alert-close" uk-close="" onClick={dismissBasketNotice}></a>
-              {basketNotice.converted > 0 && <p>{t("basketCurrencyChanged")}</p>}
-              {basketNotice.dropped.length > 0 && (
-                <p>
-                  {t("basketItemsUnavailable")} {basketNotice.dropped.join(", ")}
-                </p>
-              )}
-            </div>
+
+      {/* Fixed, below the header, rather than the first child of <main>: in the
+          content flow it rendered behind the nav and, on checkout, squeezed the
+          form column and left a white gap. */}
+      {basketNotice && (
+        <div className="basket-currency-notice">
+          <div className="uk-alert-warning" uk-alert="">
+            <a className="uk-alert-close" uk-close="" onClick={dismissBasketNotice}></a>
+            {basketNotice.converted > 0 && <p>{t("basketCurrencyChanged")}</p>}
+            {basketNotice.dropped.length > 0 && (
+              <p>
+                {t("basketItemsUnavailable")} {basketNotice.dropped.join(", ")}
+              </p>
+            )}
           </div>
-        )}
+        </div>
+      )}
+      <main id={id} className={className}>
         {children}
       </main>
       <Footer />

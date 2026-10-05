@@ -760,6 +760,35 @@ legend{
 	padding-bottom: 160px;
 }
 
+// Floats under the fixed header instead of taking part in the layout. The header
+// is 90px tall at 30px from the top (70px at 15px below 640px), and sits at
+// z-index 1000, so this clears it and stays under it.
+.basket-currency-notice{
+	position: fixed;
+	top: 130px;
+	left: 40px;
+	right: 40px;
+	z-index: 990;
+	max-width: 760px;
+	margin: 0 auto;
+	.uk-alert-warning{
+		margin: 0;
+		box-shadow: 0 4px 20px rgba(0, 0, 0, .18);
+	}
+	p{
+		margin: 0 0 6px;
+		&:last-child{ margin-bottom: 0; }
+	}
+}
+
+@media(max-width: 640px){
+	.basket-currency-notice{
+		top: 95px;
+		left: 15px;
+		right: 15px;
+	}
+}
+
 // A basket line for a product that has no version in the current language. Kept
 // visible so switching back restores it, but clearly not part of the order.
 .basket-item-unavailable{
