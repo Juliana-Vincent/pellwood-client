@@ -105,3 +105,40 @@ describe("display price formatting", () => {
     expect(formatLineTotal(219, 4, "cz").replace(/ /g, " ")).toBe("876 Kč");
   });
 });
+
+describe("per-country shipping from Strapi", () => {
+  const setting: any = {
+    shipping: [
+      {
+        country: "cz",
+        deliveryOptions: [{ label: "PPL ČR", price: 150 }],
+        paymentOptions: [{ label: "Na dobírku", price: 30, payOnline: false }],
+      },
+      { country: "de", deliveryOptions: [{ label: "DHL DE", price: 390 }] },
+      { country: "at", deliveryOptions: [] },
+    ],
+    deliveryOptions: [{ label: "Fallback", price: 99 }],
+  };
+
+  it("offers the options configured for the chosen country", async () => {
+    const { resolveDeliveryData } = await import("@/functions/shippingOptions");
+    expect(resolveDeliveryData(setting, "cz", "cz").map((o) => o.value)).toEqual(["PPL ČR"]);
+    expect(resolveDeliveryData(setting, "cz", "de").map((o) => o.value)).toEqual(["DHL DE"]);
+  });
+
+  it("treats a configured country with no options as 'we do not ship there'", async () => {
+    const { resolveDeliveryData } = await import("@/functions/shippingOptions");
+    // Must not fall through to the flat list and quietly offer Czech delivery.
+    expect(resolveDeliveryData(setting, "cz", "at")).toEqual([]);
+  });
+
+  it("falls back to the flat list for a country nobody configured", async () => {
+    const { resolveDeliveryData } = await import("@/functions/shippingOptions");
+    expect(resolveDeliveryData(setting, "cz", "sk").map((o) => o.value)).toEqual(["Fallback"]);
+  });
+
+  it("matches the country by label as well as code", async () => {
+    const { resolveDeliveryData } = await import("@/functions/shippingOptions");
+    expect(resolveDeliveryData(setting, "cz", "Německo").map((o) => o.value)).toEqual(["DHL DE"]);
+  });
+});

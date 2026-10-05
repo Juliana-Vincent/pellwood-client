@@ -58,7 +58,14 @@ export async function computeAuthoritativeOrderTotal(
   try {
     const settingRes = await fetchAPI<Setting>("setting", {
       locale: strapiLocale,
-      populate: { deliveryOptions: true, paymentOptions: true },
+      // The per-country blocks are a nested component, so they need populating
+      // explicitly - without this, setting.shipping comes back undefined and every
+      // country silently falls back to the flat list.
+      populate: {
+        deliveryOptions: true,
+        paymentOptions: true,
+        shipping: { populate: { deliveryOptions: true, paymentOptions: true } },
+      },
     });
     settingData = settingRes.data;
   } catch (err) {
@@ -127,8 +134,15 @@ export async function computeAuthoritativeOrderTotal(
     verifiedBasket.push({ ...item, variantPrice: unitPrice, countVariant: quantity });
   }
 
-  const deliveryOption = resolveDeliveryData(settingData, lang).find((d) => d.value === delivery?.value);
-  const paymentOption = resolvePaymentData(settingData, lang).find((p) => p.value === payment?.value);
+  // Resolved for the shipping country, so a method offered only in one country
+  // cannot be used for another by posting it directly - the UI filtering is for the
+  // customer, this is what actually enforces it.
+  const deliveryOption = resolveDeliveryData(settingData, lang, country).find(
+    (d) => d.value === delivery?.value,
+  );
+  const paymentOption = resolvePaymentData(settingData, lang, country).find(
+    (p) => p.value === payment?.value,
+  );
   if (!deliveryOption) throw new OrderValidationError("Unknown delivery method");
 
   if (!servesCountry(deliveryOption, country)) {

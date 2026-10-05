@@ -9,6 +9,12 @@ export interface Setting {
    *  unset (not yet added in Strapi, or empty for this locale). */
   deliveryOptions?: CmsShippingOption[];
   paymentOptions?: CmsShippingOption[];
+  /** Per-country shipping, managed in Strapi as Setting -> Shipping. Each entry is
+   *  one country with its own delivery and payment options, so an editor adds a
+   *  country and fills in what is offered there. Takes precedence over the flat
+   *  deliveryOptions/paymentOptions lists above, which remain for the countries
+   *  nobody has configured yet. */
+  shipping?: CountryShipping[];
   discountThreshold?: number;
   deliveryFreeThreshold?: number;
   discountRatePercent?: number;
@@ -29,4 +35,9 @@ export interface CmsShippingOption {
   price: number | null;
   payOnline?: boolean | null;
   countries?: string | null;
+}
+export interface CountryShipping {
+  country?: string | null;
+  deliveryOptions?: CmsShippingOption[];
+  paymentOptions?: CmsShippingOption[];
 }

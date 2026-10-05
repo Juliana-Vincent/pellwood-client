@@ -1,4 +1,15 @@
 import type { CmsShippingOption, Setting } from "@/types/setting";
+import { countryCode } from "@/helpers/countryCode";
+
+// Strapi: Setting -> Shipping is a repeatable block, one per country, each holding
+// that country's delivery and payment options. An editor adds a country and fills
+// in what is offered there; nothing in the code needs changing to add a country or
+// a carrier.
+function blockForCountry(setting: Partial<Setting> | undefined, country?: string) {
+  if (!setting?.shipping?.length || !country) return undefined;
+  const code = countryCode(country);
+  return setting.shipping.find((entry) => countryCode(entry.country || "") === code);
+}
 
 export interface ShippingOption {
   value: string;
@@ -57,8 +68,21 @@ const fromCms = (options: CmsShippingOption[], lang: "cz" | "en"): ShippingOptio
 
 export function resolveDeliveryData(
   setting: Partial<Setting> | undefined,
-  lang: "cz" | "en"
+  lang: "cz" | "en",
+  country?: string
 ): ShippingOption[] {
+  // Most specific first: the country's own block, then the flat list for countries
+  // nobody has configured yet, then the hardcoded fallback.
+  const block = blockForCountry(setting, country);
+  if (block?.deliveryOptions?.length) {
+    const rows = fromCms(block.deliveryOptions, lang);
+    if (rows.length) return rows;
+  }
+
+  // A configured country with an empty delivery list means "we do not ship there",
+  // which is a real answer - don't fall through and offer the default options.
+  if (block) return [];
+
   const cms = setting?.deliveryOptions?.length ? fromCms(setting.deliveryOptions, lang) : [];
   return cms.length ? cms : deliveryData[lang];
 }
@@ -67,8 +91,15 @@ export function resolveDeliveryData(
  *  or every configured row is incomplete. */
 export function resolvePaymentData(
   setting: Partial<Setting> | undefined,
-  lang: "cz" | "en"
+  lang: "cz" | "en",
+  country?: string
 ): ShippingOption[] {
+  const block = blockForCountry(setting, country);
+  if (block?.paymentOptions?.length) {
+    const rows = fromCms(block.paymentOptions, lang);
+    if (rows.length) return rows;
+  }
+
   const cms = setting?.paymentOptions?.length ? fromCms(setting.paymentOptions, lang) : [];
   return cms.length ? cms : paymentData[lang];
 }

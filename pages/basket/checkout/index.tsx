@@ -38,7 +38,14 @@ export async function getServerSideProps({ locale }: GetServerSidePropsContext) 
   try {
     const settingRes = await fetchAPI<Setting>("setting", {
       locale: strapiLocale,
-      populate: { deliveryOptions: true, paymentOptions: true },
+      // The per-country blocks are a nested component, so they need populating
+      // explicitly - without this, setting.shipping comes back undefined and every
+      // country silently falls back to the flat list.
+      populate: {
+        deliveryOptions: true,
+        paymentOptions: true,
+        shipping: { populate: { deliveryOptions: true, paymentOptions: true } },
+      },
     });
     settings = settingRes.data || null;
   } catch (err) {
@@ -58,8 +65,6 @@ const Basket = ({ settings }: BasketProps) => {
     useContext(DataStateContext);
 
   const typedLang = lang as "cz" | "en";
-  const deliveryOptions: ShippingOption[] = resolveDeliveryData(settings || undefined, typedLang);
-  const paymentOptions: ShippingOption[] = resolvePaymentData(settings || undefined, typedLang);
   const pricingRules: PricingRules = resolvePricingRules(settings || undefined, typedLang);
   const [sum, setSum] = useState<number | string>(0);
   const [sumBefore, setSumBefore] = useState<number | string>(0);
@@ -97,6 +102,25 @@ const Basket = ({ settings }: BasketProps) => {
     address: "",
     code: "",
   });
+
+  // The parcel's destination, which is the alternate address when one is given.
+  // Delivery and payment are resolved against it, so changing country immediately
+  // changes what is offered.
+  const shippingCountry =
+    state.anotherAddressCheck && anotherAdress.country
+      ? anotherAdress.country
+      : state.country;
+
+  const deliveryOptions: ShippingOption[] = resolveDeliveryData(
+    settings || undefined,
+    typedLang,
+    shippingCountry,
+  );
+  const paymentOptions: ShippingOption[] = resolvePaymentData(
+    settings || undefined,
+    typedLang,
+    shippingCountry,
+  );
 
   const [companyData, setCompanyData] = useState<CompanyDataState>({
     companyName: "",
