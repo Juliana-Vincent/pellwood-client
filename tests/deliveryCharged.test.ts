@@ -85,3 +85,23 @@ describe("feed price format", () => {
     expect(feedPrice("1250", "cz")).toBe("1250.00 CZK");
   });
 });
+
+describe("display price formatting", () => {
+  it("groups thousands and keeps Czech prices whole", async () => {
+    const { formatPrice } = await import("@/helpers/formatPrice");
+    // "208050 Kč" with no separator was what the retest flagged.
+    expect(formatPrice(208050, "cz").replace(/ /g, " ")).toBe("208 050 Kč");
+  });
+
+  it("gives EUR two decimals every time", async () => {
+    const { formatPrice } = await import("@/helpers/formatPrice");
+    // The site showed "8.90 €", "5.7 €", "from € 14.5" and "€ 20.4".
+    expect(formatPrice("5,7", "en")).toBe("€5.70");
+    expect(formatPrice("8,9", "en")).toBe("€8.90");
+  });
+
+  it("prices a basket row by quantity, not per piece", async () => {
+    const { formatLineTotal } = await import("@/helpers/formatPrice");
+    expect(formatLineTotal(219, 4, "cz").replace(/ /g, " ")).toBe("876 Kč");
+  });
+});

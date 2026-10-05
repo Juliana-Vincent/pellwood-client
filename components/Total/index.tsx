@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { formatPrice } from "@/helpers/formatPrice";
 import { useTranslation } from "@/hooks/useTranslation";
 import { BasketItem } from "@/types/shop";
 import { DELIVERY_FREE_THRESHOLD } from "@/functions/pricingRules";
@@ -58,11 +59,7 @@ const Total = ({
                   ) : (
                     <span>{item.variantName}</span>
                   )}
-                  <span>
-                    {typeof item.variantPrice === "string"
-                      ? item.variantPrice
-                      : `${item.variantPrice} ${currency}`}
-                  </span>
+                  <span>{formatPrice(item.variantPrice, lang)}</span>
                   <span>
                     {item.countVariant} {t("pc")}
                   </span>
@@ -135,14 +132,14 @@ const Total = ({
               <tr>
                 <td>{t("sale")}</td>
                 <td>
-                  -{sale} {currency}
+                  -{formatPrice(sale, lang)}
                 </td>
               </tr>
             )}
             <tr>
               <td>{t("totalprice")}</td>
               <td>
-                {sum} {currency}
+                {formatPrice(sum, lang)}
               </td>
             </tr>
           </tbody>

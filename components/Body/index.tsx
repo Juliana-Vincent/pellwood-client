@@ -4,6 +4,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { BasketItem } from "@/types/shop";
 import QuantityInput from "@/components/QuantityInput";
 import { clampQuantity } from "@/helpers/quantity";
+import { formatLineTotal } from "@/helpers/formatPrice";
 
 interface BodyProps {
   setSum: (sum: number | string) => void;
@@ -132,10 +133,10 @@ const BodyWrap = ({ setSum, basket, setBasket }: BodyProps) => {
               </td>
               <td>
                 <span className="basket-body-price">
-                  {typeof item.variantPrice === "string" &&
-                  isNaN(Number(item.variantPrice.split(" ")[0]))
-                    ? item.variantPrice
-                    : `${item.variantPrice} ${currency}`}
+                  {/* Price for the row, not per piece - the column is headed
+                      "Cena" next to a quantity, so a unit price there reads as
+                      the line total and never matches the basket sum. */}
+                  {formatLineTotal(item.variantPrice, item.countVariant, lang)}
                 </span>
               </td>
             </tr>

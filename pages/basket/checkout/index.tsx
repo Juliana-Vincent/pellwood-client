@@ -144,6 +144,7 @@ const Basket = ({ settings }: BasketProps) => {
   const [prefilled, setPrefilled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [priceChanged, setPriceChanged] = useState(false);
+  const [emptyBasket, setEmptyBasket] = useState(false);
 
   useEffect(() => {
     const sessionUser = dataContextState.user;
@@ -209,6 +210,7 @@ const Basket = ({ settings }: BasketProps) => {
     // and a real payment session.
     if (submitting) return;
     setPriceChanged(false);
+    setEmptyBasket(false);
 
     // Validate every field in one pass and report all of them together - the old
     // code returned on the very first failing check, so a customer with several
@@ -249,8 +251,11 @@ const Basket = ({ settings }: BasketProps) => {
       return;
     }
 
+    // Filling in the whole form and then being bounced to the homepage with no
+    // explanation is the worst possible answer here. Say what happened and leave
+    // the customer where they are.
     if (!basket.length) {
-      window.location.href = lang === "en" ? "/en" : "/";
+      setEmptyBasket(true);
       return;
     }
 
@@ -371,6 +376,14 @@ const Basket = ({ settings }: BasketProps) => {
             <AcceptInfo />
           </div>
           <div className="tm-basket-footer tm-footer-single total-end-footer">
+            {emptyBasket && (
+              <div
+                className="uk-alert-danger uk-width-1-1 uk-text-center"
+                uk-alert=""
+              >
+                <p>{t("emptybasket")}</p>
+              </div>
+            )}
             {priceChanged && (
               <div
                 className="uk-alert-warning uk-width-1-1 uk-text-center"

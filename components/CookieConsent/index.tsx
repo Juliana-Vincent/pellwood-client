@@ -39,9 +39,11 @@ export default function CookieConsent_() {
       },
 
       language: {
-        default: lang,
+        // "cz" is the app's internal key for Czech; the actual ISO code is "cs",
+        // and that is what ends up stored in the consent cookie.
+        default: lang === 'cz' ? 'cs' : lang,
         translations: {
-          cz: {
+          cs: {
             consentModal: {
               title: 'Aby web správně fungoval používáme cookies',
               description: 'Cookies používáme ke zlepšení prohlížení webu a poskytování dalších funkcí. Souhlas udělíte kliknutím na tlačítko "Povolit vše" nebo ho můžete odmítnout <button type="button" data-cc="accept-necessary" class="cc-link">zde</button>.',

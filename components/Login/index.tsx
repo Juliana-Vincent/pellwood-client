@@ -66,7 +66,23 @@ const Login = ({ setLoginUser }: LoginProps) => {
   const onLogin = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (onBlur('email') || onBlur('password')) {
+    // Check both fields and report both. onBlur('password') runs the email check
+    // first and returns on its result, so an empty form only ever highlighted the
+    // email and the customer fixed one problem at a time.
+    const emailInvalid = !email.length || validationForm('email', { email }, error, setError);
+    const passwordInvalid = !password.length || password.length < 8;
+
+    if (!email.length || !password.length) {
+      setError(prev => ({
+        ...prev,
+        email: !email.length ? 'empty' : prev.email,
+        password: !password.length ? 'empty' : prev.password,
+      }));
+      return;
+    }
+
+    if (emailInvalid || passwordInvalid) {
+      setError(prev => ({ ...prev, password: passwordInvalid ? true : prev.password }));
       return;
     }
 
@@ -217,9 +233,9 @@ const Login = ({ setLoginUser }: LoginProps) => {
             <button type="submit" className="tm-button tm-black-button uk-width-1-1">
               {t('login')}
             </button>
-            <a href="/" onClick={forgotPassword} className="tm-button tm-bare-button tm-button-text uk-width-1-1">
+            <button type="button" onClick={forgotPassword} className="tm-button tm-bare-button tm-button-text uk-width-1-1">
               <span>{t('forgottenpassword')}</span>
-            </a>
+            </button>
             
             <hr />
             

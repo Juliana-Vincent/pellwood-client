@@ -167,7 +167,7 @@ const Header = ({
                       className="basket_count uk-button uk-button-link"
                       uk-toggle="target: #offcanvas-flip"
                       aria-expanded={false}
-                      aria-label="Open basket"
+                      aria-label={t('basket')}
                     >
                       {basketCount}
                     </button>

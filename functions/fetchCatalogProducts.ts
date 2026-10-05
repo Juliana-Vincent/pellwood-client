@@ -91,6 +91,13 @@ export async function fetchCatalogProducts({
     // Every token must appear, in any order: "4 pary x line" finds the same
     // products as "x line 4 pary".
     const tokens = searchTokens(String(search));
+
+    // "%" or "???" fold to nothing. Skipping the filter made them match every
+    // product, which reads as "your search found all 115 items".
+    if (!tokens.length) {
+      return [];
+    }
+
     if (tokens.length) {
       products = products.filter((p: any) => {
         const haystack = searchHaystack(p);
