@@ -66,6 +66,7 @@ const Canvas = () => {
 
     if (currentBasket && currentBasket.length > 0) {
       currentBasket.forEach((item) => {
+        if (item.unavailable) return;
         let price = item.variantPrice;
         if (typeof price === 'string') {
           price = parseFloat(price.split(' ')[0]);
@@ -137,11 +138,11 @@ const Canvas = () => {
             corrupt stored item - this hid the item list AND the only links to
             /basket and /basket/checkout, leaving the customer with a basket badge
             and no way to reach the basket. */}
-        {basketCount > 0 ? (
+        {basket.length > 0 ? (
           <div>
             {basket.length > 0 && basket.map((item, index) => (
               <div key={`${item.id}-${item.variantName}-${index}`} className="tm-canvas-basket-item-wrap">
-                <div className="tm-basket-item">
+                <div className={`tm-basket-item${item.unavailable ? " basket-item-unavailable" : ""}`}>
                   <div data-src={item.imgUrl} className="tm-basket-img-wrap uk-background-contain" uk-img=""></div>
                   <div className="tm-basket-item-info">
                     <h3 className="tm-basket-item-head">{item.nameProduct}</h3>

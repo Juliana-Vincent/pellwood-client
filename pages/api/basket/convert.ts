@@ -73,11 +73,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     for (const item of items) {
       const target = targetById.get(item.id);
 
-      // Seven products exist only in Czech. Nothing can be converted for them, so
-      // the line is dropped and named rather than silently carried at the wrong
-      // price or left with no price at all.
+      // Seven products exist only in Czech. The line is kept, flagged and shown
+      // greyed out, so switching back restores it - but it carries no valid price
+      // in this language, so every total and the order payload must skip it.
       if (!target) {
         dropped.push(item.nameProduct || item.id);
+        converted.push({ ...item, unavailable: true });
         continue;
       }
 
@@ -100,6 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (!variant?.price) {
           dropped.push(item.nameProduct || item.id);
+          converted.push({ ...item, unavailable: true });
           continue;
         }
 
@@ -114,14 +116,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (!(unitPrice > 0)) {
         dropped.push(item.nameProduct || item.id);
+        converted.push({ ...item, unavailable: true });
         continue;
       }
 
+      // `unavailable` is cleared here, so switching back to a language that does
+      // have the product restores it to a normal line.
       converted.push({
         ...item,
         nameProduct: target.title,
         variantName,
         variantPrice: unitPrice,
+        unavailable: false,
       });
     }
 

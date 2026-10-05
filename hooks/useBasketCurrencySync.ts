@@ -53,6 +53,9 @@ export function useBasketCurrencySync() {
             state: items,
             type: targetKey as "basketcz" | "basketen",
           });
+          // The badge counts everything in the basket, greyed lines included -
+          // they are still the customer's selection. Checkout is what refuses an
+          // order containing them.
           dataContextDispatch({
             state: items.length,
             type: `basketCount${toLang}` as "basketCountcz" | "basketCounten",

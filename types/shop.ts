@@ -11,6 +11,9 @@ export interface BasketItem {
   variantName: string;
   variantPrice: string | number;
   countVariant: number;
+  /** No version of this product exists in the current language: shown greyed
+   *  out, excluded from totals, and not sent with the order. */
+  unavailable?: boolean;
 }
 
 export interface AddressState {

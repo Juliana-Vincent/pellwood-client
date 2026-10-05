@@ -5,6 +5,9 @@ import { parsePrice } from "@/functions/parsePrice";
 export interface BasketItem {
   variantPrice: number | string;
   countVariant: number | string;
+  /** Set when the product has no version in the current language. The line is
+   *  shown greyed out and counts towards nothing. */
+  unavailable?: boolean;
   [key: string]: any;
 }
 
@@ -19,6 +22,7 @@ const sumTotal = (
   rules?: PricingRules
 ) => {
   const itemsSum = basket.reduce((total, item) => {
+    if (item.unavailable) return total;
     const price = parsePrice(item.variantPrice) || 0;
     const count = Number(item.countVariant) || 0;
     return total + (price * count);

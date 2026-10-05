@@ -594,8 +594,13 @@ export default {
     de: "xxx",
   },
   basketItemsUnavailable: {
-    cz: "Tyto položky nejsou v této jazykové verzi dostupné a byly z košíku odebrány:",
-    en: "These items are not available in this language version and were removed from your basket:",
+    cz: "Tyto položky nejsou v této jazykové verzi dostupné a nelze je objednat. Zůstávají v košíku a po přepnutí zpět budou opět dostupné:",
+    en: "These items are not available in this language version and cannot be ordered. They stay in your basket and will be available again if you switch back:",
+    de: "xxx",
+  },
+  basketUnavailableBlocked: {
+    cz: "V košíku máte položky, které nejsou v této jazykové verzi dostupné. Odeberte je, nebo přepněte zpět na češtinu.",
+    en: "Your basket contains items that are not available in this language version. Remove them, or switch back to Czech to order them.",
     de: "xxx",
   },
   priceChanged: {

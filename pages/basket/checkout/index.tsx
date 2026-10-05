@@ -145,6 +145,7 @@ const Basket = ({ settings }: BasketProps) => {
   const [submitting, setSubmitting] = useState(false);
   const [priceChanged, setPriceChanged] = useState(false);
   const [emptyBasket, setEmptyBasket] = useState(false);
+  const [blockedByUnavailable, setBlockedByUnavailable] = useState(false);
 
   useEffect(() => {
     const sessionUser = dataContextState.user;
@@ -211,6 +212,7 @@ const Basket = ({ settings }: BasketProps) => {
     if (submitting) return;
     setPriceChanged(false);
     setEmptyBasket(false);
+    setBlockedByUnavailable(false);
 
     // Validate every field in one pass and report all of them together - the old
     // code returned on the very first failing check, so a customer with several
@@ -256,6 +258,14 @@ const Basket = ({ settings }: BasketProps) => {
     // the customer where they are.
     if (!basket.length) {
       setEmptyBasket(true);
+      return;
+    }
+
+    // Refuse rather than quietly dropping the greyed lines from the order: the
+    // customer put them in the basket and would otherwise receive a parcel
+    // missing items they thought they had bought.
+    if (basket.some((item) => item.unavailable)) {
+      setBlockedByUnavailable(true);
       return;
     }
 
@@ -376,6 +386,14 @@ const Basket = ({ settings }: BasketProps) => {
             <AcceptInfo />
           </div>
           <div className="tm-basket-footer tm-footer-single total-end-footer">
+            {blockedByUnavailable && (
+              <div
+                className="uk-alert-danger uk-width-1-1 uk-text-center"
+                uk-alert=""
+              >
+                <p>{t("basketUnavailableBlocked")}</p>
+              </div>
+            )}
             {emptyBasket && (
               <div
                 className="uk-alert-danger uk-width-1-1 uk-text-center"

@@ -34,6 +34,7 @@ const BodyWrap = ({ setSum, basket, setBasket }: BodyProps) => {
 
   const sumBasket = (newBasket: BasketItem[]) => {
     const sumAll = newBasket.reduce((acc, item) => {
+      if (item.unavailable) return acc;
       const priceStr =
         typeof item.variantPrice === "string"
           ? item.variantPrice.split(" ")[0]
@@ -94,7 +95,10 @@ const BodyWrap = ({ setSum, basket, setBasket }: BodyProps) => {
         </thead>
         <tbody>
           {basket.map((item, index) => (
-            <tr key={`${item.nameProduct}-${item.variantName}-${index}`}>
+            <tr
+              key={`${item.nameProduct}-${item.variantName}-${index}`}
+              className={item.unavailable ? "basket-item-unavailable" : undefined}
+            >
               <td>
                 <div className="tm-basket-item">
                   <div

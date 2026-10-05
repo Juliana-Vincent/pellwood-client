@@ -760,6 +760,13 @@ legend{
 	padding-bottom: 160px;
 }
 
+// A basket line for a product that has no version in the current language. Kept
+// visible so switching back restores it, but clearly not part of the order.
+.basket-item-unavailable{
+	opacity: .45;
+	filter: grayscale(100%);
+}
+
 .uk-alert-danger{
 	p{
 		color: red!important;
