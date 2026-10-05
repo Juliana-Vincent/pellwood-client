@@ -211,6 +211,42 @@ const Basket = ({ settings }: BasketProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deliveryMethod, paymentMethod, basket]);
 
+  // Same removal as the basket page (components/Body -> deleteItem): splice the
+  // line out, decrement the badge by one and write both back to context, which is
+  // what the cookie layer and the two sumTotal effects above read. Keeping the two
+  // implementations identical matters more than sharing them - removing an item has
+  // to behave the same whichever page you do it from.
+  const removeItem = (index: number) => {
+    if (submitting) return;
+
+    const countKey: "basketCountcz" | "basketCounten" =
+      lang === "en" ? "basketCounten" : "basketCountcz";
+    let basketCount = Number(dataContextState[countKey]) || 0;
+    basketCount = Math.max(0, basketCount - 1);
+    dataContextDispatch({ state: basketCount, type: countKey });
+
+    const newBasket = [...basket];
+    newBasket.splice(index, 1);
+    dataContextDispatch({ state: newBasket, type: basketKey as "basketcz" | "basketen" });
+
+    // Removing the offending line is the fix for all three of these, so the alerts
+    // should go with it instead of sitting there until the next submit attempt.
+    setPriceChanged(false);
+    setEmptyBasket(false);
+    setBlockedByUnavailable(false);
+  };
+
+  // Removing the last line leaves this page with nothing to order; without this it
+  // sat there with an empty summary and a button that could only fail server-side.
+  // Mirrors the basket page: wait for cookies to load first, or every fresh load
+  // bounces a customer whose basket is merely not restored yet.
+  useEffect(() => {
+    if (dataContextState.hydrated && !submitting && !basket?.length) {
+      window.location.href = lang === "en" ? "/en" : "/";
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [basket, dataContextState.hydrated, submitting]);
+
   const onBlur = (type: any) => {
     if (validationForm(type, state, error, setError as any)) {
       return true;
@@ -404,6 +440,7 @@ const Basket = ({ settings }: BasketProps) => {
             sumBefore={sumBefore}
             delivery={deliveryMethod.price}
             payment={paymentMethod.price}
+            onRemoveItem={removeItem}
           />
           <div>
             <p>{t("infovat")}</p>

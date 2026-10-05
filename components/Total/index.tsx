@@ -16,6 +16,10 @@ interface TotalProps {
   /** CMS-configured free-delivery threshold, resolved by the caller - defaults to
    *  the hardcoded pricingRules.ts value if not passed. */
   deliveryFreeThreshold?: number;
+  /** Only passed by checkout. The summary is read-only everywhere else (the
+   *  thank-you page must not offer to edit a placed order), so the button is
+   *  rendered only when a handler is actually given. */
+  onRemoveItem?: (index: number) => void;
 }
 
 const Total = ({
@@ -27,6 +31,7 @@ const Total = ({
   payment,
   isEnd,
   deliveryFreeThreshold,
+  onRemoveItem,
 }: TotalProps) => {
   const { t, lang, currency } = useTranslation();
 
@@ -66,6 +71,24 @@ const Total = ({
                   <span>
                     {item.countVariant} {t("pc")}
                   </span>
+                  {onRemoveItem && (
+                    <div className="tm-remove-item">
+                      <button
+                        type="button"
+                        onClick={() => onRemoveItem(index)}
+                        className="uk-button uk-button-link uk-text-danger"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          textTransform: "none",
+                          padding: 0,
+                        }}
+                      >
+                        <span uk-close=""></span> {t("remove")}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
