@@ -1,4 +1,4 @@
-import { fetchAPI, urlFor } from '../lib/strapi';
+import { fetchAllAPI, urlFor } from '../lib/strapi';
 import fs from 'fs';
 import toXml from './toAllData';
 import { FeedItem } from './types';
@@ -65,13 +65,13 @@ const feedModel = (products: any[]): FeedItem[] => {
 
 const generateSitemap = async () => {
   try {
-    const res = await fetchAPI('products', { 
-      locale: 'cs', 
-      populate: ['image', 'orientedImage', 'variants', 'parametrs', 'category'], 
-      pagination: { limit: 1000 } 
+    // pagination.limit was 1000, but Strapi clamps it to api.rest.maxLimit (100)
+    // and says nothing, so this feed silently held only the first 100 products.
+    // fetchAllAPI pages through properly.
+    const products = await fetchAllAPI<any>('products', {
+      locale: 'cs',
+      populate: ['image', 'orientedImage', 'variants', 'parametrs', 'category'],
     });
-
-    const products = res.data || [];
     const czProducts = feedModel(products);
 
     const resultXml = toXml(czProducts);

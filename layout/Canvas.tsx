@@ -4,14 +4,37 @@ import UIkit from 'uikit';
 import { DataStateContext } from '../context/dataStateContext';
 import { useTranslation } from '../hooks/useTranslation';
 import { useRouter } from 'next/router';
-import { DISCOUNT_THRESHOLD, DELIVERY_FREE_THRESHOLD } from '../functions/pricingRules';
+import { resolvePricingRules, PricingRules } from '../functions/pricingRules';
 import { computePricing } from '../functions/computePricing';
+import { fetchAPI } from '../lib/strapi';
 
 const Canvas = () => {
   const router = useRouter();
   const { t, lang, currency } = useTranslation();
 
   const [mounted, setMounted] = useState(false);
+
+  // The basket page and checkout both price with resolvePricingRules(settings),
+  // while this preview used the hardcoded constants - so configuring a threshold
+  // in Strapi made the mini-cart and the basket page disagree about the total.
+  // Same client-side fetch the footer already does.
+  const [rules, setRules] = useState<PricingRules>(() =>
+    resolvePricingRules(undefined, lang as 'cz' | 'en'),
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchAPI('setting', { locale: lang === 'cz' ? 'cs' : lang })
+      .then((res) => {
+        if (!cancelled) {
+          setRules(resolvePricingRules((res.data as any) || undefined, lang as 'cz' | 'en'));
+        }
+      })
+      .catch((err) => console.error('Failed to load pricing rules', err));
+    return () => {
+      cancelled = true;
+    };
+  }, [lang]);
   const { dataContextState, dataContextDispatch } = useContext(DataStateContext);
 
   const basketKey = `basket${lang}` as keyof typeof dataContextState;
@@ -53,14 +76,16 @@ const Canvas = () => {
     // Delivery/payment aren't chosen yet at this point in the flow (this is the
     // "just added to cart" preview, before checkout) - same formula as checkout and
     // the server via computePricing.ts, just with no shipping/payment surcharge yet.
-    const { sale, total } = computePricing(itemsSum, 0, 0, lang as 'cz' | 'en');
+    const { sale, total } = computePricing(itemsSum, 0, 0, lang as 'cz' | 'en', rules);
     setSale(sale);
     setSum(total);
   };
 
   useEffect(() => {
+    // `rules` is in the deps because it arrives asynchronously - without it the
+    // total would stay on the hardcoded defaults until the basket next changed.
     onSumItems(basket);
-  }, [basket, lang]);
+  }, [basket, lang, rules]);
 
   const deleteItem = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -84,8 +109,8 @@ const Canvas = () => {
   // Delivery/discount thresholds - shared with functions/sumTotal.ts and the
   // server-side total in functions/validateOrder.ts via pricingRules.ts, so this
   // mini-cart preview can no longer drift from what checkout/the server charge.
-  const deliveryThreshold = DELIVERY_FREE_THRESHOLD[lang as 'cz' | 'en'];
-  const discountThreshold = DISCOUNT_THRESHOLD[lang as 'cz' | 'en'];
+  const deliveryThreshold = rules.deliveryFreeThreshold;
+  const discountThreshold = rules.discountThreshold;
 
   const isFreeDelivery = sum > deliveryThreshold;
   const deliveryLabel = isFreeDelivery

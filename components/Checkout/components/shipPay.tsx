@@ -96,6 +96,7 @@ const ShipPay = ({
                     <div className="radio_item">
                       <input
                         type="radio"
+                        name="delivery"
                         id={`delivery_${index}`}
                         onChange={() => onChange("delivery", item)}
                         checked={delivery.value === item.value}
@@ -132,6 +133,7 @@ const ShipPay = ({
                   <div className="radio_item">
                     <input
                       type="radio"
+                      name="payment"
                       id={`pay_${index}`}
                       onChange={() => onChange("payment", item)}
                       checked={payment.value === item.value}

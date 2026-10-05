@@ -24,6 +24,16 @@ const changeUrl = (
     queryUrl.diameterMax = parameters.diameter.max
     queryUrl.lengthMin = parameters.length.min
     queryUrl.lengthMax = parameters.length.max
+  } else {
+    // These were only ever written, never removed, and the object starts as a copy
+    // of the current query - so dragging the sliders back to the full range left
+    // the old bounds in the URL and the results stayed narrowed while the slider
+    // said otherwise. The only escape was "clear all filters", which also wiped
+    // the search term.
+    delete queryUrl.diameterMin
+    delete queryUrl.diameterMax
+    delete queryUrl.lengthMin
+    delete queryUrl.lengthMax
   }
 
   if(resetFilter){

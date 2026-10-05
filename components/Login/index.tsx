@@ -183,7 +183,12 @@ const Login = ({ setLoginUser }: LoginProps) => {
             )}
 
             <div className="uk-margin input_item">
+              {/* id + htmlFor so the floating label is clickable, and
+                  autoComplete so password managers can fill the form. */}
               <input
+                id="login-email"
+                name="email"
+                autoComplete="email"
                 className={`${email.length ? 'hasValue' : ''} ${!!error.email ? 'invalid' : ''}`}
                 type="email"
                 value={email}
@@ -191,11 +196,14 @@ const Login = ({ setLoginUser }: LoginProps) => {
                 onChange={e => handleInput(e, 'email')}
                 tabIndex={1} 
               />
-              <label>{t('formemail')}</label>
+              <label htmlFor="login-email">{t('formemail')}</label>
             </div>
             
             <div className="uk-margin input_item">
               <input
+                id="login-password"
+                name="password"
+                autoComplete="current-password"
                 className={`${password.length ? 'hasValue' : ''} ${(error.password || error.email === 'notExist') ? 'invalid' : ''}`}
                 type="password"
                 onBlur={() => onBlur('password')}
@@ -203,7 +211,7 @@ const Login = ({ setLoginUser }: LoginProps) => {
                 onChange={e => handleInput(e, 'password')}
                 tabIndex={2}
               />
-              <label>{t('formpassword')}</label>
+              <label htmlFor="login-password">{t('formpassword')}</label>
             </div>
 
             <button type="submit" className="tm-button tm-black-button uk-width-1-1">

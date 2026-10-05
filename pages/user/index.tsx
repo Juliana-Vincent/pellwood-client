@@ -7,7 +7,7 @@ import Corporate from "@/components/Checkout/components/corporate";
 import { DataStateContext } from "@/context/dataStateContext";
 import { AxiosAPI } from "@/restClient";
 import Page from "@/layout/Page";
-import validationForm, { validationCode, validationPhone } from "@/functions/validationForm";
+import validationForm, { validationCode, validationPhone, validationEmail } from "@/functions/validationForm";
 import { useRouter } from "next/router";
 import { useTranslation } from "@/hooks/useTranslation";
 import type {
@@ -146,27 +146,26 @@ const User = () => {
   };
 
   const onSave = async () => {
-    if (!state.address.length) {
-      setError({ ...error, address: true });
-      return;
-    } else if (!state.city.length) {
-      setError({ ...error, city: true });
-      return;
-    } else if (!state.surname.length) {
-      setError({ ...error, surname: true });
-      return;
-    } else if (!state.name.length) {
-      setError({ ...error, name: true });
-      return;
-    } else if (!validationPhone(state.phone)) {
-      setError({ ...error, phone: true });
-      return;
-    } else if (!validationCode(state.code, state.country)) {
-      setError({ ...error, code: true });
+    // Validate everything in one pass. The old chain returned on the first failure,
+    // so a customer with three bad fields had to press SAVE three times to discover
+    // them - the same pattern that was already fixed in checkout.
+    const nextErrors = {
+      ...error,
+      submit: false,
+      address: !state.address.length,
+      city: !state.city.length,
+      surname: !state.surname.length,
+      name: !state.name.length,
+      phone: !validationPhone(state.phone),
+      code: !validationCode(state.code, state.country),
+      email: !validationEmail(state.email),
+    };
+
+    setError(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      setSaved(false);
       return;
     }
-
-    if (onBlur("email")) return;
 
     //The server ignores it
     let saveData = {
