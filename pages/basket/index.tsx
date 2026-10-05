@@ -63,7 +63,9 @@ const Basket = ({ settings }: BasketProps) => {
     // page load (refresh, bookmark, new tab) sees a momentarily-empty basket and bounces
     // the customer to the homepage even though their cart has items.
     if (dataContextState.hydrated && !basket?.length) {
-      window.location.href = "/";
+      // Baskets are per-locale (basketcz / basketen), so an English visitor with an
+      // empty English basket was being hard-reloaded onto the CZECH homepage.
+      window.location.href = lang === "en" ? "/en" : "/";
     }
   }, [basket, dataContextState.hydrated]);
 
@@ -73,7 +75,7 @@ const Basket = ({ settings }: BasketProps) => {
   }, [basket]);
 
   return (
-    <Page className="basket" title={t("basket")}>
+    <Page className="basket" title={t("basket")} noCrawl>
       <div className="tm-basket-content-wrap">
         <div className="tm-basket-content">
           <Head />

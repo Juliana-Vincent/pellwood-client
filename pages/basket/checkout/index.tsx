@@ -250,7 +250,7 @@ const Basket = ({ settings }: BasketProps) => {
     }
 
     if (!basket.length) {
-      window.location.href = "/";
+      window.location.href = lang === "en" ? "/en" : "/";
       return;
     }
 
@@ -321,7 +321,7 @@ const Basket = ({ settings }: BasketProps) => {
   };
 
   return (
-    <Page className="basket" title={t("order")}>
+    <Page className="basket" title={t("order")} noCrawl>
       <div className="tm-basket-content-wrap">
         <div className="tm-basket-content">
           <Head />

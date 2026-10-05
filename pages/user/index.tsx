@@ -291,7 +291,9 @@ const User = () => {
                         {t("orderNumber")} {item.idOrder}
                       </td>
                       <td className="uk-text-right">
-                        {item.sum} {" " + currency}
+                        {/* The order's own currency, not the one the page happens
+                            to be in - a 1500 Kc order read "1500 EUR" on /en/user. */}
+                        {item.sum} {" " + (item.currency || currency)}
                       </td>
                     </tr>
                   ))

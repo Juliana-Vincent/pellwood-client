@@ -136,9 +136,14 @@ const Product = ({
   // where selecting it added a 0-price line to the basket.
   const pricedVariants = (product?.variants || []).filter((v) => !!v.price);
 
+  // `chosen` rather than comparing the label against t("selectvariant"). Switching
+  // locale on a product page keeps this state while the translation changes, so the
+  // old check stopped matching and let an unchosen variant through as a 0-price line
+  // literally named "Vybrat variantu".
   const [select, setSelect] = useState({
     name: t("selectvariant"),
     price: "",
+    chosen: false,
   });
 
   const [error, setError] = useState({
@@ -147,14 +152,14 @@ const Product = ({
   });
 
   const selectHandle = (name: string, price: string) => {
-    setSelect({ ...select, name, price });
+    setSelect({ ...select, name, price, chosen: true });
     setError({ ...error, select: false });
     dropdown(".select-variant").hide();
   };
 
   const onBuy = async () => {
     setLoader(true);
-    if (select.name === t("selectvariant") && product?.variants?.length) {
+    if (!select.chosen && pricedVariants.length) {
       setError({ ...error, select: true });
       setLoader(false);
       router.push(router.asPath);
@@ -375,7 +380,7 @@ const Product = ({
                             tabIndex={-1}
                             suppressHydrationWarning
                           >
-                            <span>{select.name}</span>
+                            <span>{select.chosen ? select.name : t("selectvariant")}</span>
                             <span>
                               <img
                                 src="/assets/chevron-down-light.svg"

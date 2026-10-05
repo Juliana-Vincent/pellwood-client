@@ -46,7 +46,11 @@ const Page = ({
   noCrawl,
   tags,
   purchase = false,
-  alternates = { cs: null, en: null },
+  // No default. It used to default to { cs: null, en: null }, which is truthy, so
+  // the `: pathNoQuery` fallback below could never run and every page that didn't
+  // pass alternates explicitly - the homepage, the catalogue, the basket - shipped
+  // no canonical and no hreflang, and its language switcher pointed at "/".
+  alternates,
 }: PageProps) => {
   const router = useRouter();
   const theTitle = title
@@ -134,9 +138,11 @@ const Page = ({
         <meta name="twitter:image:src" content={theImage} />*/}
         <meta property="og:title" content={theTitle} />
         <meta property="og:type" content={contentType || "website"} />
+        {/* router.asPath has the locale prefix stripped, so building og:url from it
+            advertised the Czech URL on every English page. */}
         <meta
           property="og:url"
-          content={SITE_URL + router.asPath.split("?")[0]}
+          content={canonical || SITE_URL + pathNoQuery}
         />
         <meta property="og:image" content={theImage} />
         <meta property="og:description" content={theDescription} />

@@ -38,3 +38,4 @@ public/google-feed-*.xml
 public/heureka-feed-*.xml
 public/zbozi-feed-*.xml
 public/robots.txtpublic/all-products.xml
+next-env.d.ts
