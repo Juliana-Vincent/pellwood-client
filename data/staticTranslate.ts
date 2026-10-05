@@ -588,6 +588,16 @@ export default {
     en: "Oops! This page could not be found. It looks like nothing was found here.",
     de: "xxx",
   },
+  basketCurrencyChanged: {
+    cz: "Košík byl přepočítán na české ceny.",
+    en: "Your basket has been re-priced in euros.",
+    de: "xxx",
+  },
+  basketItemsUnavailable: {
+    cz: "Tyto položky nejsou v této jazykové verzi dostupné a byly z košíku odebrány:",
+    en: "These items are not available in this language version and were removed from your basket:",
+    de: "xxx",
+  },
   priceChanged: {
     cz: "Ceny v košíku se změnily. Zkontrolujte prosím objednávku a odešlete ji znovu.",
     en: "Prices in your basket have changed. Please review your order and submit again.",

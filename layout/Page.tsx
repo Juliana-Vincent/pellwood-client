@@ -18,6 +18,8 @@ const CookieConsent = dynamic(() => import("../components/CookieConsent"), {
 import { modal } from "uikit";
 import Script from "next/script";
 import type { PageProps } from "@/types/shop";
+import { useTranslation } from "@/hooks/useTranslation";
+import { useBasketCurrencySync } from "@/hooks/useBasketCurrencySync";
 
 export const SITE_URL =
   process.env.NODE_ENV === "development"
@@ -58,6 +60,9 @@ const Page = ({
   alternates,
 }: PageProps) => {
   const router = useRouter();
+  const { t } = useTranslation();
+  const { notice: basketNotice, dismissNotice: dismissBasketNotice } =
+    useBasketCurrencySync();
   const theTitle = title
     ? (title + defaultSep + defaultTitle).substring(0, 60)
     : defaultTitle;
@@ -221,6 +226,22 @@ const Page = ({
       )}
       <Header loginUser={loginUser} csHref={csPath || "/"} enHref={enPath || "/"} />
       <main id={id} className={className}>
+        {/* Switching language carries the basket over and re-prices it from the
+            other locale's catalogue; say so rather than letting the numbers change
+            under the customer. */}
+        {basketNotice && (
+          <div className="uk-container uk-container-expand uk-margin-top">
+            <div className="uk-alert-warning" uk-alert="">
+              <a className="uk-alert-close" uk-close="" onClick={dismissBasketNotice}></a>
+              {basketNotice.converted > 0 && <p>{t("basketCurrencyChanged")}</p>}
+              {basketNotice.dropped.length > 0 && (
+                <p>
+                  {t("basketItemsUnavailable")} {basketNotice.dropped.join(", ")}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
         {children}
       </main>
       <Footer />
