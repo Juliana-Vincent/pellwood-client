@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from "react";
+import Link from "next/link";
 import Page from "@/layout/Page";
 import { DataStateContext, DataState } from "@/context/dataStateContext";
 import Head from "@/components/Head";
@@ -59,20 +60,31 @@ const Basket = ({ settings }: BasketProps) => {
   const pricingRules: PricingRules = resolvePricingRules(settings || undefined, lang as "cz" | "en");
 
   useEffect(() => {
-    // Only redirect once cookies have actually finished loading - otherwise every fresh
-    // page load (refresh, bookmark, new tab) sees a momentarily-empty basket and bounces
-    // the customer to the homepage even though their cart has items.
-    if (dataContextState.hydrated && !basket?.length) {
-      // Baskets are per-locale (basketcz / basketen), so an English visitor with an
-      // empty English basket was being hard-reloaded onto the CZECH homepage.
-      window.location.href = lang === "en" ? "/en" : "/";
-    }
-  }, [basket, dataContextState.hydrated]);
-
-  useEffect(() => {
     sumTotal(0, 0, basket, setSumBefore, setSale, setSum, lang as "cz" | "en", pricingRules);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [basket]);
+
+  // An empty basket used to hard-redirect to the homepage, which threw the customer
+  // out of the page they had just asked for and told them nothing about why. Say so
+  // and offer the way back instead. Gated on `hydrated`, or every fresh load would
+  // flash this before the cookies are read.
+  if (dataContextState.hydrated && !basket?.length) {
+    return (
+      <Page className="basket" title={t("basket")} noCrawl>
+        <div className="tm-basket-content-wrap">
+          <div className="tm-basket-content">
+            <Head />
+            <div className="uk-alert" uk-alert="">
+              <p>{t("emptybasket")}</p>
+            </div>
+            <Link href="/produkty" className="tm-button tm-black-button">
+              {t("continueShopping")}
+            </Link>
+          </div>
+        </div>
+      </Page>
+    );
+  }
 
   return (
     <Page className="basket" title={t("basket")} noCrawl>

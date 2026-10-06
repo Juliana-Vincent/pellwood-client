@@ -79,6 +79,11 @@ export default {
     en: "Basket is empty",
     de: "xxx"
   },
+  continueShopping: {
+    cz: "Pokračovat v nákupu",
+    en: "Continue shopping",
+    de: "xxx"
+  },
   delivery: {
     cz: "Doprava",
     en: "Delivery",
@@ -312,6 +317,16 @@ export default {
   quantity: {
     cz: "Počet",
     en: "Quantity",
+    de: "xxx"
+  },
+  increaseQuantity: {
+    cz: "Zvýšit počet",
+    en: "Increase quantity",
+    de: "xxx"
+  },
+  decreaseQuantity: {
+    cz: "Snížit počet",
+    en: "Decrease quantity",
     de: "xxx"
   },
   remove: {

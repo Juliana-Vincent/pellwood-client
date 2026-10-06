@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { clampQuantity, MIN_QUANTITY, MAX_QUANTITY } from "@/helpers/quantity";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface QuantityInputProps {
   value: number;
@@ -9,6 +10,7 @@ interface QuantityInputProps {
 }
 
 const QuantityInput = ({ value, onChange, onClamp, error }: QuantityInputProps) => {
+  const { t } = useTranslation();
   // The field is controlled, so an empty intermediate state was rewritten to 1 as
   // the customer typed: selecting the value, deleting it and typing "5" produced
   // 15. `draft` holds the half-typed text until blur, when it is clamped.
@@ -41,13 +43,26 @@ const QuantityInput = ({ value, onChange, onClamp, error }: QuantityInputProps) 
           if (draft !== null) apply(draft);
         }}
       />
+      {/* Buttons, not divs: a div is not focusable, not reachable by keyboard and
+          announces nothing, so the only way to change a quantity was to click or
+          type. type="button" so it can never submit a surrounding form. */}
       <div className="quantity-nav">
-        <div className="quantity-button quantity-up" onClick={() => apply(Number(value) + 1)}>
+        <button
+          type="button"
+          className="quantity-button quantity-up"
+          aria-label={t("increaseQuantity")}
+          onClick={() => apply(Number(value) + 1)}
+        >
           +
-        </div>
-        <div className="quantity-button quantity-down" onClick={() => apply(Number(value) - 1)}>
+        </button>
+        <button
+          type="button"
+          className="quantity-button quantity-down"
+          aria-label={t("decreaseQuantity")}
+          onClick={() => apply(Number(value) - 1)}
+        >
           -
-        </div>
+        </button>
       </div>
     </div>
   );

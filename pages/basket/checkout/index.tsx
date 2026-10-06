@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from "react";
+import Link from "next/link";
 import { AxiosAPI } from "@/restClient";
 import { DataStateContext, DataState } from "@/context/dataStateContext";
 import Page from "@/layout/Page";
@@ -236,17 +237,6 @@ const Basket = ({ settings }: BasketProps) => {
     setBlockedByUnavailable(false);
   };
 
-  // Removing the last line leaves this page with nothing to order; without this it
-  // sat there with an empty summary and a button that could only fail server-side.
-  // Mirrors the basket page: wait for cookies to load first, or every fresh load
-  // bounces a customer whose basket is merely not restored yet.
-  useEffect(() => {
-    if (dataContextState.hydrated && !submitting && !basket?.length) {
-      window.location.href = lang === "en" ? "/en" : "/";
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [basket, dataContextState.hydrated, submitting]);
-
   const onBlur = (type: any) => {
     if (validationForm(type, state, error, setError as any)) {
       return true;
@@ -394,6 +384,27 @@ const Basket = ({ settings }: BasketProps) => {
         setError({ ...error, submit: true });
       });
   };
+
+  // Same as the basket page: removing the last line, or arriving here with an empty
+  // basket, says so instead of silently bouncing to the homepage. `submitting` keeps
+  // it from flashing while the browser navigates away to the gateway or thank-you.
+  if (dataContextState.hydrated && !submitting && !basket?.length) {
+    return (
+      <Page className="basket" title={t("order")} noCrawl>
+        <div className="tm-basket-content-wrap">
+          <div className="tm-basket-content">
+            <Head />
+            <div className="uk-alert" uk-alert="">
+              <p>{t("emptybasket")}</p>
+            </div>
+            <Link href="/produkty" className="tm-button tm-black-button">
+              {t("continueShopping")}
+            </Link>
+          </div>
+        </div>
+      </Page>
+    );
+  }
 
   return (
     <Page className="basket" title={t("order")} noCrawl>

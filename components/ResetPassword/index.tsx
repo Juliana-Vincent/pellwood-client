@@ -27,7 +27,12 @@ const ResetPassword = ({ history }: ResetPasswordProps) => {
   useEffect(() => {
     if (router.query.email && typeof router.query.email === 'string') {
       try {
-        setEmail(Buffer.from(router.query.email, 'base64').toString());
+        // Buffer is a Node global. It is not reliably polyfilled in the browser on
+        // this Next/Turbopack version, so this threw, was swallowed by the catch
+        // below, and the customer got the reset form with an empty email field.
+        const binary = atob(router.query.email);
+        const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+        setEmail(new TextDecoder().decode(bytes));
       } catch (e) {
         console.error("Invalid base64 email");
       }

@@ -127,6 +127,9 @@ export interface CustomRangeSliderProps {
   maxValue: number;
   value: RangeValue;
   onChange: (value: RangeValue) => void;
+  /** Accessible name for the two thumbs. Without it a screen reader announces
+   *  two unnamed sliders and the user cannot tell length from weight. */
+  label?: string;
 }
 
 export interface OrderData {

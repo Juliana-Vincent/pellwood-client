@@ -49,5 +49,12 @@
     &:active {
       cursor: grabbing;
     }
+
+    // The thumbs are focusable now, so keyboard users need to see which one they
+    // are moving. :focus-visible only, so a mouse click doesn't leave a ring.
+    &:focus-visible {
+      outline: 2px solid #4D4D4D;
+      outline-offset: 3px;
+    }
   }
 }

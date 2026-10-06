@@ -132,6 +132,7 @@ const ModalFilter: FC<ModalFilterProps> = ({
                 maxValue={rangeNumber.length.max}
                 minValue={rangeNumber.length.min}
                 value={stateRange.length}
+                label={t('lengthPalicek')}
                 onChange={(value: RangeValue) => handleChange("length", value)}
               />
             </div>
@@ -149,6 +150,7 @@ const ModalFilter: FC<ModalFilterProps> = ({
                 maxValue={rangeNumber.diameter.max}
                 minValue={rangeNumber.diameter.min}
                 value={stateRange.diameter}
+                label={t('weightPalicek')}
                 onChange={(value: RangeValue) =>
                   handleChange("diameter", value)
                 }

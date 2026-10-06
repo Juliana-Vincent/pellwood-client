@@ -393,7 +393,10 @@
   header .user-area {
     margin-left: 0;
     .basket_count{
-      margin-left: 0;
+      // Was 0, which left "Prihlasit se" touching the basket circle with no gap
+      // at all on a 375px screen. The outer margin stays 0, so this adds only
+      // 10px of width - check 320px if that ever matters.
+      margin-left: 10px;
     }
   }
   .tm-basket-item{
