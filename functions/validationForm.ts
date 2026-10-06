@@ -31,9 +31,19 @@ export const validationPhone = (phone: string): boolean => {
   return digits.length >= 9 && digits.length <= 15;
 };
 
+// "/" is how Czech addresses write the descriptive/orientation number pair -
+// "Vinohradska 1234/56" is the normal form, not an edge case - and it was the one
+// character missing, so most real street addresses failed.
 export const validationAddress = (address: string): boolean => {
-  const re = /^[\p{L}0-9\s,.'-]*$/u;
+  const re = /^[\p{L}0-9\s,.'\/-]*$/u;
   return re.test(address || '');
+};
+
+// Cities were checked with the person-name rule, which allows no digits - so
+// "Praha 4" or "Brno 2" failed. Districts, "Frankfurt am Main", "Brno-sever".
+export const validationCity = (city: string): boolean => {
+  const re = /^[\p{L}0-9\s,.'\/-]+$/u;
+  return re.test(city || '');
 };
 
 type FormState = Record<string, any>;
@@ -50,8 +60,10 @@ const validationForm = (
 
   if (type === 'email') {
     isInvalid = !validationEmail(value);
-  } else if (type === 'name' || type === 'surname' || type === 'city') {
+  } else if (type === 'name' || type === 'surname') {
     isInvalid = !validateName(value);
+  } else if (type === 'city') {
+    isInvalid = !validationCity(value);
   } else if (type === 'phone') {
     isInvalid = !validationPhone(value);
   } else if (type === 'address') {

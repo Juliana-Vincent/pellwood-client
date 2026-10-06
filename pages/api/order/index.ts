@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { createOrderWithUniqueNumber, serializeOrder, ordersApi } from "@/lib/strapiAdmin";
 import { computeAuthoritativeOrderTotal, OrderValidationError } from "@/functions/validateOrder";
 import { validationEmail, validationPhone, validationCode } from "@/functions/validationForm";
+import { checkAuthRateLimit } from "@/lib/rateLimit";
 
 export default async function handler(
   req: NextApiRequest,
@@ -12,6 +13,16 @@ export default async function handler(
   const { method } = req;
 
   if (method === "POST") {
+    // Every accepted request creates a real order row and, on cash on delivery, a
+    // confirmation email. This was the only write endpoint with no limit, so a
+    // script could fill the order table or mail any address from info@pellwood.com
+    // as fast as it liked. 10 per 10 minutes per IP is far above a real customer.
+    const retryAfter = checkAuthRateLimit(req, "order-create", 10, 600);
+    if (retryAfter) {
+      res.setHeader("Retry-After", String(retryAfter));
+      return res.status(429).json({ msg: "Too many orders", error: "RATE_LIMITED" });
+    }
+
     try {
       const {
         note,

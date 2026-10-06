@@ -4,6 +4,7 @@ import { sendEmail as sendEmailViaResend } from "@/lib/mailer-resend";
 import { sendEmail as sendEmailViaSendGrid } from "@/lib/mailer-sendgrid";
 import InfoOrder from "@/mail_template/infoOrder";
 import InfoOrderEN from "@/mail_template/infoOrderEN";
+import { escapeHtmlDeep } from "@/helpers/escapeHtml";
 
 const asObject = (value: unknown): any =>
   value && typeof value === "object" && !Array.isArray(value) ? value : undefined;
@@ -42,12 +43,22 @@ export async function sendOrderConfirmation(orderNumber: number): Promise<void> 
     companyData: asObject(order.companyData),
   };
 
+  // The templates interpolate these values straight into HTML. The name, address,
+  // note and company fields are whatever the customer typed, so every string is
+  // escaped before it gets there. The address in `to` stays raw - it is an
+  // address, not markup, and validationEmail has already rejected < and >.
+  const safe = escapeHtmlDeep(data);
+  const isCzech = data.currency === "Kč";
+
   const mailOptions = {
-    from: '"Objednávka dokončena - Pellwood" <info@pellwood.com>',
+    // English orders had an English body under a Czech sender name and subject.
+    from: isCzech
+      ? '"Objednávka dokončena - Pellwood" <info@pellwood.com>'
+      : '"Order confirmed - Pellwood" <info@pellwood.com>',
     to: `${data.email}, info@pellwood.com`,
-    subject: `Objednávka č.: ${data.idOrder}`,
-    text: "Objednávka dokončena - Pellwood",
-    html: data.currency === "Kč" ? InfoOrder(data) : InfoOrderEN(data),
+    subject: isCzech ? `Objednávka č.: ${data.idOrder}` : `Order no.: ${data.idOrder}`,
+    text: isCzech ? "Objednávka dokončena - Pellwood" : "Order confirmed - Pellwood",
+    html: isCzech ? InfoOrder(safe) : InfoOrderEN(safe),
   };
 
   if (process.env.RESEND_API_KEY) {

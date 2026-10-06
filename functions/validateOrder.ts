@@ -1,11 +1,10 @@
-import { fetchAPI } from "@/lib/strapi";
+import { fetchAPI, urlFor } from "@/lib/strapi";
 import { resolveDeliveryData, resolvePaymentData } from "@/functions/shippingOptions";
 import { resolvePricingRules } from "@/functions/pricingRules";
 import { computePricing } from "@/functions/computePricing";
 import type { Setting } from "@/types/setting";
 import { parsePrice } from "@/functions/parsePrice";
 import { servesCountry } from "@/helpers/countryCode";
-import order from "@/pages/api/order";
 
 interface BasketItemInput {
   id: string;
@@ -89,7 +88,7 @@ export async function computeAuthoritativeOrderTotal(
   const productsRes = await fetchAPI("products", {
     locale: strapiLocale,
     filters: { documentId: { $in: productIds } },
-    populate: { variants: true },
+    populate: { variants: true, image: true },
     pagination: { pageSize: MAX_BASKET_ITEMS },
   });
   const productsById = new Map((productsRes.data || []).map((p: any) => [p.documentId, p]));
@@ -109,14 +108,17 @@ export async function computeAuthoritativeOrderTotal(
     }
 
     let unitPrice: number;
+    let variantName: string;
     if (product.variants?.length) {
       const variant = product.variants.find((v: any) => v.title === item.variantName);
       if (!variant) {
         throw new OrderValidationError(`Unknown variant "${item.variantName}" for product ${item.id}`);
       }
       unitPrice = parsePrice(variant.price);
+      variantName = variant.title;
     } else {
       unitPrice = parsePrice(product.price);
+      variantName = product.title;
     }
 
     // parsePrice returns 0 for anything it can't read - an empty price field in
@@ -131,7 +133,19 @@ export async function computeAuthoritativeOrderTotal(
 
     itemsSum += unitPrice * quantity;
 
-    verifiedBasket.push({ ...item, variantPrice: unitPrice, countVariant: quantity });
+    // Built only from what Strapi says, never by spreading the posted item. The
+    // posted item's own nameProduct and imgUrl used to survive into the stored
+    // order, and from there straight into the confirmation email's HTML - so a
+    // crafted request could put any link or markup into a "Pellwood" email and
+    // send it to any address it liked.
+    verifiedBasket.push({
+      id: item.id,
+      nameProduct: product.title,
+      variantName,
+      variantPrice: unitPrice,
+      countVariant: quantity,
+      imgUrl: product.image ? urlFor(product.image).url() : "",
+    });
   }
 
   // Resolved for the shipping country, so a method offered only in one country

@@ -553,6 +553,21 @@ export default {
     en: "A confirmation of the order has been sent to your e-mail.",
     de: "xxx"
   },
+  paymentPendingInfo: {
+    cz: "Platbu ještě ověřujeme. Potvrzení vám pošleme e-mailem, jakmile ji banka potvrdí.",
+    en: "We are still confirming your payment. We will email you a confirmation as soon as it clears.",
+    de: "xxx"
+  },
+  paymentFailedInfo: {
+    cz: "Objednávka nebyla zaplacena. Zboží zůstalo v košíku, takže to můžete zkusit znovu.",
+    en: "Your order was not paid. Your items are still in the basket, so you can try again.",
+    de: "xxx"
+  },
+  backToBasket: {
+    cz: "Zpět do košíku",
+    en: "Back to basket",
+    de: "xxx"
+  },
   errorSendOrder: {
     cz: "Chyba, zkontrolujte si prosím vaše údaje.",
     en: "Error, please check your details.",
@@ -601,6 +616,26 @@ export default {
   passwordMismatch: {
     cz: "Hesla se neshodují.",
     en: "Passwords do not match.",
+    de: "xxx"
+  },
+  confirmPassword: {
+    cz: "Heslo znovu",
+    en: "Repeat password",
+    de: "xxx"
+  },
+  registerConsent: {
+    cz: "Souhlasím s",
+    en: "I agree to the",
+    de: "xxx"
+  },
+  consentRequired: {
+    cz: "Pro registraci je potřeba souhlasit s obchodními podmínkami.",
+    en: "Please accept the terms and conditions to register.",
+    de: "xxx"
+  },
+  haveAccount: {
+    cz: "Už máte účet?",
+    en: "Already have an account?",
     de: "xxx"
   },
   cookieSettings: {

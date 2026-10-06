@@ -90,29 +90,57 @@ const ThankYou = ({ status, dataGtag }: ThankYouProps) => {
   const { dataContextState, dataContextDispatch } = useContext(DataStateContext);
   const { t, lang } = useTranslation();
 
+  const failed = status === "CANCELLED";
+  const pending = status === "PENDING";
+
   useEffect(() => {
     if (!dataContextState.hydrated) return;
+    // A cancelled or failed payment means no order the customer will receive, so
+    // their basket must survive it - it used to be wiped here regardless, leaving
+    // them to rebuild it from scratch to try again.
+    if (failed) return;
 
     dataContextDispatch({ state: [], type: ("basket" + lang) as "basketcz" | "basketen" });
     dataContextDispatch({ state: 0, type: ("basketCount" + lang) as "basketCountcz" | "basketCounten" });
-  }, [dataContextState.hydrated, status, lang, dataContextDispatch]);
+  }, [dataContextState.hydrated, failed, lang, dataContextDispatch]);
+
+  // Comgate usually sends the customer back before its webhook has told us how the
+  // payment ended, so the first view often says PENDING and nothing ever updated
+  // it. Look again a few times. A full reload rather than a client re-render: the
+  // purchase scripts are only switched on by the cookie-consent scan at page load.
+  useEffect(() => {
+    if (!pending) return;
+    const params = new URLSearchParams(window.location.search);
+    const tries = Number(params.get("check") || 0);
+    if (tries >= 5) return;
+    const timer = setTimeout(() => {
+      params.set("check", String(tries + 1));
+      window.location.replace(`${window.location.pathname}?${params.toString()}`);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [pending]);
+
+  if (failed) {
+    return (
+      <Page className="thank-you-page base-page" title={t("PayStatusError")} noCrawl>
+        <h1>{t("PayStatusError")}</h1>
+        <p>{t("paymentFailedInfo")}</p>
+        <Link href="/basket" className="tm-button tm-black-button">
+          {t("backToBasket")}
+        </Link>
+      </Page>
+    );
+  }
 
   return (
     <Page className="thank-you-page base-page" title={t("thankOrder")} purchase={dataGtag} noCrawl>
       <h1>{t("thankOrder")}</h1>
-      <p>{t("thankInfo")}</p>
-      {!!status.length && status === "PENDING" && (
-        <div className="uk-text-warning">{t("PayStatusWait")}</div>
-      )}
-      {!!status.length && status === "CANCELLED" && (
-        <div className="uk-text-danger">{t("PayStatusError")}</div>
-      )}
-      {!!status.length && status === "PAID" && (
-        <div className="uk-text-success">{t("PayStatusOk")}</div>
-      )}
-      {!!status.length && status === "dobirka" && (
-        <div className="uk-text-success">{t("PayStatusCash")}</div>
-      )}
+      {/* "A confirmation has been sent" is only true once the payment is settled -
+          the email goes out from the verified webhook, not before. */}
+      <p>{pending ? t("paymentPendingInfo") : t("thankInfo")}</p>
+      {pending && <div className="uk-text-warning">{t("PayStatusWait")}</div>}
+      {status === "PAID" && <div className="uk-text-success">{t("PayStatusOk")}</div>}
+      {status === "dobirka" && <div className="uk-text-success">{t("PayStatusCash")}</div>}
 
       <Link href="/" className="tm-button tm-black-button">
         {t("backtohp")}

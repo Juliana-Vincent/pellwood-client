@@ -4,7 +4,7 @@ import { AxiosAPI } from "@/restClient";
 import { useTranslation } from "@/hooks/useTranslation";
 
 const ForgotPassword = () => {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState("");
   const [done, setDone] = useState(false);
@@ -33,7 +33,7 @@ const ForgotPassword = () => {
     }
 
     // AxiosAPI already has the correct baseURL configured via restClient
-    AxiosAPI.post("/send/reset-password", { email })
+    AxiosAPI.post("/send/reset-password", { email, lang })
       .then(() => {
         setDone(true);
       })

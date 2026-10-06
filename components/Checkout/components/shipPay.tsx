@@ -72,6 +72,17 @@ const ShipPay = ({
   // someone fills the field in Strapi.
   const resolvedPayment = (paymentOptions ?? paymentData[lang as keyof typeof paymentData])
     .filter((option) => servesCountry(option, country));
+
+  // Delivery already had this; payment didn't. Picking cash on delivery for CZ and
+  // then switching to a country without it removed the radio button but kept the
+  // choice, so the order failed on submit with an error that named nothing.
+  const paymentValues = resolvedPayment.map((option) => option.value).join("|");
+  useEffect(() => {
+    if (!payment.value) return;
+    if (resolvedPayment.some((option) => option.value === payment.value)) return;
+    setPayment({ value: "", price: "", payOnline: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [country, paymentValues]);
   const freeThreshold = deliveryFreeThreshold ?? DELIVERY_FREE_THRESHOLD[lang as "cz" | "en"];
 
   const sum = typeof sumBefore === "string" ? parseFloat(sumBefore) : sumBefore;

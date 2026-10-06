@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { emailFilter, normalizeEmail, sameEmail } from "@/helpers/email";
 import { customersApi, serializeCustomer, StrapiError } from "@/lib/strapiAdmin";
 import { hashPassword, verifyPassword, createSessionToken, buildSessionCookie } from "@/lib/auth";
 import { getSessionUser } from "@/lib/session";
@@ -64,14 +65,24 @@ export default async function handler(
         });
       }
 
-      const existUser = await customersApi.findFirst({ "filters[email][$eq]": email });
+      // This is the path the login modal's "Registrace" uses. Only the checkout's
+      // create-account path (PUT, type "create") enforced a minimum length, so a
+      // one-character password could be set from here.
+      if (password.length < MIN_PASSWORD_LENGTH) {
+        return res.status(400).json({
+          msg: `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
+          error: "password",
+        });
+      }
 
-      if (existUser) {
+      const existUser = await customersApi.findFirst(emailFilter(email));
+
+      if (existUser && sameEmail(existUser.email, email)) {
         return res.status(409).json({ msg: "User now exist", error: "email" });
       }
 
       const userData = await customersApi.create({
-        email,
+        email: normalizeEmail(email),
         password: await hashPassword(password),
       });
       res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(userData.documentId, Number(userData.tokenVersion) || 0)));
@@ -103,9 +114,9 @@ export default async function handler(
           if (!data?.currentPassword) {
             return res.status(400).json({ msg: "Current password required", error: "currentPassword" });
           }
-          const current = await customersApi.findFirst({
-            "filters[email][$eq]": sessionUser.email,
-          });
+          // By id, not by email: the session already says exactly which record
+          // this is.
+          const current = await customersApi.findOne(sessionUser.documentId);
           if (!current?.password || !(await verifyPassword(data.currentPassword, current.password))) {
             return res.status(403).json({ msg: "Current password is incorrect", error: "currentPassword" });
           }
@@ -135,15 +146,15 @@ export default async function handler(
           });
         }
 
-        const existUser = await customersApi.findFirst({ "filters[email][$eq]": data.email });
-        if (existUser) {
+        const existUser = await customersApi.findFirst(emailFilter(data.email));
+        if (existUser && sameEmail(existUser.email, data.email)) {
           return res.status(409).json({ msg: "User now exist", error: "email" });
         }
         // Whitelisted, not spread: `...data` let a client set any field the schema
         // happened to define, including resetTokenHash.
         userData = await customersApi.create({
           ...pickWritableFields(data),
-          email: data.email,
+          email: normalizeEmail(data.email),
           password: await hashPassword(data.password),
         });
         res.setHeader("Set-Cookie", buildSessionCookie(createSessionToken(userData.documentId, Number(userData.tokenVersion) || 0)));

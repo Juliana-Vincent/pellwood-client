@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { emailFilter, normalizeEmail, sameEmail } from "@/helpers/email";
 import { customersApi } from "@/lib/strapiAdmin";
 import { hashPassword, hashResetToken } from "@/lib/auth";
 import { checkAuthRateLimit } from "@/lib/rateLimit";
@@ -40,11 +41,12 @@ export default async function handler(
     const tokenHash = hashResetToken(resetToken);
     // Deliberately email AND token AND unexpired, so a valid token for the wrong
     // address is still rejected.
-    const user = await customersApi.findFirst({
-      "filters[email][$eq]": email,
+    const found = await customersApi.findFirst({
+      ...emailFilter(email),
       "filters[resetTokenHash][$eq]": tokenHash,
       "filters[resetTokenExpires][$gt]": new Date().toISOString(),
     });
+    const user = found && sameEmail(found.email, email) ? found : null;
 
     if (!user) {
       return res.status(401).json({ msg: "Invalid or expired reset link", error: true });

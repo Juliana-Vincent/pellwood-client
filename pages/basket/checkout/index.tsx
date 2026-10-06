@@ -8,7 +8,7 @@ import Checkout from "@/components/Checkout";
 import Total from "@/components/Total";
 import AcceptInfo from "@/components/AcceptInfo";
 import ButtonsSubmit from "@/components/ButtonsSubmit";
-import validationForm, { validateName, validationAddress, validationCode, validationEmail, validationPhone } from "@/functions/validationForm";
+import validationForm, { validateName, validationAddress, validationCity, validationCode, validationEmail, validationPhone } from "@/functions/validationForm";
 import sumTotal from "@/functions/sumTotal";
 import { fetchAPI } from "@/lib/strapi";
 import localize from "@/data/localize";
@@ -287,7 +287,7 @@ const Basket = ({ settings }: BasketProps) => {
           name: !validateName(anotherAdress.name),
           surname: !validateName(anotherAdress.surname),
           address: !anotherAdress.address.length || !validationAddress(anotherAdress.address),
-          city: !validateName(anotherAdress.city),
+          city: !validationCity(anotherAdress.city),
           code: !validationCode(anotherAdress.code, anotherAdress.country || state.country),
         }
       : {};
@@ -352,8 +352,11 @@ const Basket = ({ settings }: BasketProps) => {
         } else {
           // The thank-you page requires the order's access token - the order number
           // alone is guessable, so it can't be what authorises seeing the order.
+          // A full page load, so the locale must be in the URL: without "/en" an
+          // English order landed on the Czech thank-you page, which then cleared the
+          // Czech basket and left the English one to be converted back into Kc.
           window.location.href =
-            `/thank-you?refId=${res.data.data.idOrder}&dobirka=true` +
+            `${lang === "en" ? "/en" : ""}/thank-you?refId=${res.data.data.idOrder}&dobirka=true` +
             `&t=${encodeURIComponent(res.data.data.accessToken || "")}`;
         }
       })

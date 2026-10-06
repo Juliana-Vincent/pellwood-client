@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { emailFilter, normalizeEmail, sameEmail } from "@/helpers/email";
 import { customersApi, serializeCustomer } from "@/lib/strapiAdmin";
 import { verifyPassword, createSessionToken, buildSessionCookie } from "@/lib/auth";
 import { checkAuthRateLimit } from "@/lib/rateLimit";
@@ -23,9 +24,8 @@ export default async function handler(
   try {
     const { email, password } = req.body;
 
-    const user = email
-      ? await customersApi.findFirst({ "filters[email][$eq]": email })
-      : null;
+    const found = email ? await customersApi.findFirst(emailFilter(email)) : null;
+    const user = found && sameEmail(found.email, email) ? found : null;
     const passwordMatches = user ? await verifyPassword(password, user.password) : false;
 
     if (user && passwordMatches) {

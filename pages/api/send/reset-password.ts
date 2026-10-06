@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { emailFilter, normalizeEmail, sameEmail } from "@/helpers/email";
 import { customersApi } from "@/lib/strapiAdmin";
 import { generateResetToken } from "@/lib/auth";
 import { createTransporter } from "@/lib/mailer";
@@ -29,11 +30,10 @@ export default async function handler(
   }
 
   try {
-    const { email } = req.body;
+    const { email, lang } = req.body;
 
-    const user = email
-      ? await customersApi.findFirst({ "filters[email][$eq]": email })
-      : null;
+    const found = email ? await customersApi.findFirst(emailFilter(email)) : null;
+    const user = found && sameEmail(found.email, email) ? found : null;
 
     // Always respond the same way regardless of whether the account exists,
     // so this endpoint can't be used to enumerate registered emails.
@@ -44,12 +44,27 @@ export default async function handler(
         resetTokenExpires: expires.toISOString(),
       });
 
+      // Built from the request, not hardcoded to https://pellwood.com: a reset
+      // requested on staging used to send the customer to production. And the
+      // base64 email is URL-encoded now - base64 can contain "+", which arrives as
+      // a space, so the decoded address came out wrong and the reset failed for
+      // roughly one address in four.
+      const host = req.headers["x-forwarded-host"] || req.headers.host;
+      const proto = req.headers["x-forwarded-proto"] || "https";
+      const isEnglish = lang === "en";
+      const resetUrl =
+        `${proto}://${host}${isEnglish ? "/en" : ""}/` +
+        `?email=${encodeURIComponent(Buffer.from(String(email)).toString("base64"))}` +
+        `&resetToken=${encodeURIComponent(token)}`;
+
       const mailOptions = {
-        from: '"Obnoveni hesla - Pellwood" <info@pellwood.cz>',
+        from: isEnglish
+          ? '"Password reset - Pellwood" <info@pellwood.cz>'
+          : '"Obnovení hesla - Pellwood" <info@pellwood.cz>',
         to: email,
-        subject: "Obnoveni hesla",
-        text: "Obnoveni hesla - Pellwood",
-        html: ResetPassword(email, token),
+        subject: isEnglish ? "Password reset" : "Obnovení hesla",
+        text: isEnglish ? "Password reset - Pellwood" : "Obnovení hesla - Pellwood",
+        html: ResetPassword(resetUrl),
       };
 
       if (process.env.RESEND_API_KEY) {
