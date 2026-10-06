@@ -1,5 +1,6 @@
 import { fetchAPI, fetchAllAPI } from "@/lib/strapi";
 import { normalizeText, searchTokens } from "@/helpers/normalizeText";
+import { CatalogSort, sortProducts } from "@/helpers/sortProducts";
 
 interface FetchCatalogParams {
   lang: string;
@@ -11,6 +12,7 @@ interface FetchCatalogParams {
   lengthMax?: string | number | false;
   offset: number;
   limit: number;
+  sortBy?: CatalogSort;
 }
 
 const findParam = (parametrs: any[] | undefined, titles: string[]) =>
@@ -40,6 +42,7 @@ export async function fetchCatalogProducts({
   lengthMax,
   offset,
   limit,
+  sortBy = "default",
 }: FetchCatalogParams): Promise<any[]> {
   const strapiLocale = lang === "cz" ? "cs" : lang;
   const populate = { category: true, image: true, variants: true, parametrs: true };
@@ -57,7 +60,9 @@ export async function fetchCatalogProducts({
   // in a repeatable component and need parsing; search needs accent folding,
   // punctuation folding and multi-token matching, none of which Strapi's
   // $containsi can do ("x line 4 pary" must match "X-Line 4 páry").
-  const needsInMemory = hasRangeFilter || !!search;
+  // Ordering by price or title also has to be done here - see sortProducts for
+  // why neither can be left to Strapi.
+  const needsInMemory = hasRangeFilter || !!search || sortBy !== "default";
 
   if (!needsInMemory) {
     const filters: Record<string, any> = {};
@@ -122,6 +127,8 @@ export async function fetchCatalogProducts({
       return val >= parseFloat(String(lengthMin)) && val <= parseFloat(String(lengthMax));
     });
   }
+
+  products = sortProducts(products, sortBy, lang);
 
   return products.slice(offset, offset + limit);
 }

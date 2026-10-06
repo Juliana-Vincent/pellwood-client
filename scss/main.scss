@@ -1067,6 +1067,10 @@ p{
 }
 
 .filter-controls-wrap{
+	display: -webkit-flex;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
 	.tm-black-button{
 		padding-left: 100px;
 		padding-right: 100px;
@@ -1075,6 +1079,38 @@ p{
 	.tm-button-text{
 		padding-left: 50px;
 		padding-right: 50px;
+	}
+}
+
+// Catalogue ordering. Sits beside the filter button in the same control row,
+// borrowing the catalogue's type so it does not read as a stray browser widget.
+.catalog-sort{
+	display: -webkit-flex;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-right: 20px;
+	.catalog-sort-label{
+		font-family: var(--font-oswald), sans-serif;
+		font-size: 15px;
+		letter-spacing: 1px;
+		color: rgba($accent, .7);
+		text-transform: uppercase;
+		white-space: nowrap;
+	}
+	select{
+		font-family: var(--font-oswald), sans-serif;
+		font-size: 15px;
+		color: $accent;
+		background: none;
+		border: none;
+		border-bottom: 1px solid rgba($border, .4);
+		padding: 4px 2px;
+		cursor: pointer;
+		&:focus-visible{
+			outline: 2px solid rgba($accent, .5);
+			outline-offset: 2px;
+		}
 	}
 }
 

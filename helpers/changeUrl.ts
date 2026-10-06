@@ -39,7 +39,10 @@ const changeUrl = (
   if(resetFilter){
     queryUrl = {
       size: size ? String(size) : undefined,
-      category: router.query.category
+      category: router.query.category,
+      // Ordering is a display choice, not a filter - "clear all filters" should
+      // not silently reorder the catalogue as well.
+      sort: router.query.sort
     }
   }
 

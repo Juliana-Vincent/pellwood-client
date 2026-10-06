@@ -169,3 +169,51 @@ describe("CMS rich-text links", () => {
     expect(cleanUrl("http://example.com/a")).toBe("http://example.com/a");
   });
 });
+
+describe("catalogue sorting", () => {
+  const products: any[] = [
+    { title: "Jazz Model", variants: [{ price: "219" }, { price: "199" }] },
+    { title: "Černá mikina", price: "890" },
+    { title: "3A", price: "1250" },
+    { title: "Claves", price: "" },
+  ];
+
+  it("ignores anything unexpected in the URL", async () => {
+    const { parseCatalogSort } = await import("@/helpers/sortProducts");
+    expect(parseCatalogSort("price-asc")).toBe("price-asc");
+    expect(parseCatalogSort("; drop table")).toBe("default");
+    expect(parseCatalogSort(undefined)).toBe("default");
+  });
+
+  it("prices a product by its cheapest variant, like the card does", async () => {
+    const { productPrice } = await import("@/helpers/sortProducts");
+    expect(productPrice(products[0])).toBe(199);
+    expect(productPrice(products[1])).toBe(890);
+  });
+
+  it("orders by real numbers, not the string Postgres would compare", async () => {
+    const { sortProducts } = await import("@/helpers/sortProducts");
+    // Lexicographically "1250" < "199" < "890", which is the order a database
+    // sort on this string column would give.
+    expect(sortProducts(products, "price-asc", "cz").map((p) => p.title))
+      .toEqual(["Jazz Model", "Černá mikina", "3A", "Claves"]);
+  });
+
+  it("puts products with an unreadable price last in both directions", async () => {
+    const { sortProducts } = await import("@/helpers/sortProducts");
+    expect(sortProducts(products, "price-asc", "cz").at(-1).title).toBe("Claves");
+    expect(sortProducts(products, "price-desc", "cz").at(-1).title).toBe("Claves");
+  });
+
+  it("sorts Czech titles with Czech collation", async () => {
+    const { sortProducts } = await import("@/helpers/sortProducts");
+    // A plain database sort puts C-with-caron after Z.
+    expect(sortProducts(products, "title-asc", "cz").map((p) => p.title))
+      .toEqual(["3A", "Claves", "Černá mikina", "Jazz Model"]);
+  });
+
+  it("leaves the default order exactly as Strapi returned it", async () => {
+    const { sortProducts } = await import("@/helpers/sortProducts");
+    expect(sortProducts(products, "default", "cz")).toBe(products);
+  });
+});

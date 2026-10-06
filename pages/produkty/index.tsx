@@ -8,6 +8,7 @@ import { fetchAPI, fetchAllAPI } from "@/lib/strapi";
 import ModalFilter from "@/components/ModalFilter/index";
 import localize from "@/data/localize";
 import changeUrl from "@/helpers/changeUrl";
+import { CatalogSort, parseCatalogSort } from "@/helpers/sortProducts";
 import { useRouter } from "next/router";
 import controledProduct from "@/helpers/controlledProduct";
 import getRangeParameter, { RangeParameter } from "@/helpers/getRangeParameter";
@@ -43,6 +44,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     ? Math.min(Math.max(parsedSize, 6), 120)
     : 6;
   const search = (query.search as string) || "";
+  const sortBy = parseCatalogSort(query.sort);
   const diameterMin = (query.diameterMin as string) || false;
   const diameterMax = (query.diameterMax as string) || false;
   const lengthMin = (query.lengthMin as string) || false;
@@ -71,6 +73,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     lengthMax,
     offset: 0,
     limit: size,
+    sortBy,
   });
   const products = await controledProduct(lang, productsSliced);
 
@@ -112,6 +115,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       rangeState,
       ifFiltered,
       searchQuery: search,
+      sortBy,
     },
   };
 }
@@ -126,6 +130,7 @@ interface CatalogProps {
   rangeState: RangeParameter;
   ifFiltered: boolean;
   searchQuery: string;
+  sortBy: CatalogSort;
 }
 
 const Catalog = ({
@@ -138,6 +143,7 @@ const Catalog = ({
   rangeState,
   ifFiltered,
   searchQuery,
+  sortBy,
 }: CatalogProps) => {
   const router = useRouter();
   const { t, lang, currency } = useTranslation();
@@ -170,6 +176,7 @@ const Catalog = ({
     const count = parseInt((queryUrl.size as string) || "6");
     const category = queryUrl.category as string;
     const search = (queryUrl.search as string) || "";
+    const sortBy = parseCatalogSort(queryUrl.sort);
 
     const diameterMin = (queryUrl.diameterMin as string) || false;
     const diameterMax = (queryUrl.diameterMax as string) || false;
@@ -186,6 +193,7 @@ const Catalog = ({
       lengthMax,
       offset: sizeBefore,
       limit: count - sizeBefore,
+      sortBy,
     });
 
     if (data.length < 6) {
@@ -213,6 +221,16 @@ const Catalog = ({
       console.error("Failed to load more products:", err);
       setHasMore(false);
     }
+  };
+
+  // Changing the order has to reset `size` to 6. changeData appends whenever
+  // size > 6, so without this you would get page 4 of the new order stuck on the
+  // end of the old list.
+  const changeSort = (value: string) => {
+    const query = { ...router.query, sort: value, size: "6" } as any;
+    if (value === "default") delete query.sort;
+    setReset(true);
+    router.push({ pathname: router.pathname, query }, undefined, { scroll: false });
   };
 
   const moreData = () => {
@@ -293,6 +311,21 @@ const Catalog = ({
                   >
                     {t("searchAndFilter")}
                   </a>
+                )}
+                {mounted && (
+                  <label className="catalog-sort">
+                    <span className="catalog-sort-label">{t("sortBy")}</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => changeSort(e.target.value)}
+                    >
+                      <option value="default">{t("sortDefault")}</option>
+                      <option value="price-asc">{t("sortPriceAsc")}</option>
+                      <option value="price-desc">{t("sortPriceDesc")}</option>
+                      <option value="title-asc">{t("sortTitleAsc")}</option>
+                      <option value="title-desc">{t("sortTitleDesc")}</option>
+                    </select>
+                  </label>
                 )}
                 {mounted && !!filtered && (
                   <button

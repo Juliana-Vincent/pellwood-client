@@ -289,6 +289,36 @@ export default {
     en: "All products",
     de: "xxx"
   },
+  sortBy: {
+    cz: "Řadit",
+    en: "Sort by",
+    de: "xxx"
+  },
+  sortDefault: {
+    cz: "Doporučené",
+    en: "Recommended",
+    de: "xxx"
+  },
+  sortPriceAsc: {
+    cz: "Cena: od nejnižší",
+    en: "Price: low to high",
+    de: "xxx"
+  },
+  sortPriceDesc: {
+    cz: "Cena: od nejvyšší",
+    en: "Price: high to low",
+    de: "xxx"
+  },
+  sortTitleAsc: {
+    cz: "Název: A–Z",
+    en: "Name: A–Z",
+    de: "xxx"
+  },
+  sortTitleDesc: {
+    cz: "Název: Z–A",
+    en: "Name: Z–A",
+    de: "xxx"
+  },
   searchAndFilter: {
     cz: "Hledat a filtrovat",
     en: "Search and filter",
