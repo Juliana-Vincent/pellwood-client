@@ -1082,35 +1082,92 @@ p{
 	}
 }
 
-// Catalogue ordering. Sits beside the filter button in the same control row,
-// borrowing the catalogue's type so it does not read as a stray browser widget.
+// Catalogue ordering. A native <select> draws its list through the OS, so the
+// options are a custom listbox (components/SortSelect) in order to carry the
+// site's own styling rather than a grey system popup.
 .catalog-sort{
 	display: -webkit-flex;
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 12px;
 	margin-right: 20px;
 	.catalog-sort-label{
 		font-family: var(--font-oswald), sans-serif;
-		font-size: 15px;
-		letter-spacing: 1px;
-		color: rgba($accent, .7);
+		font-size: 16px;
+		color: $accent;
 		text-transform: uppercase;
+		font-weight: 300;
 		white-space: nowrap;
 	}
-	select{
-		font-family: var(--font-oswald), sans-serif;
-		font-size: 15px;
-		color: $accent;
-		background: none;
-		border: none;
-		border-bottom: 1px solid rgba($border, .4);
-		padding: 4px 2px;
-		cursor: pointer;
-		&:focus-visible{
-			outline: 2px solid rgba($accent, .5);
-			outline-offset: 2px;
-		}
+}
+
+.catalog-sort-control{
+	position: relative;
+}
+
+// Inherits .tm-button.tm-black-button wholesale - same height, same type, same
+// hover lightening as "Filtrovat" - and only narrows the padding, which is set
+// to 100px for the filter button alone.
+// Three classes deep on purpose: .filter-controls-wrap .tm-black-button sets the
+// filter button's 100px side padding and would otherwise win on specificity.
+.catalog-sort .catalog-sort-control .catalog-sort-button{
+	padding-left: 25px;
+	padding-right: 25px;
+	margin-right: 0;
+	min-width: 230px;
+	line-height: 1;
+	display: -webkit-flex;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 15px;
+	&:focus-visible{
+		outline: 2px solid $accent;
+		outline-offset: 2px;
+	}
+}
+
+.catalog-sort-caret{
+	width: 0;
+	height: 0;
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+	border-top: 6px solid white;
+	flex-shrink: 0;
+}
+
+.catalog-sort-list{
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 0;
+	right: 0;
+	z-index: 120;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	background-color: white;
+	border: 1px solid $accent;
+	&:focus{
+		outline: none;
+	}
+}
+
+.catalog-sort-option{
+	font-family: var(--font-oswald), sans-serif;
+	font-size: 16px;
+	font-weight: 300;
+	color: $accent;
+	padding: 10px 20px;
+	cursor: pointer;
+	// A transparent border of the same width is always there, so gaining one on
+	// hover does not move the text by a pixel.
+	border: 1px solid transparent;
+	transition: border-color .3s ease;
+	&.is-active{
+		border-color: $accent;
+	}
+	&.is-selected{
+		font-weight: 400;
 	}
 }
 

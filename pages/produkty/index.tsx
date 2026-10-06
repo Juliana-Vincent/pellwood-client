@@ -9,6 +9,7 @@ import ModalFilter from "@/components/ModalFilter/index";
 import localize from "@/data/localize";
 import changeUrl from "@/helpers/changeUrl";
 import { CatalogSort, parseCatalogSort } from "@/helpers/sortProducts";
+import SortSelect from "@/components/SortSelect";
 import { useRouter } from "next/router";
 import controledProduct from "@/helpers/controlledProduct";
 import getRangeParameter, { RangeParameter } from "@/helpers/getRangeParameter";
@@ -313,19 +314,18 @@ const Catalog = ({
                   </a>
                 )}
                 {mounted && (
-                  <label className="catalog-sort">
-                    <span className="catalog-sort-label">{t("sortBy")}</span>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => changeSort(e.target.value)}
-                    >
-                      <option value="default">{t("sortDefault")}</option>
-                      <option value="price-asc">{t("sortPriceAsc")}</option>
-                      <option value="price-desc">{t("sortPriceDesc")}</option>
-                      <option value="title-asc">{t("sortTitleAsc")}</option>
-                      <option value="title-desc">{t("sortTitleDesc")}</option>
-                    </select>
-                  </label>
+                  <SortSelect
+                    label={t("sortBy")}
+                    value={sortBy}
+                    onChange={changeSort}
+                    options={[
+                      { value: "default", label: t("sortDefault") },
+                      { value: "price-asc", label: t("sortPriceAsc") },
+                      { value: "price-desc", label: t("sortPriceDesc") },
+                      { value: "title-asc", label: t("sortTitleAsc") },
+                      { value: "title-desc", label: t("sortTitleDesc") },
+                    ]}
+                  />
                 )}
                 {mounted && !!filtered && (
                   <button
