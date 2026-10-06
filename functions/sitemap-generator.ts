@@ -12,10 +12,13 @@ const buildUrl = (path: string) => {
 
 async function generateSitemap() {
   try {
-    const [products, archives, articles] = await Promise.all([
+    const [products, archives, articles, categories] = await Promise.all([
       fetchAllAPI<any>('products', { locale: 'cs', populate: ['localizations'] }),
       fetchAllAPI<any>('archives', { locale: 'cs', populate: ['localizations'] }),
-      fetchAllAPI<any>('articles', { locale: 'cs', populate: ['localizations', 'category', 'localizations.category'] })
+      fetchAllAPI<any>('articles', { locale: 'cs', populate: ['localizations', 'category', 'localizations.category'] }),
+      // Catalogue categories are their own pages now, so they belong in here -
+      // as query strings they were never listed and never crawled.
+      fetchAllAPI<any>('categories', { locale: 'cs', populate: ['localizations'] })
     ]);
 
     const urls: string[] = [
@@ -24,6 +27,15 @@ async function generateSitemap() {
       buildUrl('/produkty'),
       buildUrl('/en/produkty')
     ];
+
+    for (const c of categories) {
+      if (!c.slug) continue;
+      urls.push(buildUrl(`/produkty/${c.slug}`));
+      const enLoc = c.localizations?.find((l: any) => l.locale === 'en');
+      if (enLoc?.slug) {
+        urls.push(buildUrl(`/en/produkty/${enLoc.slug}`));
+      }
+    }
 
     for (const p of products) {
       urls.push(buildUrl(`/produkt/${p.slug}`));

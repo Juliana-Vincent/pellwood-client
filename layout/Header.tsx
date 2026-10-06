@@ -133,7 +133,7 @@ const Header = ({
               <nav>
                 <ul>
                   <li className={router.pathname.includes("/produkty") ? "active-menu-top" : ""}>
-                    <Link href="/produkty?size=6&category=all">
+                    <Link href="/produkty">
                       {t('products')}
                     </Link>
                   </li>

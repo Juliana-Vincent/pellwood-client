@@ -11,12 +11,13 @@ const changeUrl = (
   var queryUrl = { ...router.query } as any;
 
   if(!router.query.category){
-    queryUrl.category = 'all'
     queryUrl.size = '6'
   }
 
   if(size) queryUrl.size = String(size)
-  if(category) queryUrl.category = category
+  // `category` is a path segment now (/produkty/<slug>), not a query parameter.
+  // On the category route router.query.category holds the segment, and copying it
+  // through above is what keeps router.push filling the dynamic part of the path.
   if(search !== false) queryUrl.search = search
 
   if(parameters.diameter || parameters.length) {

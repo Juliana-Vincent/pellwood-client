@@ -276,7 +276,7 @@ const Product = ({
       ? [
           {
             name: product.category.title,
-                        url: `${SITE_URL}${localePrefix}/produkty?category=${product.category.slug || product.category.documentId}`,
+                        url: `${SITE_URL}${localePrefix}/produkty/${product.category.slug || product.category.documentId}`,
           },
         ]
       : [{ name: t("products"), url: `${SITE_URL}${localePrefix}/produkty` }]),

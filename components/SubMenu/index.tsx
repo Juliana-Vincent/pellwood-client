@@ -2,7 +2,6 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useTranslation } from "@/hooks/useTranslation";
-import changeUrl from "@/helpers/changeUrl";
 
 import type { SubMenuProps } from "@/types/menu";
 
@@ -10,12 +9,10 @@ const SubMenu = ({ data, articles = false, setReset }: SubMenuProps) => {
   const router = useRouter();
   const { t } = useTranslation();
 
-  const handleChangeUrl = (e: React.MouseEvent, id: string) => {
-    e.preventDefault();
-    if (setReset) setReset(true);
-    changeUrl(6, id, false, {}, router);
-  };
-
+  // Categories are pages now, so these are real links: crawlable, middle-clickable,
+  // and they survive being copied out of the address bar. They used to be
+  // <a href="#"> with preventDefault, which is invisible to a search engine.
+  const activeCategory = (router.query.category as string) || "";
   const isProduktyPage = router.pathname.includes("produkty");
 
   return (
@@ -23,11 +20,11 @@ const SubMenu = ({ data, articles = false, setReset }: SubMenuProps) => {
       <ul>
         {isProduktyPage && (
           <li
-            className={`sub_menu_item${router.query.category === "all" ? " active_sub" : ""}`}
+            className={`sub_menu_item${!activeCategory ? " active_sub" : ""}`}
           >
-            <a href="#catalog-short" onClick={(e) => handleChangeUrl(e, "all")}>
+            <Link href="/produkty" onClick={() => setReset && setReset(true)}>
               {t("allProducts")}
-            </a>
+            </Link>
           </li>
         )}
         {data &&
@@ -40,14 +37,14 @@ const SubMenu = ({ data, articles = false, setReset }: SubMenuProps) => {
               return (
                 <li
                   key={key}
-                  className={`sub_menu_item${router.query.category === (item.slug || item.documentId) ? " active_sub" : ""}`}
+                  className={`sub_menu_item${activeCategory === (item.slug || item.documentId) ? " active_sub" : ""}`}
                 >
-                  <a
-                    href="#"
-                    onClick={(e) => handleChangeUrl(e, item.slug || item.documentId)}
+                  <Link
+                    href={`/produkty/${item.slug || item.documentId}`}
+                    onClick={() => setReset && setReset(true)}
                   >
                     {item.title}
-                  </a>
+                  </Link>
                 </li>
               );
             } else {
