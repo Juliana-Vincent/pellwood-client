@@ -1,3 +1,4 @@
+import { formatPrice } from "@/helpers/formatPrice";
 import type { CmsShippingOption, Setting } from "@/types/setting";
 import { countryCode } from "@/helpers/countryCode";
 
@@ -23,7 +24,7 @@ export const deliveryData: Record<"cz" | "en", ShippingOption[]> = {
     { value: "PPL standartní doručení v ČR", price: "150 Kč", countries: ["cz"] },
     { value: "PPL na Slovensko", price: "200 Kč", countries: ["sk"] },
   ],
-  en: [{ value: "DHL", price: "10 €" }],
+  en: [{ value: "DHL", price: "\u20ac10.00" }],
 };
 
 export const paymentData: Record<"cz" | "en", ShippingOption[]> = {
@@ -35,16 +36,29 @@ export const paymentData: Record<"cz" | "en", ShippingOption[]> = {
   en: [{ value: "Card payment", price: "FREE", payOnline: true }],
 };
 
-// "ZDARMA"/"FREE" -> 0, "150 Kč"/"10 €" -> 150 / 10
+// "ZDARMA"/"FREE" -> 0, "150 Kč"/"€10.00"/"1 500 Kč" -> 150 / 10 / 1500
 export function optionPriceToNumber(price: string): number {
-  const digits = price.replace(/[^\d.,]/g, "").replace(",", ".");
+  // Strip everything that is not a digit or a separator, including the narrow
+  // no-break space Intl puts between a Czech amount and its unit.
+  let digits = String(price).replace(/[^\d.,]/g, "");
+  if (digits.includes(",") && digits.includes(".")) {
+    // "1,500.00" - the comma groups thousands, the dot is the decimal point.
+    digits = digits.replace(/,/g, "");
+  } else {
+    // A lone comma is the Czech decimal separator; a lone dot already is one.
+    digits = digits.replace(",", ".");
+  }
   const parsed = parseFloat(digits);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-const formatPrice = (price: number, lang: "cz" | "en"): string => {
+// Was hand-rolled ("150 Kč", "10 €") - the one place still building a price
+// string by hand after everything else moved to Intl, which is why the delivery
+// line in checkout read "10 €" while the same amount read "€10.00" everywhere
+// else on the page.
+const formatOptionPrice = (price: number, lang: "cz" | "en"): string => {
   if (price <= 0) return lang === "cz" ? "ZDARMA" : "FREE";
-  return lang === "cz" ? `${price} Kč` : `${price} €`;
+  return formatPrice(price, lang);
 };
 
 // Strapi doesn't require every field on a repeatable component row - a CMS editor
@@ -58,7 +72,7 @@ const fromCms = (options: CmsShippingOption[], lang: "cz" | "en"): ShippingOptio
     .filter((item): item is CmsShippingOption & { label: string } => !!item.label)
     .map((item) => ({
       value: item.label,
-      price: formatPrice(item.price ?? 0, lang),
+      price: formatOptionPrice(item.price ?? 0, lang),
       payOnline: !!item.payOnline,
       countries: item.countries
       ? String(item.countries).split(",").map((c) => c.trim().toLowerCase()).filter(Boolean)

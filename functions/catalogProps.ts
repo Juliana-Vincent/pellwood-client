@@ -20,8 +20,22 @@ export interface ResolvedCategory {
   documentId: string;
   slug: string;
   title: string;
+  /** Flattened from the category's rich-text description, for the meta tag. */
+  description: string;
   csSlug: string | null;
   enSlug: string | null;
+}
+
+/** Strapi blocks -> plain text, for a meta description. */
+function flattenBlocks(blocks: any): string {
+  if (!Array.isArray(blocks)) return "";
+  const walk = (node: any): string => {
+    if (!node) return "";
+    if (typeof node.text === "string") return node.text;
+    if (Array.isArray(node.children)) return node.children.map(walk).join("");
+    return "";
+  };
+  return blocks.map(walk).join(" ").replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -54,6 +68,7 @@ export async function resolveCategory(
     documentId: category.documentId,
     slug: category.slug,
     title: category.title,
+    description: flattenBlocks(category.description),
     csSlug: own === "cs" ? category.slug : otherSlug,
     enSlug: own === "en" ? category.slug : otherSlug,
   };
@@ -186,6 +201,12 @@ export async function getCatalogProps(
       ifFiltered,
       searchQuery: search,
       sortBy,
+      // A category page used to take its title, H1 and description from the
+      // catalogue settings, so all four read "Prvotridni bubenicke palicky
+      // PELLWOOD" - four URLs claiming to be the same page.
+      activeCategory: resolved
+        ? { title: resolved.title, description: resolved.description }
+        : null,
       alternates: resolved
         ? {
             cs: resolved.csSlug ? `/produkty/${resolved.csSlug}` : null,

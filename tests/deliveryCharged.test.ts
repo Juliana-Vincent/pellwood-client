@@ -217,3 +217,30 @@ describe("catalogue sorting", () => {
     expect(sortProducts(products, "default", "cz")).toBe(products);
   });
 });
+
+describe("delivery option prices", () => {
+  it("formats a CMS price with Intl, not by hand", async () => {
+    const { resolveDeliveryData } = await import("@/functions/shippingOptions");
+    const setting: any = { deliveryOptions: [{ label: "DHL", price: 10 }] };
+    // The checkout line read "10 €" while the same amount read "€10.00" in the
+    // basket - this function was the last hand-rolled price string.
+    expect(resolveDeliveryData(setting, "en")[0].price).toBe("€10.00");
+    expect(resolveDeliveryData({ deliveryOptions: [{ label: "PPL", price: 150 }] } as any, "cz")[0].price.replace(/\s/g, " ")).toBe("150 Kc".replace("Kc", "K\u010d"));
+  });
+
+  it("still says ZDARMA / FREE for zero", async () => {
+    const { resolveDeliveryData } = await import("@/functions/shippingOptions");
+    expect(resolveDeliveryData({ deliveryOptions: [{ label: "X", price: 0 }] } as any, "cz")[0].price).toBe("ZDARMA");
+    expect(resolveDeliveryData({ deliveryOptions: [{ label: "X", price: 0 }] } as any, "en")[0].price).toBe("FREE");
+  });
+
+  it("reads its own formatted output back as a number", async () => {
+    const { optionPriceToNumber } = await import("@/functions/shippingOptions");
+    // computePricing parses these strings back, so the two must agree.
+    expect(optionPriceToNumber("€10.00")).toBe(10);
+    expect(optionPriceToNumber("150 Kč")).toBe(150);
+    expect(optionPriceToNumber("1\u00a0500 K\u010d")).toBe(1500);
+    expect(optionPriceToNumber("€1,500.00")).toBe(1500);
+    expect(optionPriceToNumber("ZDARMA")).toBe(0);
+  });
+});

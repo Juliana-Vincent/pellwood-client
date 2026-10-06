@@ -37,6 +37,8 @@ interface CatalogProps {
   sortBy: CatalogSort;
   /** hreflang pair for a category page; the "all products" page has none. */
   alternates?: { cs: string | null; en: string | null };
+  /** Set only on a category page; null on /produkty. */
+  activeCategory?: { title: string; description: string } | null;
 }
 
 const Catalog = ({
@@ -51,6 +53,7 @@ const Catalog = ({
   searchQuery,
   sortBy,
   alternates,
+  activeCategory,
 }: CatalogProps) => {
   const router = useRouter();
   const { t, lang, currency } = useTranslation();
@@ -187,16 +190,16 @@ const Catalog = ({
   return (
     <Page
       id="catalog"
-      title={settings?.title}
-      description={settings?.description}
+      title={activeCategory?.title || settings?.title}
+      description={activeCategory?.description || settings?.description}
       alternates={alternates}
     >
-      {settings?.title && (
+      {(activeCategory?.title || settings?.title) && (
         <section className="head_category">
           <div className="uk-container uk-container-expand">
             <div className="content_head_wrap">
-              <h1>{settings.title}</h1>
-              <p>{settings.description}</p>
+              <h1>{activeCategory?.title || settings?.title}</h1>
+              <p>{activeCategory?.description || settings?.description}</p>
             </div>
           </div>
         </section>
