@@ -96,11 +96,23 @@ export async function getCatalogProps(
     parametersArr = { lengthMin, lengthMax, diameterMin, diameterMax };
   }
 
+  // Everything below follows one rule: the product list is essential, everything
+  // else on this page is decoration. A failure fetching the products must stay a
+  // 500 - answering 200 with an empty grid tells a customer the shop is empty and
+  // tells Google the same, which is worse than an honest error. The filter bounds,
+  // the category menu, the footer articles and the CMS settings are all things the
+  // page can render without, so none of them may take it down.
   const strapiLocale2 = lang === "cz" ? "cs" : lang;
-  const rangeProducts = await fetchAllAPI<Product>("products", {
-    locale: strapiLocale2,
-    populate: { parametrs: true },
-  });
+  let rangeProducts: Product[] = [];
+  try {
+    rangeProducts = await fetchAllAPI<Product>("products", {
+      locale: strapiLocale2,
+      populate: { parametrs: true },
+    });
+  } catch (err) {
+    console.error("Strapi unreachable (filter ranges):", (err as Error).message);
+  }
+  // getRangeParameter already returns zeroed bounds for an empty list.
   const range = getRangeParameter(rangeProducts);
   const rangeState = getRangeParameter(rangeProducts, parametersArr);
 
@@ -118,22 +130,39 @@ export async function getCatalogProps(
   });
   const products = await controledProduct(lang, productsSliced);
 
-  const categoriesRes = await fetchAPI<Category[]>("categories", {
-    locale: strapiLocale,
-    sort: ["sort:asc"],
-  });
-  const categoriesData = categoriesRes.data || [];
+  let categoriesData: Category[] = [];
+  try {
+    const categoriesRes = await fetchAPI<Category[]>("categories", {
+      locale: strapiLocale,
+      sort: ["sort:asc"],
+    });
+    categoriesData = categoriesRes.data || [];
+  } catch (err) {
+    console.error("Strapi unreachable (categories):", (err as Error).message);
+  }
 
-  const articlesRes = await fetchAPI<Article[]>("articles", {
-    locale: strapiLocale,
-    populate: { category: true, image: true },
-  });
-  const articlesData = articlesRes.data || [];
+  let articlesData: Article[] = [];
+  try {
+    const articlesRes = await fetchAPI<Article[]>("articles", {
+      locale: strapiLocale,
+      populate: { category: true, image: true },
+    });
+    articlesData = articlesRes.data || [];
+  } catch (err) {
+    console.error("Strapi unreachable (catalogue articles):", (err as Error).message);
+  }
 
-  const settingsRes = await fetchAPI<Setting>("setting", {
-    locale: strapiLocale,
-  });
-  const settingsData: Partial<Setting> = settingsRes.data || {};
+  // resolvePricingRules falls back to the hardcoded defaults for an empty object,
+  // and Page falls back to the default title and description.
+  let settingsData: Partial<Setting> = {};
+  try {
+    const settingsRes = await fetchAPI<Setting>("setting", {
+      locale: strapiLocale,
+    });
+    settingsData = settingsRes.data || {};
+  } catch (err) {
+    console.error("Strapi unreachable (catalogue settings):", (err as Error).message);
+  }
 
   const ifFiltered = !!search.length || !!parametersArr;
 

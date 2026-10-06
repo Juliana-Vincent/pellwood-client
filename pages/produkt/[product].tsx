@@ -31,6 +31,12 @@ export async function getStaticProps({
   const { lang, currency } = localize(locale);
   const strapiLocale = lang === "cz" ? "cs" : lang;
 
+  // Deliberately NOT wrapped in try/catch, unlike the articles fetch below.
+  // This page IS the product: if Strapi cannot be reached there is nothing
+  // honest to render, and catching here would mean either a product page with
+  // no product or a `notFound` that Next would then cache as a 404 for a
+  // product that exists. Letting it throw gives a 500, which Next retries;
+  // pages already in the ISR cache keep being served from it meanwhile.
   // 1. Fetch Product by slug
   const productRes = await fetchAPI<ProductType[]>("products", {
     locale: strapiLocale,
@@ -65,12 +71,20 @@ export async function getStaticProps({
   const product = productData[0];
   const linkedCarts = product.linkedProducts || [];
 
-  // 2. Fetch Articles for footer
-  const articlesRes = await fetchAPI<Article[]>("articles", {
-    locale: strapiLocale,
-    populate: { category: true },
-  });
-  const articlesData = articlesRes.data || [];
+  // 2. Fetch Articles for footer - decorative, so it must not be able to take
+  // the product page down with it. Same shape as pages/index.tsx.
+  let articlesData: Article[] = [];
+  let cmsReachable = true;
+  try {
+    const articlesRes = await fetchAPI<Article[]>("articles", {
+      locale: strapiLocale,
+      populate: { category: true },
+    });
+    articlesData = articlesRes.data || [];
+  } catch (err) {
+    cmsReachable = false;
+    console.error("Strapi unreachable (product page articles):", (err as Error).message);
+  }
 
   const articlesFilteredFirst = articlesData.filter(
     (item) => item?.category?.slug === "sluzby",
@@ -100,7 +114,9 @@ export async function getStaticProps({
         en: enSlug ? `/produkt/${enSlug}` : null,
       },
     },
-    revalidate: 60,
+    // A page rendered without its footer articles should not sit in the cache for
+    // a full minute - retry sooner so it heals as soon as Strapi is back.
+    revalidate: cmsReachable ? 60 : 10,
   };
 }
 
