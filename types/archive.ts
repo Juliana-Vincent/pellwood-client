@@ -6,4 +6,7 @@ export interface Archive {
   slug: string;
   sort: number;
   description?: BlocksContent;
+  /** Search-engine title and description, set per entry in Strapi. */
+  SEOtitle?: string;
+  SEOdescription?: string;
 }

@@ -1,4 +1,5 @@
 import { fetchAPI, urlFor } from "@/lib/strapi";
+import { firstText } from "@/helpers/seoText";
 import Link from "next/link";
 import BlockContent from "@/components/BlockContent";
 import localize from "@/data/localize";
@@ -87,7 +88,13 @@ const Homepage = ({
   return (
     <Page
       id="homepage"
-      title={homepage?.title}
+      // Every page without its own description fell back to one shared default -
+      // the homepage, all articles and all /kategorie pages had the same meta
+      // description. Strapi has SEO fields for each of them; they were unused.
+      title={homepage?.SEOtitle || homepage?.title}
+      // Not the page's content as a fallback: that block carries notices such as
+      // the holiday announcement, which would become the search-result snippet.
+      description={firstText(homepage?.SEOdescription)}
       image={homepage?.image ? urlFor(homepage.image).url() : ""}
     >
       <section className="homepage_slide">

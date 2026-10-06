@@ -10,7 +10,7 @@ const toXmlProduct = (data: FeedItem[]): string => {
     <description>${escapeXml(item.description)}</description>
     <link>${escapeXml(item.link)}</link>
     <g:image_link>${escapeXml(item.image_link)}</g:image_link>
-    <g:availability>in stock</g:availability>
+    <g:availability>${item.availability === 'out_of_stock' ? 'out of stock' : 'in stock'}</g:availability>
     <g:price>${escapeXml(item.price)}</g:price>
     <g:mpn>${escapeXml(item.mpn)}</g:mpn>
     <g:brand>PELLWOOD</g:brand>

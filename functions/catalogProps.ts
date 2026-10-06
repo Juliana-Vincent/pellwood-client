@@ -1,4 +1,5 @@
 import { fetchAPI, fetchAllAPI } from "@/lib/strapi";
+import { blocksToText } from "@/helpers/seoText";
 import localize from "@/data/localize";
 import controledProduct from "@/helpers/controlledProduct";
 import getRangeParameter from "@/helpers/getRangeParameter";
@@ -26,17 +27,6 @@ export interface ResolvedCategory {
   enSlug: string | null;
 }
 
-/** Strapi blocks -> plain text, for a meta description. */
-function flattenBlocks(blocks: any): string {
-  if (!Array.isArray(blocks)) return "";
-  const walk = (node: any): string => {
-    if (!node) return "";
-    if (typeof node.text === "string") return node.text;
-    if (Array.isArray(node.children)) return node.children.map(walk).join("");
-    return "";
-  };
-  return blocks.map(walk).join(" ").replace(/\s+/g, " ").trim();
-}
 
 /**
  * Finds a category by slug *within one locale*. The slug field is localized, so
@@ -68,7 +58,7 @@ export async function resolveCategory(
     documentId: category.documentId,
     slug: category.slug,
     title: category.title,
-    description: flattenBlocks(category.description),
+    description: blocksToText(category.description),
     csSlug: own === "cs" ? category.slug : otherSlug,
     enSlug: own === "en" ? category.slug : otherSlug,
   };

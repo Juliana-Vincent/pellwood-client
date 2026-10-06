@@ -1,4 +1,5 @@
 import Page, { SITE_URL } from "@/layout/Page";
+import { firstText } from "@/helpers/seoText";
 import SubMenu from "@/components/SubMenu/index";
 import Article from "@/components/ArticleShort/index";
 import localize from "@/data/localize";
@@ -94,7 +95,12 @@ const BlogShort = ({ articles, archives, lang, alternates }: BlogShortProps) => 
   ]);
 
   return (
-    <Page id="blog" title={archives.title} alternates={alternates}>
+    <Page
+      id="blog"
+      title={archives.SEOtitle || archives.title}
+      description={firstText(archives.SEOdescription, archives.description)}
+      alternates={alternates}
+    >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}

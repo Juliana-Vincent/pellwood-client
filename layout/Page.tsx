@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext, ReactNode } from "react";
+import { clip } from "@/helpers/seoText";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { DataStateContext } from "../context/dataStateContext";
@@ -63,11 +64,14 @@ const Page = ({
   const { t } = useTranslation();
   const { notice: basketNotice, dismissNotice: dismissBasketNotice } =
     useBasketCurrencySync();
+  // The brand stays whole and the page's own name gives way, at a word boundary.
+  // substring(0, 60) on the joined string cut long product names to "... | PELLW".
+  const suffix = defaultSep + defaultTitle;
   const theTitle = title
-    ? (title + defaultSep + defaultTitle).substring(0, 60)
+    ? clip(title, 60 - suffix.length) + suffix
     : defaultTitle;
   const theDescription = description
-    ? description.substring(0, 155)
+    ? clip(description, 155)
     : defaultDescriptions[router.locale || "cs"] || defaultDescriptions.cs;
   const theImage = image ? image : defaultImage;
 

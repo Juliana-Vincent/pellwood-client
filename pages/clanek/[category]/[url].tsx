@@ -1,4 +1,5 @@
 import { fetchAPI, urlFor } from "@/lib/strapi";
+import { firstText } from "@/helpers/seoText";
 import BlockContent from "@/components/BlockContent";
 import Page, { SITE_URL } from "@/layout/Page";
 import localize from "@/data/localize";
@@ -113,7 +114,8 @@ const Article = ({ chapters, alternates }: ArticleProps) => {
   return (
     <Page
       id="blog"
-      title={chapters.title}
+      title={chapters.SEOtitle || chapters.title}
+      description={firstText(chapters.SEOdescription, chapters.chapters?.[0]?.text)}
       alternates={alternates}
       image={
         chapters?.chapters?.[0]?.image

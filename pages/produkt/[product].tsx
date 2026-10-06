@@ -1,4 +1,6 @@
 import { useState, useContext, useEffect } from "react";
+import { slugify } from "@/helpers/feedPrice";
+import { firstText } from "@/helpers/seoText";
 import BlockContent from "@/components/BlockContent";
 import { dropdown, offcanvas } from "uikit";
 import Page, { SITE_URL } from "@/layout/Page";
@@ -174,13 +176,29 @@ const Product = ({
   // with new props and keeps its state. The variant chosen on product A was still
   // selected on product B - its name and its price - and one click added B to the
   // basket as that. After a language switch the Czech price went in as euros.
+  //
+  // The comparison-site feeds link each variant as ?variant=<slug>. Nothing read
+  // it, so a shopper who clicked "5A Javor 239 Kc" on Heureka landed with no
+  // variant chosen. It is applied here, after the reset, when it names a variant
+  // that can actually be bought.
+  const requestedVariant =
+    router.isReady && typeof router.query.variant === "string" ? router.query.variant : "";
   useEffect(() => {
-    setSelect({ name: t("selectvariant"), price: "", chosen: false });
+    const wanted = requestedVariant
+      ? pricedVariants.find(
+          (v) => v.inStock !== false && slugify(v.title) === requestedVariant,
+        )
+      : undefined;
+    setSelect(
+      wanted
+        ? { name: wanted.title, price: String(wanted.price), chosen: true }
+        : { name: t("selectvariant"), price: "", chosen: false },
+    );
     setCount(1);
     setError({ select: false, count: false });
     setQuantityNotice(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId, lang]);
+  }, [productId, lang, requestedVariant]);
 
   const selectHandle = (name: string, price: string) => {
     setSelect({ ...select, name, price, chosen: true });
@@ -331,8 +349,8 @@ const Product = ({
   return (
     <Page
       id="product"
-      description={product.SEOdescription || ""}
-      title={product.title}
+      description={firstText(product.SEOdescription, product.description, product.text)}
+      title={product.SEOtitle || product.title}
       image={urlFor(product.image).url()}
       alternates={alternates}
     >

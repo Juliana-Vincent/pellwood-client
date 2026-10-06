@@ -7,6 +7,7 @@ export interface Product {
   documentId?: string;
   title: string;
   titleHead?: string;
+  SEOtitle?: string;
   SEOdescription?: string;
   description?: BlocksContent;
   slug: string;
