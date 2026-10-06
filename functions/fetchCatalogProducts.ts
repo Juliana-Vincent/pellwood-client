@@ -15,6 +15,9 @@ interface FetchCatalogParams {
   sortBy?: CatalogSort;
 }
 
+/** config/api.ts maxLimit. A request above this is clamped, not rejected. */
+const STRAPI_MAX_LIMIT = 100;
+
 const findParam = (parametrs: any[] | undefined, titles: string[]) =>
   parametrs?.find((o: any) => titles.includes(o.title));
 
@@ -70,14 +73,28 @@ export async function fetchCatalogProducts({
       filters.category = { $or: [{ slug: { $eq: category } }, { documentId: { $eq: category } }] };    
     }
 
-    const res = await fetchAPI("products", {
-      locale: strapiLocale,
-      populate,
-      filters,
-      sort,
-      pagination: { start: offset, limit },
-    });
-    return res.data || [];
+    // Strapi clamps pagination[limit] to config/api.ts maxLimit (100) and says
+    // nothing about it - the response just comes back short. getServerSideProps
+    // asks for `limit: size`, and size grows with the infinite scroll, so once a
+    // visitor scrolled past 100 products the catalogue silently stopped there:
+    // always the last 15 of 115, in whatever order the list was in. Ask in
+    // chunks no larger than the cap instead.
+    const out: any[] = [];
+    for (let fetched = 0; fetched < limit; fetched += STRAPI_MAX_LIMIT) {
+      const chunk = Math.min(STRAPI_MAX_LIMIT, limit - fetched);
+      const res = await fetchAPI("products", {
+        locale: strapiLocale,
+        populate,
+        filters,
+        sort,
+        pagination: { start: offset + fetched, limit: chunk },
+      });
+      const batch = res.data || [];
+      out.push(...batch);
+      // Short batch means the catalogue ended; asking again only costs a request.
+      if (batch.length < chunk) break;
+    }
+    return out;
   }
 
   let products: any[] = await fetchAllAPI("products", {
