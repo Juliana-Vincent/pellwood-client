@@ -1,18 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { fetchAPI } from "@/lib/strapi";
 import { parsePrice } from "@/functions/parsePrice";
+import { convertPrice, fetchRate, otherLang, priceOf, strapiLocale, type Lang } from "@/functions/exchangeRate";
 
 /**
  * Re-prices a basket into the other language's catalogue.
  *
- * There is no exchange rate anywhere in this system: Czech and English prices are
- * set independently per product in Strapi. So "convert to EUR" means looking up
- * the same product's price in the other locale - which is also the price the
- * server will actually charge, so the basket cannot show one number and the order
- * be computed from another.
- *
- * In Strapi 5 a document keeps one documentId across locales, so the same ids
- * fetch both versions.
+ * Prices are set per locale in Strapi, so the same product's price in the target
+ * locale is used. A product that exists in one locale only is priced from that
+ * locale through Setting -> eurCzkRate (the same conversion validateOrder uses).
+ * In Strapi 5 a document keeps one documentId across locales.
  */
 const MAX_ITEMS = 100;
 
@@ -42,30 +39,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ msg: "Invalid toLang" });
     }
 
-    const strapiLocale = (l: string) => (l === "cz" ? "cs" : l);
+    const to = toLang as Lang;
+    const other = otherLang(to);
     const ids = [...new Set(items.map((item) => item.id).filter(Boolean))];
 
-    const [sourceRes, targetRes] = await Promise.all([
+    const fetchLocale = (lang: Lang) =>
       fetchAPI("products", {
-        locale: strapiLocale(fromLang),
+        locale: strapiLocale(lang),
         filters: { documentId: { $in: ids } },
         populate: { variants: true },
         pagination: { pageSize: MAX_ITEMS },
-      }),
-      fetchAPI("products", {
-        locale: strapiLocale(toLang),
-        filters: { documentId: { $in: ids } },
-        populate: { variants: true },
-        pagination: { pageSize: MAX_ITEMS },
-      }),
-    ]);
+      }).then((r) => new Map(((r.data as any[]) || []).map((p) => [p.documentId, p])));
 
-    const sourceById = new Map(
-      ((sourceRes.data as any[]) || []).map((p) => [p.documentId, p]),
-    );
-    const targetById = new Map(
-      ((targetRes.data as any[]) || []).map((p) => [p.documentId, p]),
-    );
+    const [targetById, otherById, rate] = await Promise.all([
+      fetchLocale(to),
+      fetchLocale(other),
+      fetchRate(),
+    ]);
+    const sourceById = fromLang === toLang ? targetById : otherById;
 
     const converted: any[] = [];
     const dropped: string[] = [];
@@ -73,12 +64,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     for (const item of items) {
       const target = targetById.get(item.id);
 
-      // Seven products exist only in Czech. The line is kept, flagged and shown
-      // greyed out, so switching back restores it - but it carries no valid price
-      // in this language, so every total and the order payload must skip it.
       if (!target) {
-        dropped.push(item.nameProduct || item.id);
-        converted.push({ ...item, unavailable: true });
+        // Only in the other locale (seven Czech-only products): its own price,
+        // converted. Without a rate it stays greyed out and is not orderable.
+        const only = otherById.get(item.id);
+        const priced = only && rate ? priceOf(only, item.variantName) : null;
+        const unitPrice = priced ? convertPrice(priced.price, other, to, rate) : 0;
+        if (!priced || !(unitPrice > 0)) {
+          dropped.push(item.nameProduct || item.id);
+          converted.push({ ...item, unavailable: true });
+          continue;
+        }
+        converted.push({
+          ...item,
+          nameProduct: only.title,
+          variantName: priced.variantName,
+          variantPrice: unitPrice,
+          unavailable: false,
+        });
         continue;
       }
 

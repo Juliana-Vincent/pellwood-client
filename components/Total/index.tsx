@@ -67,7 +67,7 @@ const Total = ({
                   ) : (
                     <span>{item.variantName}</span>
                   )}
-                  <span>{formatPrice(item.variantPrice, lang)}</span>
+                  <span>{item.unavailable ? t("outOfStock") : formatPrice(item.variantPrice, lang)}</span>
                   <span>
                     {item.countVariant} {t("pc")}
                   </span>

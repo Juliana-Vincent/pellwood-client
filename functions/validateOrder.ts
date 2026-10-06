@@ -5,6 +5,7 @@ import { computePricing } from "@/functions/computePricing";
 import type { Setting } from "@/types/setting";
 import { parsePrice } from "@/functions/parsePrice";
 import { servesCountry } from "@/helpers/countryCode";
+import { convertPrice, fetchRate, otherLang, priceOf } from "@/functions/exchangeRate";
 
 interface BasketItemInput {
   id: string;
@@ -93,18 +94,51 @@ export async function computeAuthoritativeOrderTotal(
   });
   const productsById = new Map((productsRes.data || []).map((p: any) => [p.documentId, p]));
 
+  // Products that exist only in the other locale are sold at their converted
+  // price, exactly as /api/basket/convert showed them.
+  const other = otherLang(lang);
+  const missingIds = productIds.filter((id) => !productsById.has(id));
+  // Read from the same (Czech) entry the basket used.
+  const rate = missingIds.length ? await fetchRate() : 0;
+  const otherById = new Map<string, any>();
+  if (missingIds.length && rate) {
+    const otherRes = await fetchAPI("products", {
+      locale: other === "cz" ? "cs" : "en",
+      filters: { documentId: { $in: missingIds } },
+      populate: { variants: true, image: true },
+      pagination: { pageSize: MAX_BASKET_ITEMS },
+    });
+    for (const p of (otherRes.data as any[]) || []) otherById.set(p.documentId, p);
+  }
+
   let itemsSum = 0;
   const verifiedBasket: any[] = [];
 
   for (const item of basket) {
     const product = productsById.get(item.id) as any;
-    if (!product) {
-      throw new OrderValidationError(`Unknown product in basket: ${item.id}`);
-    }
-    
     const quantity = Number(item.countVariant);
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) {
       throw new OrderValidationError(`Invalid quantity for product ${item.id}: ${item.countVariant}`);
+    }
+
+    if (!product) {
+      const only = otherById.get(item.id);
+      if (!only) throw new OrderValidationError(`Unknown product in basket: ${item.id}`);
+      const priced = priceOf(only, item.variantName);
+      const unitPrice = priced ? convertPrice(priced.price, other, lang, rate) : 0;
+      if (!priced || !(unitPrice > 0)) {
+        throw new OrderValidationError(`Product ${item.id} / "${item.variantName}" cannot be ordered`);
+      }
+      itemsSum += unitPrice * quantity;
+      verifiedBasket.push({
+        id: item.id,
+        nameProduct: only.title,
+        variantName: priced.variantName,
+        variantPrice: unitPrice,
+        countVariant: quantity,
+        imgUrl: only.image ? urlFor(only.image).url() : "",
+      });
+      continue;
     }
 
     let unitPrice: number;

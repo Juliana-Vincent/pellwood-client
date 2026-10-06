@@ -18,6 +18,8 @@ export interface Setting {
   discountThreshold?: number;
   deliveryFreeThreshold?: number;
   discountRatePercent?: number;
+  /** CZK per 1 EUR, shared by both locales. Prices products that exist in one locale only. */
+  eurCzkRate?: number | string | null;
   [key: string]: any;
 }
 

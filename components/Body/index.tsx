@@ -140,7 +140,9 @@ const BodyWrap = ({ setSum, basket, setBasket }: BodyProps) => {
                   {/* Price for the row, not per piece - the column is headed
                       "Cena" next to a quantity, so a unit price there reads as
                       the line total and never matches the basket sum. */}
-                  {formatLineTotal(item.variantPrice, item.countVariant, lang)}
+                  {item.unavailable
+                    ? t("outOfStock")
+                    : formatLineTotal(item.variantPrice, item.countVariant, lang)}
                 </span>
               </td>
             </tr>

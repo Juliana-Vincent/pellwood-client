@@ -147,7 +147,7 @@ const Canvas = () => {
                   <div className="tm-basket-item-info">
                     <h3 className="tm-basket-item-head">{item.nameProduct}</h3>
                     <span>{item.variantName}</span>
-                    <span>{formatPrice(item.variantPrice, lang)}</span>
+                    <span>{item.unavailable ? t("outOfStock") : formatPrice(item.variantPrice, lang)}</span>
                     <div className="tm-canvas-basket-item-count">
                       <span>{item.countVariant} {t('pc')}</span>
                       <button
