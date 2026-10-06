@@ -450,8 +450,8 @@ export default {
     de: "xxx"
   },
   deliveryFreeCanvas: {
-    cz: "Doprava ZDARMA po ČR a SK",
-    en: "Free delivery to DE and AU",
+    cz: "Doprava ZDARMA",
+    en: "Free delivery",
     de: "xxx"
   },
   saleCanvas: {

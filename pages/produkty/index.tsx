@@ -7,6 +7,14 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const query = context.query || {};
   const category = (query.category as string) || "";
 
+  // A redirect destination is sent exactly as written - neither the server nor
+  // the client router adds the locale in this Next version (pages-handler sets
+  // Location to it verbatim, and router.js follows it with locale: false). So
+  // /en/produkty?category=all used to land on the CZECH catalogue, and an EN
+  // category slug landed on the Czech route and 404'd.
+  const localePrefix =
+    context.locale && context.locale !== context.defaultLocale ? `/${context.locale}` : "";
+
   // Strips ?category= and ?size= from the query, keeping search, filters and sort
   // so a shared link still lands on what the sender was looking at. size is
   // pagination state; a fresh page starts at the first page.
@@ -26,7 +34,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   // better to have only one.
   if (category === "all") {
     return {
-      redirect: { destination: `/produkty${restOfQuery()}`, permanent: true },
+      redirect: { destination: `${localePrefix}/produkty${restOfQuery()}`, permanent: true },
     };
   }
 
@@ -45,7 +53,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     if (resolved) {
       return {
         redirect: {
-          destination: `/produkty/${resolved.slug}${restOfQuery()}`,
+          destination: `${localePrefix}/produkty/${resolved.slug}${restOfQuery()}`,
           permanent: true,
         },
       };
