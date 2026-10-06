@@ -1,4 +1,4 @@
-import { useState, useEffect, MouseEvent } from "react";
+import { useState, useEffect, useRef, MouseEvent } from "react";
 import { modal, util } from "uikit";
 import { useRouter } from "next/router";
 import InfiniteScroll from "react-infinite-scroll-component";
@@ -69,6 +69,26 @@ const Catalog = ({
   const [rangeNumber, setRangeNumber] = useState(range);
   const [mounted, setMounted] = useState(false);
 
+  // The URL is the source of truth for the filters, but these copies were only
+  // taken once, at mount. Moving between /produkty and a category, or switching
+  // language, re-renders this component instead of mounting a new one - so the
+  // search box, the sliders and "Zrusit vsechny filtry" kept showing the previous
+  // page's filters, and submitting the modal applied them again.
+  const rangeKey = JSON.stringify(rangeState);
+  const boundsKey = JSON.stringify(range);
+  useEffect(() => {
+    setFiltered(ifFiltered);
+    setSearch(searchQuery || "");
+    setStateRange(rangeState);
+    setRangeNumber(range);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ifFiltered, searchQuery, rangeKey, boundsKey]);
+
+  // Only the newest request may write the list. Two quick category clicks start
+  // two fetches, and if the first one answered last, its products were shown
+  // under the second category's heading.
+  const latestRequest = useRef(0);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -81,6 +101,7 @@ const Catalog = ({
   }, [router.query]);
 
   const changeData = async (queryUrl: ParsedUrlQuery) => {
+    const requestId = ++latestRequest.current;
     try {
     const sizeBefore = parseInt((queryUrl.size as string) || "6") - 6 || 0;
     const count = parseInt((queryUrl.size as string) || "6");
@@ -105,6 +126,7 @@ const Catalog = ({
       limit: count - sizeBefore,
       sortBy,
     });
+    if (requestId !== latestRequest.current) return;
 
     if (data.length < 6) {
       setHasMore(false);
@@ -150,6 +172,8 @@ const Catalog = ({
       false,
       [],
       router,
+      false,
+      "replace",
     );
   };
 

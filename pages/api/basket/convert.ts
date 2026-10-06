@@ -99,7 +99,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           if (index !== undefined && index >= 0) variant = target.variants[index];
         }
 
-        if (!variant?.price) {
+        // Out of stock counts as unavailable, the same rule the order API applies -
+        // otherwise checkout would show a line it is about to refuse.
+        if (!variant?.price || variant.inStock === false) {
           dropped.push(item.nameProduct || item.id);
           converted.push({ ...item, unavailable: true });
           continue;

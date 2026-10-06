@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import BlockContent from "@/components/BlockContent";
 import { dropdown, offcanvas } from "uikit";
 import Page, { SITE_URL } from "@/layout/Page";
@@ -169,6 +169,19 @@ const Product = ({
     count: false,
   });
 
+  // _app renders pages without a key, so going from one product to another (the
+  // "Mohlo by vas zajimat" links) or switching language re-renders THIS component
+  // with new props and keeps its state. The variant chosen on product A was still
+  // selected on product B - its name and its price - and one click added B to the
+  // basket as that. After a language switch the Czech price went in as euros.
+  useEffect(() => {
+    setSelect({ name: t("selectvariant"), price: "", chosen: false });
+    setCount(1);
+    setError({ select: false, count: false });
+    setQuantityNotice(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId, lang]);
+
   const selectHandle = (name: string, price: string) => {
     setSelect({ ...select, name, price, chosen: true });
     setError({ ...error, select: false });
@@ -177,16 +190,21 @@ const Product = ({
 
   const onBuy = async () => {
     setLoader(true);
+    // These used to router.push(asPath) without scroll:false, which threw the page
+    // to the top - on mobile, away from the only sign of the problem, a red border
+    // on the selector. Now the selector is brought into view and focused, and a
+    // message says what is missing.
     if (!select.chosen && pricedVariants.length) {
       setError({ ...error, select: true });
       setLoader(false);
-      router.push(router.asPath);
+      const trigger = document.querySelector<HTMLButtonElement>(".order_block .custom-select");
+      trigger?.scrollIntoView({ block: "center", behavior: "smooth" });
+      trigger?.focus({ preventScroll: true });
       return;
     }
     if (count === 0) {
       setError({ ...error, count: true });
       setLoader(false);
-      router.push(router.asPath);
       return;
     }
 
@@ -266,8 +284,19 @@ const Product = ({
   const inStock = product.variants?.length
     ? product.variants.some((v) => v.inStock !== false)
     : true;
+  // From the variants that can actually be bought. An unpriced variant parsed to
+  // 0 and made the structured-data price 0 - the number Google shows in results.
+  const buyablePrices = pricedVariants
+    .filter((v) => v.inStock !== false)
+    .map((v) => parsePrice(v.price))
+    .filter((p) => p > 0);
+  const listedPrices = buyablePrices.length
+    ? buyablePrices
+    : pricedVariants.map((v) => parsePrice(v.price)).filter((p) => p > 0);
   const price = product.variants?.length
-    ? Math.min(...product.variants.map((v) => parsePrice(v.price)))
+    ? listedPrices.length
+      ? Math.min(...listedPrices)
+      : 0
     : parsePrice(product.price);
   const productJsonLd = {
     "@context": "https://schema.org",
@@ -396,14 +425,14 @@ const Product = ({
                               error.select ? "error" : ""
                             }`}
                             type="button"
-                            tabIndex={-1}
+                            aria-haspopup="listbox"
                             suppressHydrationWarning
                           >
                             <span>{select.chosen ? select.name : t("selectvariant")}</span>
                             <span>
                               <img
                                 src="/assets/chevron-down-light.svg"
-                                alt="Down"
+                                alt=""
                               />
                             </span>
                           </button>
@@ -421,10 +450,17 @@ const Product = ({
                                   handle={selectHandle}
                                   name={item.title}
                                   price={item.price}
+                                  available={item.inStock !== false}
+                                  outOfStockLabel={t("outOfStock")}
                                 />
                               ))}
                             </ul>
                           </div>
+                          {error.select && (
+                            <p className="uk-text-danger uk-margin-small-top" role="alert">
+                              {t("chooseVariantError")}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <QuantityInput
@@ -537,18 +573,38 @@ interface VariantProps {
   price: string | number;
   lang: string;
   currency: string;
+  available?: boolean;
+  outOfStockLabel?: string;
 }
 
-const Variant = ({ handle, name, price, lang, currency }: VariantProps) => {
+const Variant = ({
+  handle,
+  name,
+  price,
+  lang,
+  available = true,
+  outOfStockLabel,
+}: VariantProps) => {
+  // A button, not a bare <li onClick>, so the list can be reached and used from
+  // the keyboard - the trigger was tabIndex={-1} and the options unfocusable, so
+  // nobody without a mouse could buy a product that has variants.
+  //
+  // Out-of-stock variants stay visible, so the range is clear, but cannot be
+  // picked. They used to be ordinary options: chosen, added, ordered.
   return (
-    <li
-      className="variant_select uk-flex"
-      onClick={(e) => handle(name, String(price))}
-    >
-      <span className="uk-width-expand">{name}</span>
-      <span className="uk-width-auto uk-text-right">
-        {formatPrice(price, lang)}
-      </span>
+    <li className={`variant_select${available ? "" : " variant_unavailable"}`}>
+      <button
+        type="button"
+        className="uk-flex uk-width-1-1"
+        disabled={!available}
+        onClick={() => available && handle(name, String(price))}
+      >
+        <span className="uk-width-expand">
+          {name}
+          {!available && <span className="variant_stock"> ({outOfStockLabel})</span>}
+        </span>
+        <span className="uk-width-auto uk-text-right">{formatPrice(price, lang)}</span>
+      </button>
     </li>
   );
 };

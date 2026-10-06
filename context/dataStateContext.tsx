@@ -1,4 +1,5 @@
 import React, { useReducer, createContext, useEffect, ReactNode } from "react";
+import { asBasket, asCount, asObject } from "@/helpers/storedState";
 import type { BasketItem, SessionUser } from "@/types/shop";
 
 export interface DataState {
@@ -111,24 +112,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // value - a half-written count, a stale key from an older build - aborted
     // everything after it, typically leaving the basket restored but its counter
     // at 0, which then hid the basket entirely (the mini-cart reads the counter).
-    const restore = <T,>(key: string, type: DataAction["type"]): T | undefined => {
+    //
+    // Each value is also checked for the shape the app expects before it is let
+    // in. Valid JSON is not the same as a valid basket: "null", "{}" or "[null]"
+    // parsed fine and then threw inside the reducer or the mini-cart on every page
+    // render, and with no error boundary the whole site went blank until the
+    // storage was cleared by hand.
+    const restore = <T,>(
+      key: string,
+      type: DataAction["type"],
+      clean: (value: unknown) => T | undefined,
+    ): T | undefined => {
       try {
         const raw = readStorage(key);
         if (!raw) return undefined;
-        const parsed = JSON.parse(raw);
-        dataContextDispatch({ type, state: parsed } as DataAction);
-        return parsed as T;
+        const value = clean(JSON.parse(raw));
+        if (value === undefined) {
+          console.error(`Ignoring stored "${key}": not the expected shape`);
+          return undefined;
+        }
+        dataContextDispatch({ type, state: value } as DataAction);
+        return value;
       } catch (e) {
         console.error(`Failed to restore stored "${key}"`, e);
         return undefined;
       }
     };
 
-    const basketCz = restore<any[]>("basketcz", "basketcz");
-    const countCz = restore<number>("basketCountcz", "basketCountcz");
-    const basketEn = restore<any[]>("basketen", "basketen");
-    const countEn = restore<number>("basketCounten", "basketCounten");
-    restore("user", "user");
+    const basketCz = restore("basketcz", "basketcz", asBasket);
+    const countCz = restore("basketCountcz", "basketCountcz", asCount);
+    const basketEn = restore("basketen", "basketen", asBasket);
+    const countEn = restore("basketCounten", "basketCounten", asCount);
+    restore("user", "user", asObject);
 
     // The array and its counter are stored as two independent keys and can drift
     // apart on their own. The array is the source of truth; repair the counter

@@ -114,6 +114,11 @@ export async function computeAuthoritativeOrderTotal(
       if (!variant) {
         throw new OrderValidationError(`Unknown variant "${item.variantName}" for product ${item.id}`);
       }
+      // The page greys these out, but an order can be posted without the page -
+      // and stock was only ever displayed, never checked.
+      if (variant.inStock === false) {
+        throw new OrderValidationError(`Variant "${item.variantName}" of product ${item.id} is out of stock`);
+      }
       unitPrice = parsePrice(variant.price);
       variantName = variant.title;
     } else {

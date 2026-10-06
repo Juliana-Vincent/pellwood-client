@@ -638,6 +638,16 @@ export default {
     en: "Already have an account?",
     de: "xxx"
   },
+  chooseVariantError: {
+    cz: "Vyberte prosím variantu.",
+    en: "Please choose a variant.",
+    de: "xxx"
+  },
+  menu: {
+    cz: "Menu",
+    en: "Menu",
+    de: "xxx"
+  },
   cookieSettings: {
     cz: "Nastavení cookies",
     en: "Cookie settings",
@@ -673,6 +683,16 @@ export default {
     en: "Oops! This page could not be found. It looks like nothing was found here.",
     de: "xxx",
   },
+  serverErrorTitle: {
+    cz: "Něco se pokazilo",
+    en: "Something went wrong",
+    de: "xxx",
+  },
+  serverErrorText: {
+    cz: "Stránku se teď nepodařilo načíst. Zkuste to prosím za chvíli znovu.",
+    en: "This page could not be loaded right now. Please try again in a moment.",
+    de: "xxx",
+  },
   basketCurrencyChanged: {
     cz: "Košík byl přepočítán na české ceny.",
     en: "Your basket has been re-priced in euros.",
@@ -691,6 +711,16 @@ export default {
   priceChanged: {
     cz: "Ceny v košíku se změnily. Zkontrolujte prosím objednávku a odešlete ji znovu.",
     en: "Prices in your basket have changed. Please review your order and submit again.",
+    de: "xxx",
+  },
+  basketRepriced: {
+    cz: "Ceny některých položek se od vložení do košíku změnily. Košík jsme aktualizovali.",
+    en: "Some prices have changed since you added these items. Your basket has been updated.",
+    de: "xxx",
+  },
+  basketItemsGone: {
+    cz: "Některé položky v košíku už nejsou k dispozici. Odeberte je prosím a objednávku pak odešlete.",
+    en: "Some items in your basket are no longer available. Please remove them, then place your order.",
     de: "xxx",
   }
 }

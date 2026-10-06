@@ -6,7 +6,12 @@ const changeUrl = (
   search: string | false = false,
   parameters: any = {},
   router: NextRouter,
-  resetFilter: boolean = false
+  resetFilter: boolean = false,
+  // Loading the next page of the infinite scroll is not a place the visitor can
+  // go back to. Pushing it put one history entry per scroll step, so Back walked
+  // size=24 -> 18 -> 12 without visibly changing anything, and after one Back the
+  // next scroll asked for products already on screen and the spinner never ended.
+  historyMode: "push" | "replace" = "push",
 ) => {
   var queryUrl = { ...router.query } as any;
 
@@ -47,7 +52,7 @@ const changeUrl = (
     }
   }
 
-  router.push({pathname: router.pathname, query: queryUrl}, undefined, { scroll: false })
+  router[historyMode]({pathname: router.pathname, query: queryUrl}, undefined, { scroll: false })
 }
 
 export default changeUrl

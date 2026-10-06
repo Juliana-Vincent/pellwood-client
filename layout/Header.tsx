@@ -33,6 +33,16 @@ const Header = ({
   const { dataContextState } = useContext(DataStateContext);
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [hamburger, setHamburger] = useState<boolean>(false);
+
+  // Close the mobile menu on every navigation. It only closed when the Header
+  // remounted, and between pages of the same type - another product, another
+  // category, or a language switch - it doesn't, so the menu stayed open over the
+  // page that had just loaded underneath it.
+  useEffect(() => {
+    const close = () => setHamburger(false);
+    router.events.on("routeChangeStart", close);
+    return () => router.events.off("routeChangeStart", close);
+  }, [router.events]);
   const [mounted, setMounted] = useState<boolean>(false);
 
   useEffect(() => {
@@ -121,7 +131,8 @@ const Header = ({
                 className={`hamburger hamburger--spin ${hamburger ? "is-active" : ""}`}
                 onClick={() => setHamburger(!hamburger)}
                 type="button"
-                aria-label="Toggle Menu"
+                aria-label={t('menu')}
+                aria-expanded={hamburger}
               >
                 <span className="hamburger-box">
                   <span className="hamburger-inner"></span>

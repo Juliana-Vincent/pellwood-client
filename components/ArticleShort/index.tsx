@@ -14,7 +14,10 @@ const Article = ({ data }: ArticleProps) => {
   return (
     <div className="uk-width-1-1 uk-width-1-2@s" suppressHydrationWarning>
       <Link
-        href={`/clanek/${router.query.category || data.category?.slug}/${
+        // The article's own category first. router.query.category is whatever the
+        // current route calls "category": on /produkty/<slug> that is a PRODUCT
+        // category, so every tile there linked to a URL that 301-redirects.
+        href={`/clanek/${data.category?.slug || router.query.category || "archive"}/${
           data.slug
         }`}
         className="big_category"

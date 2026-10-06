@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import Link from "next/link";
 import { AxiosAPI } from "@/restClient";
 import { DataStateContext, DataState } from "@/context/dataStateContext";
@@ -171,6 +171,48 @@ const Basket = ({ settings }: BasketProps) => {
   const [priceChanged, setPriceChanged] = useState(false);
   const [emptyBasket, setEmptyBasket] = useState(false);
   const [blockedByUnavailable, setBlockedByUnavailable] = useState(false);
+  const [itemsGone, setItemsGone] = useState(false);
+  const [repricedNotice, setRepricedNotice] = useState(false);
+
+  // The basket stores each line's price from the moment it was added, with no
+  // expiry. This page showed those stored prices until the customer pressed
+  // submit, and only then did the server's 409 reveal the real total. Ask the
+  // server for today's prices and availability as soon as the page opens, so the
+  // number on screen is the one that will be charged - and so a product deleted
+  // or unpublished since is flagged here, not at the last step. Once per visit.
+  const repriced = useRef(false);
+  useEffect(() => {
+    if (!dataContextState.hydrated || repriced.current || !basket.length) return;
+    repriced.current = true;
+    const before = basket;
+    AxiosAPI.post("/basket/convert", { items: before, fromLang: lang, toLang: lang })
+      .then((res) => {
+        const fresh = res.data?.items;
+        if (!Array.isArray(fresh) || fresh.length !== before.length) return;
+        const changed = fresh.some(
+          (item: BasketItem, i: number) =>
+            Number(item.variantPrice) !== Number(before[i].variantPrice) ||
+            !!item.unavailable !== !!before[i].unavailable ||
+            item.nameProduct !== before[i].nameProduct,
+        );
+        if (!changed) return;
+        dataContextDispatch({ state: fresh, type: basketKey as "basketcz" | "basketen" });
+        if (fresh.some((item: BasketItem, i: number) => item.unavailable && !before[i].unavailable)) {
+          setItemsGone(true);
+        }
+        if (
+          fresh.some(
+            (item: BasketItem, i: number) =>
+              !item.unavailable && Number(item.variantPrice) !== Number(before[i].variantPrice),
+          )
+        ) {
+          setRepricedNotice(true);
+        }
+      })
+      // Not fatal: the server still re-prices on submit and answers 409.
+      .catch((err) => console.error("Could not refresh basket prices:", err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataContextState.hydrated, basket.length]);
 
   useEffect(() => {
     const sessionUser = dataContextState.user;
@@ -461,12 +503,23 @@ const Basket = ({ settings }: BasketProps) => {
             <AcceptInfo />
           </div>
           <div className="tm-basket-footer tm-footer-single total-end-footer">
-            {blockedByUnavailable && (
+            {/* Gone from the shop and missing in this language are different
+                problems; the language message told someone whose product had
+                been deleted to "switch back to Czech". */}
+            {(blockedByUnavailable || itemsGone) && (
               <div
                 className="uk-alert-danger uk-width-1-1 uk-text-center"
                 uk-alert=""
               >
-                <p>{t("basketUnavailableBlocked")}</p>
+                <p>{t(itemsGone ? "basketItemsGone" : "basketUnavailableBlocked")}</p>
+              </div>
+            )}
+            {repricedNotice && !priceChanged && (
+              <div
+                className="uk-alert-warning uk-width-1-1 uk-text-center"
+                uk-alert=""
+              >
+                <p>{t("basketRepriced")}</p>
               </div>
             )}
             {emptyBasket && (
