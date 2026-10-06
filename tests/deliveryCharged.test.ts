@@ -142,3 +142,30 @@ describe("per-country shipping from Strapi", () => {
     expect(resolveDeliveryData(setting, "cz", "Německo").map((o) => o.value)).toEqual(["DHL DE"]);
   });
 });
+
+describe("CMS rich-text links", () => {
+  it("treats only off-site http(s) links as external", async () => {
+    const { isExternalUrl } = await import("@/helpers/externalLink");
+    expect(isExternalUrl("https://modernistdrumshop.com")).toBe(true);
+    expect(isExternalUrl("http://vicfirth.com")).toBe(true);
+    expect(isExternalUrl("https://pellwood.com/produkty")).toBe(false);
+    expect(isExternalUrl("/produkty")).toBe(false);
+    expect(isExternalUrl("mailto:info@pellwood.com")).toBe(false);
+    expect(isExternalUrl("#parametry")).toBe(false);
+  });
+
+  it("strips tracking parameters and keeps the real ones", async () => {
+    const { cleanUrl } = await import("@/helpers/externalLink");
+    expect(cleanUrl("https://example.com/a?fbclid=XYZ")).toBe("https://example.com/a");
+    expect(cleanUrl("https://example.com/a?id=7&utm_source=fb")).toBe("https://example.com/a?id=7");
+    // Untouched when there is nothing to strip, so the href stays byte-identical
+    // to what the editor typed.
+    expect(cleanUrl("https://example.com/a?id=7")).toBe("https://example.com/a?id=7");
+    expect(cleanUrl("/produkty?size=24")).toBe("/produkty?size=24");
+  });
+
+  it("leaves http:// alone - upgrading blind would break hosts without https", async () => {
+    const { cleanUrl } = await import("@/helpers/externalLink");
+    expect(cleanUrl("http://example.com/a")).toBe("http://example.com/a");
+  });
+});

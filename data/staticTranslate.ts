@@ -74,6 +74,11 @@ export default {
     en: "Basket",
     de: "xxx"
   },
+  openBasket: {
+    cz: "Otevřít košík",
+    en: "Open basket",
+    de: "xxx"
+  },
   emptybasket: {
     cz: "Váš košík je prázdný.",
     en: "Basket is empty",

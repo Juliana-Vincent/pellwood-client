@@ -39,6 +39,24 @@ const Header = ({
     setMounted(true);
   }, []);
 
+  // UIkit flips aria-expanded on the toggle itself, but React owns that attribute
+  // and resets it to the rendered value on the next re-render - which includes the
+  // re-render caused by adding an item, the very moment the panel opens. Following
+  // the off-canvas's own events keeps the two in agreement.
+  const [basketOpen, setBasketOpen] = useState<boolean>(false);
+  useEffect(() => {
+    const panel = document.getElementById("offcanvas-flip");
+    if (!panel) return;
+    const open = () => setBasketOpen(true);
+    const close = () => setBasketOpen(false);
+    panel.addEventListener("shown", open);
+    panel.addEventListener("hidden", close);
+    return () => {
+      panel.removeEventListener("shown", open);
+      panel.removeEventListener("hidden", close);
+    };
+  }, [mounted]);
+
   useEffect(() => {
     let isSubscribed = true;
     const strapiLocale = lang === "cz" ? "cs" : lang;
@@ -166,8 +184,8 @@ const Header = ({
                       type="button"
                       className="basket_count uk-button uk-button-link"
                       uk-toggle="target: #offcanvas-flip"
-                      aria-expanded={false}
-                      aria-label={t('basket')}
+                      aria-expanded={basketOpen}
+                      aria-label={`${t('openBasket')} (${basketCount})`}
                     >
                       {basketCount}
                     </button>
