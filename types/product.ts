@@ -9,7 +9,6 @@ export interface Product {
   titleHead?: string;
   SEOtitle?: string;
   SEOdescription?: string;
-  description?: BlocksContent;
   slug: string;
   text?: BlocksContent;
   image?: StrapiImage;

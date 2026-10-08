@@ -350,7 +350,7 @@ const Product = ({
   return (
     <Page
       id="product"
-      description={firstText(product.SEOdescription, product.description, product.text)}
+      description={firstText(product.SEOdescription, product.text)}
       title={product.SEOtitle || product.title}
       image={urlFor(product.image).url()}
       alternates={alternates}
