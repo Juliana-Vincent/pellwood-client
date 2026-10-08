@@ -135,7 +135,10 @@ export interface CustomRangeSliderProps {
 export interface OrderData {
   idOrder: string;
   payOnline?: boolean;
-  status?: "PAID" | "PENDING" | "CANCELLED" | string;
+  /** Comgate's verified payment status. `status` is the pre-rename field, kept
+   *  readable for orders placed before the rename - see helpers/paymentStatus.ts. */
+  paymentStatus?: "PAID" | "PENDING" | "CANCELLED" | string;
+  status?: string;
   basket: any[];
   currency: string;
   deliveryMethod: string;

@@ -6,6 +6,7 @@ import crypto from "crypto";
 import gtag from "@/functions/gtag";
 import { ordersApi, serializeOrder } from "@/lib/strapiAdmin";
 import { sendOrderConfirmation } from "@/lib/orderEmail";
+import { paymentStatusOf } from "@/helpers/paymentStatus";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { GetServerSidePropsContext } from "next";
 import type { GtagPurchaseEvent } from "@/functions/gtag";
@@ -46,7 +47,7 @@ export async function getServerSideProps({ query }: GetServerSidePropsContext) {
     dataGtag: GtagPurchaseEvent | undefined = undefined;
 
   if (order.payOnline) {
-    status = order.status || "";
+    status = paymentStatusOf(order);
 
     // `notified` is an email flag and was previously used to gate the analytics
     // conversion too. Because Comgate's redirect usually beats its webhook, the

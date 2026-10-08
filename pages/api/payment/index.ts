@@ -66,7 +66,7 @@ export default async function handler(
 
     // Comgate retries on failure, so this must stay idempotent - writing the same
     // verified status twice is harmless.
-    await ordersApi.update(order.documentId, { status: verifiedStatus });
+    await ordersApi.update(order.documentId, { paymentStatus: verifiedStatus });
 
     // The confirmation email belongs here, not on the thank-you page. Comgate's
     // browser redirect races this webhook, and when the redirect wins the order is

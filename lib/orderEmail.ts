@@ -5,6 +5,7 @@ import { sendEmail as sendEmailViaSendGrid } from "@/lib/mailer-sendgrid";
 import InfoOrder from "@/mail_template/infoOrder";
 import InfoOrderEN from "@/mail_template/infoOrderEN";
 import { escapeHtmlDeep } from "@/helpers/escapeHtml";
+import { paymentStatusOf } from "@/helpers/paymentStatus";
 
 const asObject = (value: unknown): any =>
   value && typeof value === "object" && !Array.isArray(value) ? value : undefined;
@@ -37,6 +38,9 @@ export async function sendOrderConfirmation(orderNumber: number): Promise<void> 
   const data = {
     ...order,
     idOrder: String(order.idOrder),
+    // The templates read `status`; orders placed before the rename still carry it
+    // under the old key.
+    status: paymentStatusOf(order),
     sum: order.sum === null || order.sum === undefined ? "" : String(order.sum),
     basket: Array.isArray(order.basket) ? order.basket : [],
     anotherAdress: asObject(order.anotherAdress),

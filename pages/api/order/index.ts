@@ -95,9 +95,9 @@ export default async function handler(
         note: note ?? "",
         basket: verifiedBasket,
         sum: total,
-        // Never from the request body: status is set only by the Comgate-verified
+        // Never from the request body: the payment status is set only by the
         // webhook in /api/payment.
-        status: payOnline ? "PENDING" : "",
+        paymentStatus: payOnline ? "PENDING" : "",
         state: "new",
         paymentMethod: payment.value ?? "",
         paymentPrice: String(paymentPrice ?? ""),
@@ -171,7 +171,7 @@ export default async function handler(
           // The order row already exists (its number is what Comgate was asked to
           // reference), so mark it rather than leaving an orphan stuck at PENDING.
           await ordersApi
-            .update(order.documentId, { status: "CANCELLED" })
+            .update(order.documentId, { paymentStatus: "CANCELLED" })
             .catch((err) => console.error("Could not mark order cancelled:", err));
 
           return res.status(502).json({
