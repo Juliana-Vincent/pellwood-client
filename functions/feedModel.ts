@@ -21,9 +21,11 @@ const variantKey = (title: string): string =>
 /** Comparison sites read these as plain name/value pairs, so the labels are the
  *  same words the product page shows. */
 const feedParams = (lang: string, product: any) =>
-  parameterRows(product, lang === 'cz'
-    ? { length: 'Délka', diameter: 'Průměr' }
-    : { length: 'Length', diameter: 'Diameter' });
+  parameterRows(
+    product,
+    lang === 'cz' ? { length: 'Délka', diameter: 'Průměr' } : { length: 'Length', diameter: 'Diameter' },
+    lang === 'cz' ? 'cz' : 'en',
+  );
 
 export const feedModel = (lang: string, products: any[]): FeedItem[] => {
   const arr: FeedItem[] = [];

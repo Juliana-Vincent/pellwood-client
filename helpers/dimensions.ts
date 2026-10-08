@@ -10,6 +10,9 @@
  * The parameter rows are still read as a fallback, so nothing breaks between
  * deploying this and running the migration.
  */
+// The field is text, not a number: the editor types "14,4" or "14.4" or even
+// "14,4 mm" and the site reads the number out of it, whatever language the admin
+// happens to be in.
 const LENGTH_TITLES = ["délka", "delka", "length"];
 const DIAMETER_TITLES = ["průměr", "prumer", "diameter"];
 
@@ -46,9 +49,11 @@ const fromParams = (product: any, which: Dimension): number | null => {
 export const productDimension = (product: any, which: Dimension): number | null =>
   parseDimension(product?.[which]) ?? fromParams(product, which);
 
-/** Millimetres, formatted the way the CMS used to spell them. */
-export const formatDimension = (value: number): string =>
-  `${String(value).replace(".", ",")} mm`;
+/** Millimetres, with the decimal separator each language actually writes. */
+export const formatDimension = (value: number, lang?: string): string => {
+  const text = String(value);
+  return `${lang === "en" ? text : text.replace(".", ",")} mm`;
+};
 
 /**
  * The rows the product page shows: the two dimensions first, under translated
@@ -58,14 +63,15 @@ export const formatDimension = (value: number): string =>
 export const parameterRows = (
   product: any,
   labels: { length: string; diameter: string },
+  lang?: string,
 ): Array<{ title: string; value: string }> => {
   const rows: Array<{ title: string; value: string }> = [];
 
   const length = productDimension(product, "length");
-  if (length !== null) rows.push({ title: labels.length, value: formatDimension(length) });
+  if (length !== null) rows.push({ title: labels.length, value: formatDimension(length, lang) });
 
   const diameter = productDimension(product, "diameter");
-  if (diameter !== null) rows.push({ title: labels.diameter, value: formatDimension(diameter) });
+  if (diameter !== null) rows.push({ title: labels.diameter, value: formatDimension(diameter, lang) });
 
   for (const row of Array.isArray(product?.parametrs) ? product.parametrs : []) {
     if (dimensionOf(row?.title)) continue;

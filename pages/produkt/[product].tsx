@@ -562,7 +562,7 @@ const Product = ({
                 <div className="paramets">
                   <table className="uk-table uk-table-divider uk-table-small">
                     <tbody>
-                      {parameterRows(product, { length: t("length"), diameter: t("diameter") }).map((item, index) => (
+                      {parameterRows(product, { length: t("length"), diameter: t("diameter") }, lang).map((item, index) => (
                         <tr key={index}>
                           <td>{item.title}</td>
                           <td className="uk-text-right">{item.value}</td>

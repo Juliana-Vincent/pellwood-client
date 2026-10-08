@@ -18,6 +18,24 @@ describe("length and diameter", () => {
     expect(productDimension({ title: "x" }, "diameter")).toBeNull();
   });
 
+  it("read the field however the editor typed it", async () => {
+    const { productDimension } = await import("@/helpers/dimensions");
+    // The field is text, so a Czech comma, an English dot and a stray unit all work.
+    expect(productDimension({ diameter: "14,4" }, "diameter")).toBe(14.4);
+    expect(productDimension({ diameter: "14.4" }, "diameter")).toBe(14.4);
+    expect(productDimension({ diameter: "14,4 mm" }, "diameter")).toBe(14.4);
+    expect(productDimension({ diameter: 14.4 }, "diameter")).toBe(14.4);
+    expect(productDimension({ diameter: "  " }, "diameter")).toBeNull();
+    expect(productDimension({ diameter: "abc" }, "diameter")).toBeNull();
+  });
+
+  it("show the separator each language writes", async () => {
+    const { formatDimension } = await import("@/helpers/dimensions");
+    expect(formatDimension(14.4, "cz")).toBe("14,4 mm");
+    expect(formatDimension(14.4, "en")).toBe("14.4 mm");
+    expect(formatDimension(400, "cz")).toBe("400 mm");
+  });
+
   it("read a title that was typed with a trailing space", async () => {
     const { productDimension } = await import("@/helpers/dimensions");
     // Three live products have "Diameter " and were invisible to the filter.
@@ -38,10 +56,11 @@ describe("length and diameter", () => {
 
   it("list the dimensions first and never twice", async () => {
     const { parameterRows } = await import("@/helpers/dimensions");
-    const rows = parameterRows(sticks({ length: 400, diameter: 14.4 }), {
-      length: "Délka",
-      diameter: "Průměr",
-    });
+    const rows = parameterRows(
+      sticks({ length: "400", diameter: "14,4" }),
+      { length: "Délka", diameter: "Průměr" },
+      "cz",
+    );
     expect(rows).toEqual([
       { title: "Délka", value: "400 mm" },
       { title: "Průměr", value: "14,4 mm" },
