@@ -1,3 +1,5 @@
+import { productDimension } from '@/helpers/dimensions';
+
 interface Parameter {
   title: string;
   value: string;
@@ -41,23 +43,11 @@ export const getRangeParameter = (products: Product[], parameters?: FilterParame
 
   if (Array.isArray(products)) {
     for (const product of products) {
-      if (product?.parametrs && Array.isArray(product.parametrs)) {
-        const length = product.parametrs.find(o => o.title === 'Délka' || o.title === 'Length');
-        const diameter = product.parametrs.find(o => o.title === 'Průměr' || o.title === 'Diameter');
+      const length = productDimension(product, 'length');
+      if (length !== null) lengthNumbers.push(length);
 
-        // Regex removes " mm" and keeps numbers, commas, and dots
-        if (length?.value) {
-          const parsedStr = length.value.replace(/[^\d.,]/g, '').replace(',', '.');
-          const parsedNum = parseFloat(parsedStr);
-          if (!isNaN(parsedNum)) lengthNumbers.push(parsedNum);
-        }
-
-        if (diameter?.value) {
-          const parsedStr = diameter.value.replace(/[^\d.,]/g, '').replace(',', '.');
-          const parsedNum = parseFloat(parsedStr);
-          if (!isNaN(parsedNum)) diameterNumbers.push(parsedNum);
-        }
-      }
+      const diameter = productDimension(product, 'diameter');
+      if (diameter !== null) diameterNumbers.push(diameter);
     }
   }
 

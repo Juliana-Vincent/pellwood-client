@@ -16,6 +16,9 @@ export interface Product {
   orientedImage?: boolean;
   price?: number | string;
   variants?: Variant[];
+  /** Millimetres, shared by both locales - see helpers/dimensions.ts. */
+  length?: number | string | null;
+  diameter?: number | string | null;
   parametrs?: Parameter[];
   category?: Category | null;
   linkedProducts?: Product[];

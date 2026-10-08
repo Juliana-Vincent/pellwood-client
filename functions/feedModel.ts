@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { urlFor } from '../lib/strapi';
 import { FeedItem } from './types';
 import { feedPrice, slugify } from '../helpers/feedPrice';
+import { parameterRows } from '@/helpers/dimensions';
 import { parsePrice } from './parsePrice';
 
 /**
@@ -16,6 +17,13 @@ import { parsePrice } from './parsePrice';
  */
 const variantKey = (title: string): string =>
   crypto.createHash('sha1').update(String(title)).digest('hex').slice(0, 8);
+
+/** Comparison sites read these as plain name/value pairs, so the labels are the
+ *  same words the product page shows. */
+const feedParams = (lang: string, product: any) =>
+  parameterRows(product, lang === 'cz'
+    ? { length: 'Délka', diameter: 'Průměr' }
+    : { length: 'Length', diameter: 'Diameter' });
 
 export const feedModel = (lang: string, products: any[]): FeedItem[] => {
   const arr: FeedItem[] = [];
@@ -33,7 +41,7 @@ export const feedModel = (lang: string, products: any[]): FeedItem[] => {
           id: `${prod.documentId.slice(0, 10)}_${lang}_${variantKey(variant.title)}`,
           title: `${prod.title} - ${variant.title}`,
           description: prod.SEOdescription || '',
-          parametrs: prod.parametrs || [],
+          parametrs: feedParams(lang, prod),
           link: `https://pellwood.com/${lang === 'cz' ? '' : 'en/'}produkt/${prod.slug}?variant=${slugify(variant.title)}`,
           image_link: urlFor(prod.image).url(),
           // Derived from the product and variant, not from loop indices - an
@@ -53,7 +61,7 @@ export const feedModel = (lang: string, products: any[]): FeedItem[] => {
         description: prod.SEOdescription || '',
         link: `https://pellwood.com/${lang === 'cz' ? '' : 'en/'}produkt/${prod.slug}`,
         image_link: urlFor(prod.image).url(),
-        parametrs: prod.parametrs || [],
+        parametrs: feedParams(lang, prod),
         availability: 'in_stock',
         mpn: prod.documentId,
         price: feedPrice(prod.price, lang),

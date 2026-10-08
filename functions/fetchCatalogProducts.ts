@@ -1,6 +1,7 @@
 import { fetchAPI, fetchAllAPI } from "@/lib/strapi";
 import { normalizeText, searchTokens } from "@/helpers/normalizeText";
 import { CatalogSort, sortProducts } from "@/helpers/sortProducts";
+import { productDimension } from "@/helpers/dimensions";
 
 interface FetchCatalogParams {
   lang: string;
@@ -18,10 +19,6 @@ interface FetchCatalogParams {
 /** config/api.ts maxLimit. A request above this is clamped, not rejected. */
 const STRAPI_MAX_LIMIT = 100;
 
-const findParam = (parametrs: any[] | undefined, titles: string[]) =>
-  parametrs?.find((o: any) => titles.includes(o.title));
-
-const parseParamValue = (value: string) => parseFloat(String(value).replace(",", "."));
 
 /** Everything a customer might reasonably type to find this product. */
 const searchHaystack = (product: any): string =>
@@ -128,21 +125,16 @@ export async function fetchCatalogProducts({
     }
   }
 
+  const inRange = (value: number | null, min: unknown, max: unknown) =>
+    value !== null && value >= parseFloat(String(min)) && value <= parseFloat(String(max));
+
   if (diameterMin && diameterMax) {
-    products = products.filter((p: any) => {
-      const d = findParam(p.parametrs, ["Průměr", "Diameter"]);
-      if (!d) return false;
-      const val = parseParamValue(d.value);
-      return val >= parseFloat(String(diameterMin)) && val <= parseFloat(String(diameterMax));
-    });
+    products = products.filter((p: any) =>
+      inRange(productDimension(p, "diameter"), diameterMin, diameterMax),
+    );
   }
   if (lengthMin && lengthMax) {
-    products = products.filter((p: any) => {
-      const l = findParam(p.parametrs, ["Délka", "Length"]);
-      if (!l) return false;
-      const val = parseParamValue(l.value);
-      return val >= parseFloat(String(lengthMin)) && val <= parseFloat(String(lengthMax));
-    });
+    products = products.filter((p: any) => inRange(productDimension(p, "length"), lengthMin, lengthMax));
   }
 
   products = sortProducts(products, sortBy, lang);

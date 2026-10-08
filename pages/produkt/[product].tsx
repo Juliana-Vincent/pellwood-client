@@ -18,6 +18,7 @@ import type { BasketItem } from "@/types/shop";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { GetStaticPropsContext } from "next";
 import { parsePrice } from "@/functions/parsePrice";
+import { parameterRows } from "@/helpers/dimensions";
 import { formatPrice } from "@/helpers/formatPrice";
 import QuantityInput from "@/components/QuantityInput";
 import { clampQuantity, MAX_QUANTITY } from "@/helpers/quantity";
@@ -561,7 +562,7 @@ const Product = ({
                 <div className="paramets">
                   <table className="uk-table uk-table-divider uk-table-small">
                     <tbody>
-                      {(product.parametrs || []).map((item, index) => (
+                      {parameterRows(product, { length: t("length"), diameter: t("diameter") }).map((item, index) => (
                         <tr key={index}>
                           <td>{item.title}</td>
                           <td className="uk-text-right">{item.value}</td>

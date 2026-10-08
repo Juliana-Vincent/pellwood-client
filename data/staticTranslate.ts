@@ -668,6 +668,16 @@ export default {
     en: "Password must be at least 8 characters.",
     de: "xxx",
   },
+  length: {
+    cz: "Délka",
+    en: "Length",
+    de: "xxx",
+  },
+  diameter: {
+    cz: "Průměr",
+    en: "Diameter",
+    de: "xxx",
+  },
   outOfStock: {
     cz: "Momentálně nedostupné",
     en: "Currently unavailable",
