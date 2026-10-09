@@ -53,7 +53,9 @@ module.exports = (phase) => {
     `img-src 'self' data: blob: https://*.pellwood.com ${strapiOrigin} https://*.zbozi.cz https://www.googletagmanager.com https://www.google-analytics.com https://*.seznam.cz${isDev ? ' http://localhost:1337' : ''}`,
     `connect-src 'self' https://*.pellwood.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.seznam.cz https://*.zbozi.cz ${strapiOrigin}${isDev ? ' http://localhost:1337 ws://localhost:*' : ''}`,
     "frame-src 'none'",
-    "frame-ancestors 'self'",
+    // The Strapi admin embeds a page here for its Preview panel, so its origin is
+    // allowed to frame the site. Nothing else is.
+    `frame-ancestors 'self' ${strapiOrigin}`,
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
@@ -61,7 +63,9 @@ module.exports = (phase) => {
 
   const securityHeaders = [
     { key: 'X-Content-Type-Options', value: 'nosniff' },
-    { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+    // No X-Frame-Options: it only understands "same origin or nothing", which would
+    // override the line above and break the preview. frame-ancestors says the same
+    // thing with room for the admin, and every current browser honours it.
     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
     { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
     { key: 'Content-Security-Policy', value: csp },
