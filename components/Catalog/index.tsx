@@ -170,7 +170,7 @@ const Catalog = ({
       parseInt((router.query.size as string) || "6") + 6,
       false,
       false,
-      [],
+      null, // preserve existing range/search filter params in the URL
       router,
       false,
       "replace",

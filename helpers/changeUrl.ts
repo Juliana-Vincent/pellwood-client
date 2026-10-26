@@ -4,7 +4,9 @@ const changeUrl = (
   size: number | string | false = false,
   category: string | false = false,
   search: string | false = false,
-  parameters: any = {},
+  // null = leave the existing range params in the URL untouched (used by moreData
+  // when paginating so the active length/diameter filter is not wiped on scroll).
+  parameters: any = null,
   router: NextRouter,
   resetFilter: boolean = false,
   // Loading the next page of the infinite scroll is not a place the visitor can
@@ -25,21 +27,26 @@ const changeUrl = (
   // through above is what keeps router.push filling the dynamic part of the path.
   if(search !== false) queryUrl.search = search
 
-  if(parameters.diameter || parameters.length) {
-    queryUrl.diameterMin = parameters.diameter.min
-    queryUrl.diameterMax = parameters.diameter.max
-    queryUrl.lengthMin = parameters.length.min
-    queryUrl.lengthMax = parameters.length.max
-  } else {
-    // These were only ever written, never removed, and the object starts as a copy
-    // of the current query - so dragging the sliders back to the full range left
-    // the old bounds in the URL and the results stayed narrowed while the slider
-    // said otherwise. The only escape was "clear all filters", which also wiped
-    // the search term.
-    delete queryUrl.diameterMin
-    delete queryUrl.diameterMax
-    delete queryUrl.lengthMin
-    delete queryUrl.lengthMax
+  if (parameters !== null) {
+    // parameters is an explicit filter object - apply it (or clear the params
+    // when the object has no diameter/length, e.g. when "clear all filters" runs).
+    if(parameters.diameter || parameters.length) {
+      queryUrl.diameterMin = parameters.diameter.min
+      queryUrl.diameterMax = parameters.diameter.max
+      queryUrl.lengthMin = parameters.length.min
+      queryUrl.lengthMax = parameters.length.max
+    } else {
+      // These were only ever written, never removed, and the object starts as a copy
+      // of the current query - so dragging the sliders back to the full range left
+      // the old bounds in the URL and the results stayed narrowed while the slider
+      // said otherwise. The only escape was "clear all filters", which also wiped
+      // the search term.
+      delete queryUrl.diameterMin
+      delete queryUrl.diameterMax
+      delete queryUrl.lengthMin
+      delete queryUrl.lengthMax
+    }
+    // null: leave whatever range params are already in the URL alone (pagination)
   }
 
   if(resetFilter){
