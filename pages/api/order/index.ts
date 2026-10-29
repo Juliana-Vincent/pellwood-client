@@ -121,6 +121,11 @@ export default async function handler(
         proto + "://" + host + localePrefix +
         "/thank-you?refId=${refId}&transId=${id}&t=" + accessToken;
 
+      // COMGATE_TEST=true turns on Comgate test payments and the zbozi.cz sandbox,
+      // so the checkout can be tested end to end without real money or fake
+      // conversions. Anything other than exactly "true" (including unset) is live.
+      const testMode = process.env.COMGATE_TEST === "true";
+
       let resDataParse: Record<string, string> = {};
 
       if (payOnline) {
@@ -137,6 +142,7 @@ export default async function handler(
           cat: "PHYSICAL",
           method: "ALL",
           prepareOnly: "true",
+          test: testMode ? "true" : "false",
           email: user.email,
           secret: process.env.PAYED_PASSWORD,
           url_paid: returnUrl,
@@ -183,7 +189,7 @@ export default async function handler(
 
       const zboziConverseBody = {
         PRIVATE_KEY: process.env.ZBOZI_PRIVATE_KEY,
-        sandbox: false,
+        sandbox: testMode,
         orderId: order.idOrder,
         email: order.email,
         deliveryType: "PPL",
