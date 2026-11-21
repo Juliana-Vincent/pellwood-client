@@ -29,7 +29,6 @@ export async function sendEmail(mailOptions: MailOptions) {
     };
 
     // Parse from field
-    const fromEmail = extractEmail(mailOptions.from);
     
     // Parse to field (can be multiple addresses separated by commas)
     const toEmails = mailOptions.to
@@ -39,7 +38,7 @@ export async function sendEmail(mailOptions: MailOptions) {
 
     // Constructing as CreateEmailOptions manually bypasses the discriminated union TS complaint
     const payload = {
-      from: fromEmail,
+      from: mailOptions.from,
       to: toEmails,
       subject: mailOptions.subject,
     } as CreateEmailOptions;

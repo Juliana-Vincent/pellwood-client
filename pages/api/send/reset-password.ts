@@ -59,8 +59,8 @@ export default async function handler(
 
       const mailOptions = {
         from: isEnglish
-          ? '"Password reset - Pellwood" <info@pellwood.cz>'
-          : '"Obnovení hesla - Pellwood" <info@pellwood.cz>',
+          ? '"Password reset - Pellwood" <info@pellwood.com>'
+          : '"Obnovení hesla - Pellwood" <info@pellwood.com>',
         to: email,
         subject: isEnglish ? "Password reset" : "Obnovení hesla",
         text: isEnglish ? "Password reset - Pellwood" : "Obnovení hesla - Pellwood",

@@ -121,9 +121,9 @@ export default async function handler(
         proto + "://" + host + localePrefix +
         "/thank-you?refId=${refId}&transId=${id}&t=" + accessToken;
 
-      // COMGATE_TEST=true turns on Comgate test payments and the zbozi.cz sandbox,
-      // so the checkout can be tested end to end without real money or fake
-      // conversions. Anything other than exactly "true" (including unset) is live.
+      // COMGATE_TEST=true turns on Comgate test payments, so the checkout can be
+      // tested end to end without real money. Anything other than exactly "true"
+      // (including unset) is live.
       const testMode = process.env.COMGATE_TEST === "true";
 
       let resDataParse: Record<string, string> = {};
@@ -186,37 +186,6 @@ export default async function handler(
           });
         }
       }
-
-      const zboziConverseBody = {
-        PRIVATE_KEY: process.env.ZBOZI_PRIVATE_KEY,
-        sandbox: testMode,
-        orderId: order.idOrder,
-        email: order.email,
-        deliveryType: "PPL",
-        // Safely extract price digits even if value is "ZDARMA"
-        deliveryPrice: parseInt(String(order.deliveryPrice)) || 0,
-        paymentType: order.paymentMethod,
-        otherCosts: parseInt(String(order.paymentPrice)) || 0,
-        cart: verifiedBasket.map((item: any) => ({
-          itemId: item.id,
-          productName: `${item.nameProduct}${item.variantName ? " - " + item.variantName : ""}`,
-          unitPrice: Number(item.variantPrice) || 0,
-          quantity: Number(item.countVariant) || 1,
-        })),
-      };
-
-      // Fire-and-forget, with a timeout - this is third-party conversion tracking, not
-      // part of placing the order, so a slow/unreachable zbozi.cz must never block (or
-      // fail) checkout for the customer, who already has a saved order at this point.
-      axios
-        .post(
-          `https://www.zbozi.cz/action/153477/conversion/backend`,
-          zboziConverseBody,
-          { timeout: 5000 }
-        )
-        .catch((err) =>
-          console.error("Zbozi Conversion ERROR:", err.response?.data?.problemTypes || err.message)
-        );
 
       return res.status(200).json({
         msg: "Order successfully created",
