@@ -100,6 +100,17 @@ module.exports = (phase) => {
         { protocol: 'http', hostname: 'localhost', port: '1337' },
       ],
     },
+    async redirects() {
+      return [
+        {
+          source: '/:path*',
+          has: [{ type: 'host', value: 'pellwood.hardart.cz' }],
+          destination: 'https://pellwood.com/:path*',
+          permanent: true,
+          locale: false,
+        },
+      ];
+    },
     async headers() {
       return [
         {
