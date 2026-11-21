@@ -103,9 +103,16 @@ module.exports = (phase) => {
     async redirects() {
       return [
         {
-          source: '/:path*',
+          source: '/cs/:path*',
           has: [{ type: 'host', value: 'pellwood.hardart.cz' }],
           destination: 'https://pellwood.com/:path*',
+          permanent: true,
+          locale: false,
+        },
+        {
+          source: '/en/:path*',
+          has: [{ type: 'host', value: 'pellwood.hardart.cz' }],
+          destination: 'https://pellwood.com/en/:path*',
           permanent: true,
           locale: false,
         },
