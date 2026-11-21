@@ -209,25 +209,6 @@ const Page = ({
           }}
         />
       )}
-
-      {purchase && (
-        <Script
-          strategy="lazyOnload"
-          id="seznam-conversion"
-          dangerouslySetInnerHTML={{
-            __html: `
-        var conversionConf = {
-          zboziId: 153477,
-          orderId: ${purchase.transaction_id},
-          zboziType: "standard",
-          consent: 1,
-        };
-        if (window.rc && window.rc.conversionHit) {
-          window.rc.conversionHit(conversionConf);
-        }`,
-          }}
-        />
-      )}
       <Header loginUser={loginUser} csHref={csPath || "/"} enHref={enPath || "/"} />
 
       {/* Fixed, below the header, rather than the first child of <main>: in the
