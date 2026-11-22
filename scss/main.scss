@@ -1406,9 +1406,13 @@ footer{
 	min-height: 235px;
 	background-color: #fff;
 	padding-top: 210px;
-	margin-bottom: 50px;
+	margin-bottom: 40px;
 	.content_head_wrap{
 		text-align: center;
+	}
+	&.head_category_intro{
+		min-height: 0;
+		margin-bottom: 0;
 	}
 	&.head_category_articles{
 		text-align: right;

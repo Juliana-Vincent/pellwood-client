@@ -232,7 +232,7 @@ const Catalog = ({
       alternates={alternates}
     >
       {(activeCategory?.title || settings?.title) && (
-        <section className="head_category">
+        <section className={`head_category${intro ? " head_category_intro" : ""}`}>
           <div className="uk-container uk-container-expand">
             <div className="content_head_wrap">
               <h1>{activeCategory?.title || settings?.title}</h1>
