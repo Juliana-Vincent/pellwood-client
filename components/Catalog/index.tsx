@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, MouseEvent } from "react";
+import { CATALOG_PAGE_SIZE } from "@/helpers/catalogPageSize";
+import { blocksToText } from "@/helpers/seoText";
 import { modal, util } from "uikit";
 import { useRouter } from "next/router";
 import InfiniteScroll from "react-infinite-scroll-component";
@@ -61,7 +63,7 @@ const Catalog = ({
   const [firstLoad, setFirstLoad] = useState(false);
   const [reset, setReset] = useState(false);
   const [product, setProduct] = useState(productData);
-  const [hasMore, setHasMore] = useState(productData.length >= 6);
+  const [hasMore, setHasMore] = useState(productData.length >= CATALOG_PAGE_SIZE);
   const [filtered, setFiltered] = useState(ifFiltered);
   const [search, setSearch] = useState(searchQuery || "");
 
@@ -103,8 +105,14 @@ const Catalog = ({
   const changeData = async (queryUrl: ParsedUrlQuery) => {
     const requestId = ++latestRequest.current;
     try {
-    const sizeBefore = parseInt((queryUrl.size as string) || "6") - 6 || 0;
-    const count = parseInt((queryUrl.size as string) || "6");
+    // Never below 0: a size smaller than one page (an old ?size=6 link) made the
+    // offset negative, and slice(-6, 6) returned nothing - "no products found"
+    // for every filter.
+    const sizeBefore = Math.max(
+      0,
+      parseInt((queryUrl.size as string) || String(CATALOG_PAGE_SIZE)) - CATALOG_PAGE_SIZE || 0,
+    );
+    const count = parseInt((queryUrl.size as string) || String(CATALOG_PAGE_SIZE));
     const category = queryUrl.category as string;
     const search = (queryUrl.search as string) || "";
     const sortBy = parseCatalogSort(queryUrl.sort);
@@ -128,7 +136,7 @@ const Catalog = ({
     });
     if (requestId !== latestRequest.current) return;
 
-    if (data.length < 6) {
+    if (data.length < count - sizeBefore) {
       setHasMore(false);
     } else {
       setHasMore(true);
@@ -155,11 +163,11 @@ const Catalog = ({
     }
   };
 
-  // Changing the order has to reset `size` to 6. changeData appends whenever
-  // size > 6, so without this you would get page 4 of the new order stuck on the
+  // Changing the order has to reset `size` to one page. changeData appends whenever
+  // size > one page, so without this you would get page 4 of the new order stuck on the
   // end of the old list.
   const changeSort = (value: string) => {
-    const query = { ...router.query, sort: value, size: "6" } as any;
+    const query = { ...router.query, sort: value, size: String(CATALOG_PAGE_SIZE) } as any;
     if (value === "default") delete query.sort;
     setReset(true);
     router.push({ pathname: router.pathname, query }, undefined, { scroll: false });
@@ -167,7 +175,7 @@ const Catalog = ({
 
   const moreData = () => {
     changeUrl(
-      parseInt((router.query.size as string) || "6") + 6,
+      parseInt((router.query.size as string) || String(CATALOG_PAGE_SIZE)) + CATALOG_PAGE_SIZE,
       false,
       false,
       null, // preserve existing range/search filter params in the URL
@@ -196,7 +204,7 @@ const Catalog = ({
       stateRange.length.max !== rangeNumber.length.max ||
       stateRange.diameter.min !== rangeNumber.diameter.min ||
       stateRange.diameter.max !== rangeNumber.diameter.max;
-    changeUrl(6, false, search, isRangeNarrowed ? stateRange : {}, router);
+    changeUrl(CATALOG_PAGE_SIZE, false, search, isRangeNarrowed ? stateRange : {}, router);
 
     closeModal();
     setFiltered(true);
@@ -208,14 +216,19 @@ const Catalog = ({
     setStateRange(rangeNumber);
     setSearch("");
     setReset(true);
-    changeUrl(6, false, "", {}, router, true);
+    changeUrl(CATALOG_PAGE_SIZE, false, "", {}, router, true);
   };
+
+  // Setting.description is a rich-text (blocks) field in Strapi. It was rendered
+  // as if it were a string, so the moment anyone filled it in, React got an
+  // array of objects and the whole catalogue page crashed.
+  const intro = activeCategory?.description || blocksToText(settings?.description);
 
   return (
     <Page
       id="catalog"
       title={activeCategory?.title || settings?.title}
-      description={activeCategory?.description || settings?.description}
+      description={intro}
       alternates={alternates}
     >
       {(activeCategory?.title || settings?.title) && (
@@ -223,7 +236,7 @@ const Catalog = ({
           <div className="uk-container uk-container-expand">
             <div className="content_head_wrap">
               <h1>{activeCategory?.title || settings?.title}</h1>
-              <p>{activeCategory?.description || settings?.description}</p>
+              {intro && <p>{intro}</p>}
             </div>
           </div>
         </section>
@@ -293,7 +306,7 @@ const Catalog = ({
               endMessage={<div></div>}
             >
               <ul
-                className="uk-grid uk-child-width-1-1 uk-child-width-1-3@m uk-child-width-1-2@s"
+                className="uk-grid catalog-grid uk-child-width-1-2 uk-child-width-1-3@m"
                 uk-grid=""
                 suppressHydrationWarning
               >

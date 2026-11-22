@@ -114,7 +114,12 @@ const Checkout = ({
               duration={500}
               height={state.companyDataCheck ? "auto" : 0}
             >
-              <Corporate state={companyData} setState={setCompanyData} />
+              <Corporate
+                state={companyData}
+                setState={setCompanyData}
+                error={error}
+                clearError={(name) => setError((prev) => ({ ...prev, [name]: false }))}
+              />
             </AnimateHeight>
           </div>
 

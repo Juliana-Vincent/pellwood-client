@@ -1,4 +1,5 @@
 import { NextRouter } from "next/router";
+import { CATALOG_PAGE_SIZE } from "@/helpers/catalogPageSize";
 
 const changeUrl = (
   size: number | string | false = false,
@@ -18,7 +19,7 @@ const changeUrl = (
   var queryUrl = { ...router.query } as any;
 
   if(!router.query.category){
-    queryUrl.size = '6'
+    queryUrl.size = String(CATALOG_PAGE_SIZE)
   }
 
   if(size) queryUrl.size = String(size)

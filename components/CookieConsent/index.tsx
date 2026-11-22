@@ -2,6 +2,13 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 import * as CookieConsent from "vanilla-cookieconsent";
 import localize from "@/data/localize";
+import { applyConsent } from "@/lib/tracking";
+
+const syncConsent = () =>
+  applyConsent({
+    analytics: CookieConsent.acceptedCategory("analytics"),
+    targeting: CookieConsent.acceptedCategory("targeting"),
+  });
 
 const contactUs = "info@pellwood.com"
 
@@ -32,9 +39,18 @@ export default function CookieConsent_() {
           : { layout: 'cloud', position: 'bottom center' },
       },
 
+      // Scripts are loaded from these callbacks (lib/tracking.ts), not by the
+      // library's own scan for type="text/plain" tags - that scan ran before
+      // next/script had inserted them, so nothing ever loaded.
+      onConsent: syncConsent,
+      onChange: syncConsent,
+
       categories: {
         necessary: { readOnly: true, enabled: true },
-        analytics: { enabled: false },
+        analytics: {
+          enabled: false,
+          autoClear: { cookies: [{ name: /^_ga/ }, { name: "_gid" }] },
+        },
         targeting: { enabled: false },
       },
 

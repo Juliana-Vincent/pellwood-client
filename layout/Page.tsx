@@ -17,7 +17,7 @@ const CookieConsent = dynamic(() => import("../components/CookieConsent"), {
   ssr: false,
 });
 import { modal } from "uikit";
-import Script from "next/script";
+import { trackPurchase } from "@/lib/tracking";
 import type { PageProps } from "@/types/shop";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useBasketCurrencySync } from "@/hooks/useBasketCurrencySync";
@@ -26,9 +26,6 @@ export const SITE_URL =
   process.env.NODE_ENV === "development"
     ? "http://localhost:4502"
     : "https://pellwood.com";
-// Unset until a GA4 property exists - the analytics <Script> tags below are only
-// rendered when this is present, instead of shipping a broken/empty gtag call.
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 const defaultTitle = "PELLWOOD";
 // The fallback meta description was the Czech word "Paličky" on every page,
 // including all the English ones.
@@ -95,6 +92,11 @@ const Page = ({
       modal("#reset-password").show();
     }
   }, [dataContextState.user, router.query?.email]);
+
+  // Sent once the visitor's consent allows it - see lib/tracking.ts.
+  useEffect(() => {
+    if (purchase) trackPurchase(purchase);
+  }, [purchase]);
 
   return (
     <>
@@ -170,45 +172,9 @@ const Page = ({
         {noCrawl && <meta name="robots" content="noindex, nofollow" />}
         {tags && <meta name="article:tag" content={tags} />}
       </Head>
-      {GA_MEASUREMENT_ID && (
-        <>
-          <Script
-            strategy="afterInteractive"
-            type="text/plain"
-            data-category="analytics"
-            src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          ></Script>
-          <Script
-            strategy="afterInteractive"
-            id="google-analytics"
-            type="text/plain"
-            data-category="analytics"
-            dangerouslySetInnerHTML={{
-              __html: `window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', '${GA_MEASUREMENT_ID}');`,
-            }}
-          />
-        </>
-      )}
-      <Script
-        strategy="lazyOnload"
-        type="text/plain"
-        data-category="targeting"
-        src="https://c.seznam.cz/js/rc.js"
-      />
-      {purchase && GA_MEASUREMENT_ID && (
-        <Script
-          strategy="afterInteractive"
-          id="google-analytics-purchase"
-          type="text/plain"
-          data-category="analytics"
-          dangerouslySetInnerHTML={{
-            __html: `gtag('event', 'purchase', ${JSON.stringify(purchase)})`,
-          }}
-        />
-      )}
+      <a href="#main-content" className="skip-link">
+        {t("skipToContent")}
+      </a>
       <Header loginUser={loginUser} csHref={csPath || "/"} enHref={enPath || "/"} />
 
       {/* Fixed, below the header, rather than the first child of <main>: in the
@@ -227,6 +193,7 @@ const Page = ({
           </div>
         </div>
       )}
+      <span id="main-content" tabIndex={-1} />
       <main id={id} className={className}>
         {children}
       </main>

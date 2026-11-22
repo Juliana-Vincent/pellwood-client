@@ -2,7 +2,8 @@ import type { BlocksContent } from '@strapi/blocks-react-renderer';
 
 export interface Setting {
   title?: string;
-  description: string;
+  /** Rich text (blocks) in Strapi, not a string - see blocksToText. */
+  description?: BlocksContent | string | null;
   footer?: Footer[];
   /** CMS-editable shipping/payment/discount config - see functions/shippingOptions.ts
    *  and functions/pricingRules.ts for the hardcoded fallback used when these are

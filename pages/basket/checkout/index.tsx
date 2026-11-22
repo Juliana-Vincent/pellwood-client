@@ -8,7 +8,7 @@ import Checkout from "@/components/Checkout";
 import Total from "@/components/Total";
 import AcceptInfo from "@/components/AcceptInfo";
 import ButtonsSubmit from "@/components/ButtonsSubmit";
-import validationForm, { validateName, validationAddress, validationCity, validationCode, validationEmail, validationPhone } from "@/functions/validationForm";
+import validationForm, { validateName, validationAddress, validationCity, validationCode, validationEmail, validationPhone, validationIco, validationDic } from "@/functions/validationForm";
 import sumTotal from "@/functions/sumTotal";
 import { fetchAPI } from "@/lib/strapi";
 import localize from "@/data/localize";
@@ -277,6 +277,7 @@ const Basket = ({ settings }: BasketProps) => {
     setPriceChanged(false);
     setEmptyBasket(false);
     setBlockedByUnavailable(false);
+    setError((prev) => ({ ...prev, submit: false }));
   };
 
   const onBlur = (type: any) => {
@@ -322,6 +323,9 @@ const Basket = ({ settings }: BasketProps) => {
       email: !validationEmail(state.email),
       delivery: !deliveryMethod.value.length,
       payment: !paymentMethod.value.length,
+      // Only when the customer ticked "company details"; both fields are optional.
+      ico: !!state.companyDataCheck && !validationIco(companyData.ico, state.country),
+      dic: !!state.companyDataCheck && !validationDic(companyData.dic, state.country),
     };
 
     const anotherInvalid = state.anotherAddressCheck
@@ -506,7 +510,9 @@ const Basket = ({ settings }: BasketProps) => {
             {/* Gone from the shop and missing in this language are different
                 problems; the language message told someone whose product had
                 been deleted to "switch back to Czech". */}
-            {(blockedByUnavailable || itemsGone) && (
+            {/* Only while an unavailable line is still in the basket - removing it
+                is the fix, so the notice goes with it */}
+            {(blockedByUnavailable || itemsGone) && basket.some((item) => item.unavailable) && (
               <div
                 className="uk-alert-danger uk-width-1-1 uk-text-center"
                 uk-alert=""

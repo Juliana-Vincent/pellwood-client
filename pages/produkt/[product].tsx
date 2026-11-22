@@ -79,9 +79,11 @@ export async function getStaticProps({
   let articlesData: Article[] = [];
   let cmsReachable = true;
   try {
+    // image too: without it the two article tiles at the bottom of every
+    // product page rendered with no picture. Same as the homepage and catalogue.
     const articlesRes = await fetchAPI<Article[]>("articles", {
       locale: strapiLocale,
-      populate: { category: true },
+      populate: { category: true, image: true },
     });
     articlesData = articlesRes.data || [];
   } catch (err) {
@@ -300,9 +302,15 @@ const Product = ({
 
   // Product/Offer structured data - lets Google show price/availability rich
   // results for this page, which no page in the app currently provides.
-  const inStock = product.variants?.length
-    ? product.variants.some((v) => v.inStock !== false)
-    : true;
+  // A product with no price anywhere can't be bought.
+  const hasPrice = product.variants?.length
+    ? pricedVariants.length > 0
+    : parsePrice(product.price) > 0;
+  const inStock =
+    hasPrice &&
+    (product.variants?.length
+      ? pricedVariants.some((v) => v.inStock !== false)
+      : true);
   // From the variants that can actually be bought. An unpriced variant parsed to
   // 0 and made the structured-data price 0 - the number Google shows in results.
   const buyablePrices = pricedVariants
@@ -317,20 +325,38 @@ const Product = ({
       ? Math.min(...listedPrices)
       : 0
     : parsePrice(product.price);
+  const productUrl = `${SITE_URL}${lang === "en" ? "/en" : ""}/produkt/${product.slug}`;
+  const priceCurrency = currency === "Kč" ? "CZK" : "EUR";
+  const availability = `https://schema.org/${inStock ? "InStock" : "OutOfStock"}`;
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: product.title,
+    name: product.title.trim(),
+    brand: { "@type": "Brand", name: "Pellwood" },
     ...(product.SEOdescription ? { description: product.SEOdescription } : {}),
     ...(product.image ? { image: urlFor(product.image).url() } : {}),
-    sku: productId,
-    offers: {
-      "@type": "Offer",
-      url: `${SITE_URL}${lang === "en" ? "/en" : ""}/produkt/${product.slug}`,
-      priceCurrency: currency === "Kč" ? "CZK" : "EUR",
-      price,
-      availability: `https://schema.org/${inStock ? "InStock" : "OutOfStock"}`,
-    },
+    ...(hasPrice
+      ? {
+          offers:
+            listedPrices.length > 1
+              ? {
+                  "@type": "AggregateOffer",
+                  url: productUrl,
+                  priceCurrency,
+                  lowPrice: Math.min(...listedPrices),
+                  highPrice: Math.max(...listedPrices),
+                  offerCount: listedPrices.length,
+                  availability,
+                }
+              : {
+                  "@type": "Offer",
+                  url: productUrl,
+                  priceCurrency,
+                  price,
+                  availability,
+                },
+        }
+      : {}),
   };
 
   const localePrefix = lang === "en" ? "/en" : "";
@@ -351,7 +377,7 @@ const Product = ({
     <Page
       id="product"
       description={firstText(product.SEOdescription, product.text)}
-      title={product.SEOtitle || product.title}
+      title={product.SEOtitle || product.title.trim()}
       image={urlFor(product.image).url()}
       alternates={alternates}
     >
@@ -398,7 +424,7 @@ const Product = ({
           <div suppressHydrationWarning>
             <div className="content_wrap grey" suppressHydrationWarning>
               <div className="content">
-                <h1 className="head_1">{product.title}</h1>
+                <h1 className="head_1">{product.title.trim()}</h1>
                 {!!product?.variants?.length && (
                   <div className="variants_list">
                     {product.variants.map((item, index) => {
@@ -505,7 +531,10 @@ const Product = ({
                     </button>
                   </div>
                 )}
-                {!product?.variants?.length && (
+                {!hasPrice && (
+                  <p className="uk-text-center uk-margin-bottom">{t("outOfStock")}</p>
+                )}
+                {!product?.variants?.length && hasPrice && (
                   <div className="tm-single-order">
                     <div className="tm-single-price uk-text-center uk-margin-bottom">
                       {formatPrice(product.price, lang)}

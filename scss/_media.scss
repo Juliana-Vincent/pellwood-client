@@ -55,15 +55,22 @@
       flex-wrap: nowrap;
       .sub_menu{
         max-width: 100%;
-        overflow-y: none;
         text-align: center;
         ul{
           -webkit-overflow-scrolling: touch; /* apply iOS momentum scrolling effect to this element */
           display: inline-block;
           max-width: 100%;
-          overflow: auto;
-          height: 35px;
-          white-space: nowrap
+          // Swipe sideways only. `overflow: auto` with a fixed 35px height made
+          // the tabs scroll vertically too, clipped the text and showed the
+          // browser's own scrollbars and arrows under them.
+          overflow-x: auto;
+          overflow-y: hidden;
+          padding-bottom: 12px;
+          white-space: nowrap;
+          scrollbar-width: none;
+          &::-webkit-scrollbar{
+            display: none;
+          }
         }
       }
   	}
@@ -270,8 +277,9 @@
       padding-right: 15px;
     }
     .cancel-filtered{
-      margin-top: 10px;
-      width: 100%;
+      width: auto;
+      padding-left: 0;
+      padding-right: 0;
     }
   }
 
@@ -447,5 +455,40 @@
     ul li{
       width: calc(100% - 2px);
     }
+  }
+}
+
+// Two products per row on phones instead of one 345 x 391 px card each - 115
+// products made an extremely long list
+@media (max-width: 639px) {
+  // "Hledat a filtrovat" and "Řadit" stacked with no gap and at different widths. Same width, with space between.
+  .filter-controls-wrap{
+    .catalog-sort{
+      width: calc(100% - 20px);
+      margin-right: 0;
+      .catalog-sort-control{
+        flex: 1;
+      }
+      .catalog-sort-control .catalog-sort-button{
+        width: 100%;
+        min-width: 0;
+      }
+    }
+  }
+  .catalog-grid{
+    margin-left: -12px;
+    > *{
+      padding-left: 12px;
+    }
+    .card_short .card_short_head{
+      font-size: 16px;
+    }
+  }
+}
+
+// Below 960px the cancel link gets its own row under the controls.
+@media (max-width: 960px) {
+  .filter-controls-wrap .cancel-filtered{
+    flex-basis: 100%;
   }
 }

@@ -36,12 +36,14 @@ const Cart = ({ item, lang, currency, block, priority }: CartProps) => {
   // before the number for EN - which is why the homepage and catalogue read
   // "€ 14.5" while every other page read "8.90 €". Intl decides placement now.
   let price = "";
+  const priced = (item?.variants || []).filter((v) => parsePrice(v.price) > 0);
+  const distinctPrices = new Set(priced.map((v) => parsePrice(v.price)));
   if (!item?.variants?.length) {
     price = formatPrice(item.price, lang);
-  } else if (item?.variants?.length > 1) {
-    price = `${t("from")} ${formatPrice(getMin(item.variants), lang)}`;
-  } else if (item?.variants?.length === 1) {
-    price = formatPrice(item.variants[0].price, lang);
+  } else if (distinctPrices.size > 1) {
+    price = `${t("from")} ${formatPrice(getMin(priced), lang)}`;
+  } else if (priced.length) {
+    price = formatPrice(priced[0].price, lang);
   }
 
   const hrefUrl = `/produkt/${item.slug}`;

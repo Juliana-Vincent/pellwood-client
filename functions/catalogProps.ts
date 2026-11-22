@@ -1,4 +1,5 @@
 import { fetchAPI, fetchAllAPI } from "@/lib/strapi";
+import { CATALOG_PAGE_SIZE } from "@/helpers/catalogPageSize";
 import { blocksToText } from "@/helpers/seoText";
 import localize from "@/data/localize";
 import controledProduct from "@/helpers/controlledProduct";
@@ -85,10 +86,10 @@ export async function getCatalogProps(
   const category = resolved?.slug || "all";
   // `size` comes straight from the URL and flowed into Strapi's pagination
   // untouched, so /produkty?size=abc sent pagination[limit]=NaN. Clamp it.
-  const parsedSize = parseInt((query.size as string) || "6", 10);
+  const parsedSize = parseInt((query.size as string) || String(CATALOG_PAGE_SIZE), 10);
   const size = Number.isFinite(parsedSize)
-    ? Math.min(Math.max(parsedSize, 6), 120)
-    : 6;
+    ? Math.min(Math.max(parsedSize, CATALOG_PAGE_SIZE), 120)
+    : CATALOG_PAGE_SIZE;
   const search = (query.search as string) || "";
   const sortBy = parseCatalogSort(query.sort);
   const diameterMin = (query.diameterMin as string) || false;

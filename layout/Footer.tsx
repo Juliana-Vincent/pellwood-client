@@ -59,7 +59,12 @@ export default () => {
                 <h4 className="footer-item-head">{item.title}</h4>
                 <BlockContent blocks={item.content} />
                 {index === 2 && (
-                  <a onClick={handleCookies} href="/" aria-label={t('cookieSettings')}>
+                  <a
+                    onClick={handleCookies}
+                    href="/"
+                    className="footer-cookie-link"
+                    aria-label={t('cookieSettings')}
+                  >
                     {t('cookieSettings')}
                   </a>
                 )}

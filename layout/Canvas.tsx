@@ -117,7 +117,7 @@ const Canvas = () => {
   const isFreeDelivery = sum > deliveryThreshold;
   const deliveryLabel = isFreeDelivery
     ? t('free')
-    : (lang === 'cz' ? 'od 150 Kč' : '10 €');
+    : (lang === 'cz' ? `od ${formatPrice(150, lang)}` : formatPrice(10, lang));
 
   const showDeliveryFreeCanvas = sum <= deliveryThreshold;
   const showSaleCanvas = sum <= discountThreshold;
@@ -146,7 +146,8 @@ const Canvas = () => {
                   <div data-src={item.imgUrl} className="tm-basket-img-wrap uk-background-contain" uk-img=""></div>
                   <div className="tm-basket-item-info">
                     <h3 className="tm-basket-item-head">{item.nameProduct}</h3>
-                    <span>{item.variantName}</span>
+                    {/* Single-variant products store their own name as the variant - shown twice here, unlike the basket page. */}
+                    {item.variantName !== item.nameProduct && <span>{item.variantName}</span>}
                     <span>{item.unavailable ? t("outOfStock") : formatPrice(item.variantPrice, lang)}</span>
                     <div className="tm-canvas-basket-item-count">
                       <span>{item.countVariant} {t('pc')}</span>

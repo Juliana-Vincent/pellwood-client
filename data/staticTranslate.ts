@@ -226,7 +226,7 @@ export default {
   },
   interestedproducts: {
     cz: "Mohlo by vás zajímat",
-    en: "You could be interested in",
+    en: "You might also like",
     de: "xxx"
   },
   footeradress: {
@@ -500,7 +500,7 @@ export default {
     de: "xxx"
   },
   sale: {
-    cz: "Sleva 5%",
+    cz: "Sleva 5 %",
     en: "Discount 5%",
     de: "xxx"
   },
@@ -574,8 +574,8 @@ export default {
     de: "xxx"
   },
   linkBusiness: {
-    cz: "/clanek/kategorie/vseobecne-obchodni-podminky",
-    en: "/en/clanek/kategorie/agb",
+    cz: "/clanek/technicke-clanky/vseobecne-obchodni-podminky",
+    en: "/en/clanek/technical/agb",
     de: "xxx"
   },
   showResults: {
@@ -731,6 +731,41 @@ export default {
   basketItemsGone: {
     cz: "Některé položky v košíku už nejsou k dispozici. Odeberte je prosím a objednávku pak odešlete.",
     en: "Some items in your basket are no longer available. Please remove them, then place your order.",
+    de: "xxx",
+  },
+  fieldErrorRequired: {
+    cz: "Vyplňte prosím toto pole správně.",
+    en: "Please fill in this field correctly.",
+    de: "xxx",
+  },
+  fieldErrorEmail: {
+    cz: "Zadejte platný e-mail, např. jan@seznam.cz.",
+    en: "Enter a valid email address, e.g. john@example.com.",
+    de: "xxx",
+  },
+  fieldErrorPhone: {
+    cz: "Zadejte telefon, 9 až 15 číslic.",
+    en: "Enter a phone number, 9 to 15 digits.",
+    de: "xxx",
+  },
+  fieldErrorZip: {
+    cz: "Zkontrolujte PSČ pro zvolenou zemi.",
+    en: "Check the postcode for the selected country.",
+    de: "xxx",
+  },
+  fieldErrorIco: {
+    cz: "IČO má 8 číslic, zkontrolujte ho prosím.",
+    en: "Please check the company ID.",
+    de: "xxx",
+  },
+  fieldErrorDic: {
+    cz: "DIČ zadejte ve tvaru CZ12345678.",
+    en: "Enter the VAT ID with its country prefix, e.g. DE123456789.",
+    de: "xxx",
+  },
+  skipToContent: {
+    cz: "Přeskočit na obsah",
+    en: "Skip to content",
     de: "xxx",
   }
 }

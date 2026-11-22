@@ -115,6 +115,8 @@ export interface CheckoutErrors {
   delivery?: boolean;
   payment?: boolean;
   submit?: boolean;
+  ico?: boolean;
+  dic?: boolean;
 }
 
 export interface RangeValue {

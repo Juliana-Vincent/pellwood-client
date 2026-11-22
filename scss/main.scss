@@ -134,7 +134,7 @@
           font-weight: normal;
           font-size: 18px;
           letter-spacing: 1.8px;
-          color: #989898;
+          color: $text-muted;
           &:last-child{
             text-align: right;
           }
@@ -172,16 +172,16 @@
 
 .tm-remove-item{
   a{
-    color: #989898;
+    color: $text-muted;
     vertical-align: middle;
     font-family: var(--font-oswald), sans-serif;
     font-size: 18px;
     text-transform: lowercase;
     &:hover{
-      color: darken(#989898, 10%);
+      color: darken($text-muted, 10%);
       text-decoration: none;
       button svg{
-        color: darken(#989898, 10%);
+        color: darken($text-muted, 10%);
       }
     }
     button{
@@ -190,7 +190,7 @@
       svg{
         height: 19px;
         width: 19px;
-        color: #989898;
+        color: $text-muted;
       }
     }
   }
@@ -451,7 +451,7 @@ p{
     padding-bottom: 20px;
     margin-bottom: 50px;
     h2{
-      color: #989898;
+      color: $text-muted;
       font-size: 18px;
       margin-bottom: 0!important;
     }
@@ -585,18 +585,25 @@ legend{
     top: 15px;
     left: 12px;
     font-family: var(--font-oswald), sans-serif;
-    color: #989898;
+    color: $text-muted;
     transition: all .5s ease;
     letter-spacing: 1.5px;
     z-index: -1;
     cursor: text;
+  }
+  .field_error{
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #C4161C;
   }
   input{
     width: calc(100% - 40px);
     display: inline-block;
     border: 1px solid #CBCBCB!important;
     height: 45px;
-    font-size: 15px;
+    font-size: 16px;
     padding: 0 20px;
     color: #232323;
     font-family: var(--font-oswald), sans-serif;
@@ -637,6 +644,10 @@ legend{
 
 .checkbox_item{
   vertical-align: middle;
+  label a{
+    color: inherit;
+    text-decoration: underline;
+  }
   label{
     cursor: pointer;
   }
@@ -1071,6 +1082,8 @@ p{
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
+	// Space between the rows once the controls wrap, at any width.
+	row-gap: 15px;
 	.tm-black-button{
 		padding-left: 100px;
 		padding-right: 100px;
@@ -1468,7 +1481,7 @@ footer{
 }
 
 #blog .full{
-	&:not(:first-child){
+	&:not(:first-of-type){
 		.content_wrap, .article_img_wrap{
 			padding-top: 30px;
 			position: relative;
@@ -1663,7 +1676,7 @@ footer{
   justify-content: space-between;
   .basket-right-panel p{
     font-size: 13px;
-    color: #989898;
+    color: $text-muted;
     line-height : 31px;
     letter-spacing : 0.65px;
     margin: 0;
@@ -1702,7 +1715,7 @@ footer{
 }
 
 .tm-positive{
-  color: #7AC843!important;
+  color: #3A7D1C!important;
 }
 
 
@@ -1846,7 +1859,7 @@ footer{
 	height: 53px;
 	border: 1px solid #ccc;
 	position: relative;
-	color: #989898;
+	color: $text-muted;
 	font-family: $font-medium;
 	font-size: 18px;
 	transition: 0.4s;
@@ -1862,6 +1875,14 @@ footer{
 	height: 53px;
 	width: calc(100% - 30px);
 	border: 1px solid rgba(#232323, .2);
+	// Focus shows on the box's own border. The global input outline was clipped
+	// by overflow: hidden below and showed as a stray vertical bar.
+	&:focus-within{
+		border-color: $accent;
+	}
+	input:focus-visible{
+		outline: none;
+	}
 	padding-right: 30px;
 	overflow: hidden;
 	margin-top: 30px;
@@ -1918,11 +1939,22 @@ footer{
 	}
 }
 
-.cancel-filtered{
+// A small text link, not a 54px-tall button: with the buttons' fixed 54px
+// line-height a squeezed label became three tall lines over the tabs.
+.filter-controls-wrap .cancel-filtered{
+	display: -webkit-inline-flex;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	height: auto;
+	line-height: 1.2;
+	padding: 8px 0;
+	white-space: nowrap;
 	svg, img{
-		width: 20px;
-		margin-top: -3px;
-		margin-right: 10px;
+		width: 14px;
+		height: 14px;
+		margin: 0;
+		flex-shrink: 0;
 	}
 }
 
@@ -1940,7 +1972,7 @@ footer{
 		font-weight: normal;
 		.name-range{
 			font-family: $font-medium;
-			color: #989898
+			color: $text-muted
 		}
 		// .value-range{
 		// 	// font-weight: bold;
@@ -2221,7 +2253,7 @@ input[type=number]
       th{
         font-size: 18px;
         letter-spacing : 1.8px;
-        color : #989898;
+        color : $text-muted;
       }
       td{
         font-size: 20px;
@@ -2271,7 +2303,7 @@ button{
 
   p{
     text-align: center;
-    color: #989898;
+    color: $text-muted;
     font-size: 18px;
   }
 }
@@ -2310,4 +2342,35 @@ hr{
       height: auto;
     }
   }
+}
+.thank-you-summary{
+  max-width: 560px;
+  margin: 30px auto;
+  text-align: left;
+}
+
+input:focus-visible, select:focus-visible, textarea:focus-visible,
+button:focus-visible, a:focus-visible{
+  outline: 2px solid $accent;
+  outline-offset: 2px;
+}
+
+// "Skip to content" - hidden until a keyboard user tabs onto it.
+.skip-link{
+  position: absolute;
+  left: 16px;
+  top: -100px;
+  z-index: 2000;
+  padding: 10px 16px;
+  background-color: #fff;
+  color: $accent;
+  font-family: $font;
+  &:focus{
+    top: 16px;
+  }
+}
+
+footer .footer-cookie-link{
+  font-family: $font;
+  font-weight: 300;
 }

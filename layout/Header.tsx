@@ -9,6 +9,9 @@ import { useRouter } from "next/router";
 interface ArchiveItem {
   title: string;
   slug: string;
+  /** Strapi: Rubriky článků -> showInMenu. Unset on rubrics created before the
+   *  field existed, which must still show, so only an explicit false hides one. */
+  showInMenu?: boolean | null;
 }
 
 interface MenuItem {
@@ -77,7 +80,9 @@ const Header = ({
     })
       .then((res) => {
         if (!isSubscribed) return;
-        const formatted: MenuItem[] = (res.data || []).map((item) => ({
+        const formatted: MenuItem[] = (res.data || [])
+          .filter((item) => item.showInMenu !== false)
+          .map((item) => ({
           title: item.title,
           slug: item.slug,
         }));

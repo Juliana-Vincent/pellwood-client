@@ -21,7 +21,7 @@ export interface ShippingOption {
 
 export const deliveryData: Record<"cz" | "en", ShippingOption[]> = {
   cz: [
-    { value: "PPL standartní doručení v ČR", price: "150 Kč", countries: ["cz"] },
+    { value: "PPL standardní doručení v ČR", price: "150 Kč", countries: ["cz"] },
     { value: "PPL na Slovensko", price: "200 Kč", countries: ["sk"] },
   ],
   en: [{ value: "DHL", price: "\u20ac10.00" }],

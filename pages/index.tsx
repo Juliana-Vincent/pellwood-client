@@ -111,7 +111,7 @@ const Homepage = ({
             <div>
               <h1
                 className="contrast"
-                uk-scrollspy="cls: uk-animation-slide-top-small; delay: 500"
+                uk-scrollspy="cls: uk-animation-slide-top-small"
                 suppressHydrationWarning
               >
                 {homepage?.title}
@@ -119,7 +119,7 @@ const Homepage = ({
               <Link
                 href={homepage?.button?.url || "/"}
                 className="tm-button tm-bare-button tm-contrast"
-                uk-scrollspy="cls: uk-animation-slide-top; delay: 500"
+                uk-scrollspy="cls: uk-animation-slide-top"
                 suppressHydrationWarning
               >
                 {homepage?.button?.title || ""}

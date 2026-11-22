@@ -8,6 +8,7 @@ import { ordersApi, serializeOrder } from "@/lib/strapiAdmin";
 import { sendOrderConfirmation } from "@/lib/orderEmail";
 import { paymentStatusOf } from "@/helpers/paymentStatus";
 import { useTranslation } from "@/hooks/useTranslation";
+import { formatPrice } from "@/helpers/formatPrice";
 import type { GetServerSidePropsContext } from "next";
 import type { GtagPurchaseEvent } from "@/functions/gtag";
 
@@ -74,20 +75,41 @@ export async function getServerSideProps({ query }: GetServerSidePropsContext) {
     }
   }
 
+  const summary = {
+    orderNumber: String(order.idOrder),
+    sum: Number(order.sum) || 0,
+    currency: order.currency === "Kč" ? "cz" : "en",
+    items: (Array.isArray(order.basket) ? order.basket : []).map((item: any) => ({
+      name: String(item.nameProduct || ""),
+      variant:
+        item.variantName && item.variantName !== item.nameProduct ? String(item.variantName) : "",
+      count: Number(item.countVariant) || 1,
+    })),
+  };
+
   return {
     props: {
       status,
       dataGtag: dataGtag || null,
+      summary,
     },
   };
+}
+
+interface OrderSummary {
+  orderNumber: string;
+  sum: number;
+  currency: "cz" | "en";
+  items: { name: string; variant: string; count: number }[];
 }
 
 interface ThankYouProps {
   status: string;
   dataGtag?: GtagPurchaseEvent | null;
+  summary?: OrderSummary;
 }
 
-const ThankYou = ({ status, dataGtag }: ThankYouProps) => {
+const ThankYou = ({ status, dataGtag, summary }: ThankYouProps) => {
   const { dataContextState, dataContextDispatch } = useContext(DataStateContext);
   const { t, lang } = useTranslation();
 
@@ -107,8 +129,8 @@ const ThankYou = ({ status, dataGtag }: ThankYouProps) => {
 
   // Comgate usually sends the customer back before its webhook has told us how the
   // payment ended, so the first view often says PENDING and nothing ever updated
-  // it. Look again a few times. A full reload rather than a client re-render: the
-  // purchase scripts are only switched on by the cookie-consent scan at page load.
+  // it. Look again a few times. A full reload re-runs getServerSideProps, which is
+  // where the payment status and the one-time purchase event come from.
   useEffect(() => {
     if (!pending) return;
     const params = new URLSearchParams(window.location.search);
@@ -142,6 +164,37 @@ const ThankYou = ({ status, dataGtag }: ThankYouProps) => {
       {pending && <div className="uk-text-warning">{t("PayStatusWait")}</div>}
       {status === "PAID" && <div className="uk-text-success">{t("PayStatusOk")}</div>}
       {status === "dobirka" && <div className="uk-text-success">{t("PayStatusCash")}</div>}
+
+      {summary && (
+        <div className="thank-you-summary">
+          <p>
+            <strong>{t("orderNumber")} {summary.orderNumber}</strong>
+          </p>
+          <table className="uk-table uk-table-small uk-table-divider">
+            <tbody>
+              {summary.items.map((item, index) => (
+                <tr key={index}>
+                  <td>
+                    {item.name}
+                    {item.variant && ` - ${item.variant}`}
+                  </td>
+                  <td className="uk-text-right">
+                    {item.count} {t("pc")}
+                  </td>
+                </tr>
+              ))}
+              <tr>
+                <td>
+                  <strong>{t("totalprice")}</strong>
+                </td>
+                <td className="uk-text-right">
+                  <strong>{formatPrice(summary.sum, summary.currency)}</strong>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <Link href="/" className="tm-button tm-black-button">
         {t("backtohp")}

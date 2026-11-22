@@ -34,10 +34,29 @@ const Delivery = ({
     setState((prev) => ({ ...prev, [name]: value }));
   };
 
+  const messageKey = (name: keyof AddressState) =>
+    name === "email"
+      ? "fieldErrorEmail"
+      : name === "phone"
+        ? "fieldErrorPhone"
+        : name === "code"
+          ? "fieldErrorZip"
+          : "fieldErrorRequired";
+  const fieldError = (name: keyof AddressState) =>
+    error[name as keyof CheckoutErrors] ? (
+      <span id={`${section}-${name}-error`} className="field_error" role="alert">
+        {t(messageKey(name))}
+      </span>
+    ) : null;
+  const describedBy = (name: keyof AddressState) =>
+    error[name as keyof CheckoutErrors] ? `${section}-${name}-error` : undefined;
+
   const field = (name: keyof AddressState, token: string) => ({
     id: `${section}-${name}`,
     name: `${section}-${name}`,
     autoComplete: token,
+    "aria-invalid": !!error[name as keyof CheckoutErrors] || undefined,
+    "aria-describedby": describedBy(name),
   });
 
   return (
@@ -54,6 +73,7 @@ const Delivery = ({
             title={disableEmail ? t("emailChangeUnavailable") : undefined}
           />
           <label htmlFor={`${section}-email`}>{t("formemail")}</label>
+          {fieldError("email")}
         </div>
         <div className="input_item">
           <input {...field("phone", "tel")}
@@ -64,6 +84,7 @@ const Delivery = ({
             onChange={(e) => handleChange("phone", e.target.value)}
           />
           <label htmlFor={`${section}-phone`}>{t("formphone")}</label>
+          {fieldError("phone")}
         </div>
       </div>
       <div className="form_column">
@@ -75,6 +96,7 @@ const Delivery = ({
             onChange={(e) => handleChange("name", e.target.value)}
           />
           <label htmlFor={`${section}-name`}>{t("formname")}</label>
+          {fieldError("name")}
         </div>
         <div className="input_item">
           <input {...field("surname", "family-name")}
@@ -84,6 +106,7 @@ const Delivery = ({
             onChange={(e) => handleChange("surname", e.target.value)}
           />
           <label htmlFor={`${section}-surname`}>{t("formsurname")}</label>
+          {fieldError("surname")}
         </div>
       </div>
       <div className="form_column">
@@ -143,6 +166,7 @@ const Delivery = ({
             onChange={(e) => handleChange("city", e.target.value)}
           />
           <label htmlFor={`${section}-city`}>{t("formcity")}</label>
+          {fieldError("city")}
         </div>
       </div>
       <div className="form_column">
@@ -154,6 +178,7 @@ const Delivery = ({
             onChange={(e) => handleChange("address", e.target.value)}
           />
           <label htmlFor={`${section}-address`}>{t("formstreet")}</label>
+          {fieldError("address")}
         </div>
         <div className="input_item">
           <input {...field("code", "postal-code")}
@@ -163,6 +188,7 @@ const Delivery = ({
             onChange={(e) => handleChange("code", e.target.value)}
           />
           <label htmlFor={`${section}-code`}>{t("formzip")}</label>
+          {fieldError("code")}
         </div>
       </div>
     </div>
