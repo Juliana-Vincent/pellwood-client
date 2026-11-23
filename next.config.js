@@ -69,8 +69,7 @@ module.exports = (phase) => {
     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
     { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
     { key: 'Content-Security-Policy', value: csp },
-    // The one place isStaging is actually load-bearing rather than just logged -
-    // a staging deploy must never get indexed alongside the real site.
+    ...(isDev ? [] : [{ key: 'Strict-Transport-Security', value: 'max-age=31536000' }]),
     ...(isStaging ? [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] : []),
   ]
 
