@@ -7,6 +7,8 @@ import Page, { SITE_URL } from "@/layout/Page";
 import RandomArticles from "@/components/RandomArticles/index";
 import ShortBlock from "@/components/ShortBlock";
 import { fetchAPI, urlFor } from "@/lib/strapi";
+import type { Setting } from "@/types/setting";
+import { buildOffers, returnPolicy, shippingCountries, shippingDetails } from "@/functions/productStructuredData";
 import { DataStateContext } from "@/context/dataStateContext";
 import localize from "@/data/localize";
 import { useRouter } from "next/router";
@@ -91,6 +93,20 @@ export async function getStaticProps({
     console.error("Strapi unreachable (product page articles):", (err as Error).message);
   }
 
+  // Shipping prices for the structured data. Optional like the articles: without
+  // them the offers just carry no shippingDetails.
+  let shipping: Setting["shipping"] = [];
+  try {
+    const settingRes = await fetchAPI<Setting>("setting", {
+      locale: strapiLocale,
+      populate: { shipping: { populate: { deliveryOptions: true } } },
+    });
+    shipping = settingRes.data?.shipping || [];
+  } catch (err) {
+    cmsReachable = false;
+    console.error("Strapi unreachable (product page shipping):", (err as Error).message);
+  }
+
   const articlesFilteredFirst = articlesData.filter(
     (item) => item?.category?.slug === "sluzby",
   );
@@ -114,6 +130,8 @@ export async function getStaticProps({
       articleSeccond: shuffle(articlesFilteredSeccond, 1),
       product: product,
       productId: product.documentId,
+      shipping,
+      csSlug,
       alternates: {
         cs: csSlug ? `/produkt/${csSlug}` : null,
         en: enSlug ? `/produkt/${enSlug}` : null,
@@ -131,6 +149,8 @@ interface ProductPageProps {
   articleSeccond: Article[];
   product: ProductType;
   productId: string;
+  shipping: Setting["shipping"];
+  csSlug: string | null;
   alternates: {
     cs: string | null;
     en: string | null;
@@ -143,6 +163,8 @@ const Product = ({
   articleSeccond,
   product,
   productId,
+  shipping,
+  csSlug,
   alternates,
 }: ProductPageProps) => {
   const router = useRouter();
@@ -301,7 +323,7 @@ const Product = ({
   };
 
   // Product/Offer structured data - lets Google show price/availability rich
-  // results for this page, which no page in the app currently provides.
+  // results for this page.
   // A product with no price anywhere can't be bought.
   const hasPrice = product.variants?.length
     ? pricedVariants.length > 0
@@ -311,23 +333,30 @@ const Product = ({
     (product.variants?.length
       ? pricedVariants.some((v) => v.inStock !== false)
       : true);
-  // From the variants that can actually be bought. An unpriced variant parsed to
-  // 0 and made the structured-data price 0 - the number Google shows in results.
-  const buyablePrices = pricedVariants
-    .filter((v) => v.inStock !== false)
-    .map((v) => parsePrice(v.price))
-    .filter((p) => p > 0);
-  const listedPrices = buyablePrices.length
-    ? buyablePrices
-    : pricedVariants.map((v) => parsePrice(v.price)).filter((p) => p > 0);
-  const price = product.variants?.length
-    ? listedPrices.length
-      ? Math.min(...listedPrices)
-      : 0
-    : parsePrice(product.price);
+  // Only for a product without variants; with variants every priced variant
+  // gets its own Offer below.
+  const price = parsePrice(product.price);
   const productUrl = `${SITE_URL}${lang === "en" ? "/en" : ""}/produkt/${product.slug}`;
   const priceCurrency = currency === "Kč" ? "CZK" : "EUR";
-  const availability = `https://schema.org/${inStock ? "InStock" : "OutOfStock"}`;
+  // One Offer per priced variant: Google's merchant listings accept only Offer,
+  // not AggregateOffer, and Search Console wants shipping and returns on each.
+  const offers = hasPrice
+    ? buildOffers(
+        product.variants?.length
+          ? pricedVariants.map((v) => ({
+              name: v.title,
+              price: parsePrice(v.price),
+              inStock: v.inStock !== false,
+            }))
+          : [{ name: null, price, inStock }],
+        {
+          url: productUrl,
+          priceCurrency,
+          shipping: shippingDetails({ shipping }, priceCurrency),
+          returns: returnPolicy(shippingCountries({ shipping }), csSlug),
+        },
+      )
+    : [];
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -335,28 +364,7 @@ const Product = ({
     brand: { "@type": "Brand", name: "Pellwood" },
     ...(product.SEOdescription ? { description: product.SEOdescription } : {}),
     ...(product.image ? { image: urlFor(product.image).url() } : {}),
-    ...(hasPrice
-      ? {
-          offers:
-            listedPrices.length > 1
-              ? {
-                  "@type": "AggregateOffer",
-                  url: productUrl,
-                  priceCurrency,
-                  lowPrice: Math.min(...listedPrices),
-                  highPrice: Math.max(...listedPrices),
-                  offerCount: listedPrices.length,
-                  availability,
-                }
-              : {
-                  "@type": "Offer",
-                  url: productUrl,
-                  priceCurrency,
-                  price,
-                  availability,
-                },
-        }
-      : {}),
+    ...(offers.length ? { offers } : {}),
   };
 
   const localePrefix = lang === "en" ? "/en" : "";
