@@ -25,7 +25,7 @@ const toXmlHeureka = (data: FeedItem[]): string => {
     <PRICE_VAT>${priceNum}</PRICE_VAT>${params ? '\n' + params : ''}
     <MANUFACTURER>Pellwood</MANUFACTURER>
     <DELIVERY_DATE>0</DELIVERY_DATE>
-    <PRODUCTNO>${escapeXml(item.mpn)}</PRODUCTNO>
+    <PRODUCTNO>${escapeXml(item.mpn)}</PRODUCTNO>${item.gtin ? `\n    <EAN>${item.gtin}</EAN>` : ''}
     <CATEGORYTEXT>Paličky</CATEGORYTEXT>
     <CATEGORY>
       <CATEGORY_ID>1535</CATEGORY_ID>

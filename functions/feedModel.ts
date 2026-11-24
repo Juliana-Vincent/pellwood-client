@@ -4,6 +4,7 @@ import { FeedItem } from './types';
 import { feedPrice, slugify } from '../helpers/feedPrice';
 import { parameterRows } from '@/helpers/dimensions';
 import { parsePrice } from './parsePrice';
+import { validGtin } from '../helpers/gtin';
 
 /**
  * Short, stable identifier for a variant: same product and same variant title,
@@ -26,6 +27,11 @@ const feedParams = (lang: string, product: any) =>
     lang === 'cz' ? { length: 'Délka', diameter: 'Průměr' } : { length: 'Length', diameter: 'Diameter' },
     lang === 'cz' ? 'cz' : 'en',
   );
+
+const gtinOf = (value: unknown) => {
+  const gtin = validGtin(value);
+  return gtin ? { gtin } : {};
+};
 
 export const feedModel = (lang: string, products: any[]): FeedItem[] => {
   const arr: FeedItem[] = [];
@@ -54,6 +60,7 @@ export const feedModel = (lang: string, products: any[]): FeedItem[] => {
           // Was 'in_stock' for everything, whatever the variant said.
           availability: variant.inStock === false ? 'out_of_stock' : 'in_stock',
           price: feedPrice(variant.price, lang),
+          ...gtinOf(variant.ean),
         });
       }
     } else if (parsePrice(prod.price) > 0) {
@@ -67,6 +74,7 @@ export const feedModel = (lang: string, products: any[]): FeedItem[] => {
         availability: 'in_stock',
         mpn: prod.documentId,
         price: feedPrice(prod.price, lang),
+        ...gtinOf(prod.ean),
       });
     }
   }

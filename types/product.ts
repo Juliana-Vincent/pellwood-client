@@ -18,6 +18,8 @@ export interface Product {
   /** Millimetres, shared by both locales - see helpers/dimensions.ts. */
   length?: number | string | null;
   diameter?: number | string | null;
+  /** EAN of a product without variants (a variant carries its own). */
+  ean?: string | null;
   parametrs?: Parameter[];
   category?: Category | null;
   linkedProducts?: Product[];
@@ -29,6 +31,7 @@ export interface Variant {
   price: number;
   inStock?: boolean;
   weight?: string;
+  ean?: string | null;
 }
 
 export interface Parameter {

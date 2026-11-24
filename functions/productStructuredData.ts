@@ -1,5 +1,6 @@
 import type { Setting } from "@/types/setting";
 import { countryCode } from "@/helpers/countryCode";
+import { gtinProperty } from "@/helpers/gtin";
 
 /*
  * Offer data for the product page's schema.org markup.
@@ -79,6 +80,8 @@ export interface OfferInput {
   name: string | null;
   price: number;
   inStock: boolean;
+  /** Already checked by validGtin. */
+  gtin?: string | null;
 }
 
 /** One Offer per variant that has a price - Google reads each price, and every
@@ -97,6 +100,7 @@ export function buildOffers(
     .map((item) => ({
       "@type": "Offer",
       ...(item.name ? { name: item.name } : {}),
+      ...(item.gtin ? { [gtinProperty(item.gtin)]: item.gtin } : {}),
       url,
       price: item.price,
       priceCurrency,

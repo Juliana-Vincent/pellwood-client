@@ -9,6 +9,7 @@ import ShortBlock from "@/components/ShortBlock";
 import { fetchAPI, urlFor } from "@/lib/strapi";
 import type { Setting } from "@/types/setting";
 import { buildOffers, returnPolicy, shippingCountries, shippingDetails } from "@/functions/productStructuredData";
+import { gtinProperty, validGtin } from "@/helpers/gtin";
 import { DataStateContext } from "@/context/dataStateContext";
 import localize from "@/data/localize";
 import { useRouter } from "next/router";
@@ -347,8 +348,9 @@ const Product = ({
               name: v.title,
               price: parsePrice(v.price),
               inStock: v.inStock !== false,
+              gtin: validGtin(v.ean),
             }))
-          : [{ name: null, price, inStock }],
+          : [{ name: null, price, inStock, gtin: validGtin(product.ean) }],
         {
           url: productUrl,
           priceCurrency,
@@ -357,6 +359,8 @@ const Product = ({
         },
       )
     : [];
+  const offerGtins = offers.map((offer: any) => offer.gtin13 || offer.gtin12 || offer.gtin8 || offer.gtin14);
+  const productGtin = offers.length === 1 && offerGtins[0] ? (offerGtins[0] as string) : null;
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -364,6 +368,8 @@ const Product = ({
     brand: { "@type": "Brand", name: "Pellwood" },
     ...(product.SEOdescription ? { description: product.SEOdescription } : {}),
     ...(product.image ? { image: urlFor(product.image).url() } : {}),
+    // On the Product itself only when it is unambiguous - one product, one code; with several variants each Offer carries its own.
+    ...(productGtin ? { [gtinProperty(productGtin)]: productGtin } : {}),
     ...(offers.length ? { offers } : {}),
   };
 

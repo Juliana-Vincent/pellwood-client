@@ -10,6 +10,8 @@ export interface FeedItem {
   link: string;
   image_link: string;
   mpn: string;
+  /** Checked EAN/GTIN (helpers/gtin.ts), when the product has one. */
+  gtin?: string;
   availability: string;
   price: string;
   parametrs?: FeedParameter[];

@@ -12,7 +12,7 @@ const toXmlProduct = (data: FeedItem[]): string => {
     <g:image_link>${escapeXml(item.image_link)}</g:image_link>
     <g:availability>${item.availability === 'out_of_stock' ? 'out of stock' : 'in stock'}</g:availability>
     <g:price>${escapeXml(item.price)}</g:price>
-    <g:mpn>${escapeXml(item.mpn)}</g:mpn>
+    <g:mpn>${escapeXml(item.mpn)}</g:mpn>${item.gtin ? `\n    <g:gtin>${item.gtin}</g:gtin>` : ''}
     <g:brand>PELLWOOD</g:brand>
   </item>`;
   }).join('');

@@ -21,7 +21,7 @@ const toXmlZbozi = (data: FeedItem[]): string => {
     <IMGURL>${escapeXml(item.image_link)}</IMGURL>
     <PRICE_VAT>${priceNum}</PRICE_VAT>${params ? '\n' + params : ''}
     <MANUFACTURER>Pellwood</MANUFACTURER>
-    <DELIVERY_DATE>0</DELIVERY_DATE>
+    <DELIVERY_DATE>0</DELIVERY_DATE>${item.gtin ? `\n    <EAN>${item.gtin}</EAN>` : ''}
     <CATEGORYTEXT>Kultura a zábava | Volný čas | Hudebniny | Hudební nástroje | Bicí nástroje | Příslušenství pro bicí nástroje | Paličky</CATEGORYTEXT>
   </SHOPITEM>`;
   }).join('');

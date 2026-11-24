@@ -4,6 +4,7 @@ import { sendEmail as sendEmailViaResend } from "@/lib/mailer-resend";
 import { sendEmail as sendEmailViaSendGrid } from "@/lib/mailer-sendgrid";
 import InfoOrder from "@/mail_template/infoOrder";
 import InfoOrderEN from "@/mail_template/infoOrderEN";
+import OrderProcessing from "@/mail_template/orderProcessing";
 import { escapeHtmlDeep } from "@/helpers/escapeHtml";
 import { paymentStatusOf } from "@/helpers/paymentStatus";
 
@@ -65,6 +66,12 @@ export async function sendOrderConfirmation(orderNumber: number): Promise<void> 
     html: isCzech ? InfoOrder(safe) : InfoOrderEN(safe),
   };
 
+  await deliver(mailOptions);
+}
+
+type MailOptions = { from: string; to: string; subject: string; text: string; html: string };
+
+async function deliver(mailOptions: MailOptions): Promise<void> {
   if (process.env.RESEND_API_KEY) {
     await sendEmailViaResend(mailOptions);
   } else if (process.env.SENDGRID_API_KEY) {
@@ -73,4 +80,52 @@ export async function sendOrderConfirmation(orderNumber: number): Promise<void> 
     const transporter = await createTransporter();
     await transporter.sendMail(mailOptions);
   }
+}
+
+export type ProcessingEmailResult = "sent" | "not-found" | "not-processing" | "already-sent" | "no-email";
+
+/**
+ * "Vaši objednávku vyřizujeme" - once per order, when the admin switches it to
+ * "Vyřizuje se". Strapi only says which order changed; the order is re-read here
+ * so the state, the address and the content all come from Strapi itself.
+ */
+export async function sendOrderProcessing(documentId: string): Promise<ProcessingEmailResult> {
+  const order = await ordersApi.findOne(documentId);
+  if (!order) return "not-found";
+  if (order.state !== "processing") return "not-processing";
+  if (order.processingNotified === true) return "already-sent";
+  if (!order.email) return "no-email";
+
+  // Claimed before sending, for the same reason as sendOrderConfirmation: a
+  // double click in the admin must not mail the customer twice.
+  await ordersApi.update(order.documentId, { processingNotified: true });
+
+  const isCzech = order.currency === "Kč";
+  const safe = escapeHtmlDeep({
+    idOrder: String(order.idOrder),
+    name: order.name || "",
+    currency: order.currency || "",
+    sum: order.sum === null || order.sum === undefined ? "" : String(order.sum),
+    deliveryMethod: order.deliveryMethod || "",
+    basket: Array.isArray(order.basket) ? order.basket : [],
+  });
+
+  try {
+    await deliver({
+      from: '"Pellwood" <info@pellwood.com>',
+      to: order.email,
+      subject: isCzech
+        ? `Objednávka č. ${order.idOrder} se vyřizuje`
+        : `Order no. ${order.idOrder} is being processed`,
+      text: isCzech
+        ? `Vaši objednávku č. ${order.idOrder} právě vyřizujeme.`
+        : `Your order no. ${order.idOrder} is now being processed.`,
+      html: OrderProcessing(safe, isCzech ? "cz" : "en"),
+    });
+  } catch (err) {
+    // Give the claim back, so switching the state again retries the e-mail.
+    await ordersApi.update(order.documentId, { processingNotified: false }).catch(() => undefined);
+    throw err;
+  }
+  return "sent";
 }
