@@ -9,7 +9,8 @@ import ShortBlock from "@/components/ShortBlock";
 import { fetchAPI, urlFor } from "@/lib/strapi";
 import type { Setting } from "@/types/setting";
 import { buildOffers, returnPolicy, shippingCountries, shippingDetails } from "@/functions/productStructuredData";
-import { gtinProperty, validGtin } from "@/helpers/gtin";
+import { gtinProperty, shownEan, validGtin } from "@/helpers/gtin";
+import EanBarcode from "@/components/EanBarcode";
 import { DataStateContext } from "@/context/dataStateContext";
 import localize from "@/data/localize";
 import { useRouter } from "next/router";
@@ -225,6 +226,8 @@ const Product = ({
     setQuantityNotice(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId, lang, requestedVariant]);
+
+  const ean = shownEan(product, select.chosen ? select.name : null);
 
   const selectHandle = (name: string, price: string) => {
     setSelect({ ...select, name, price, chosen: true });
@@ -613,6 +616,7 @@ const Product = ({
                       ))}
                     </tbody>
                   </table>
+                  {ean && <EanBarcode code={ean.code} caption={ean.variant} />}
                 </div>
               </div>
             </div>

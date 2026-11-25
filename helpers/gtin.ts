@@ -22,3 +22,30 @@ export function validGtin(value: unknown): string | null {
 /** The schema.org property for a GTIN of this length. */
 export const gtinProperty = (gtin: string) =>
   gtin.length === 13 ? "gtin13" : gtin.length === 12 ? "gtin12" : gtin.length === 8 ? "gtin8" : "gtin14";
+
+interface EanSource {
+  ean?: string | null;
+  variants?: Array<{ title?: string; price?: unknown; ean?: string | null }> | null;
+}
+
+/**
+ * The code shown on the product page: the chosen variant's; before a choice, the
+ * first variant that has one (named, so it is clear whose it is); for a product
+ * without variants, the product's own. Only EAN-13 - the only kind the shop has.
+ */
+export function shownEan(
+  product: EanSource,
+  chosenVariant: string | null,
+): { code: string; variant: string | null } | null {
+  const variants = (product.variants || []).filter((v) => !!v.price);
+  if (!variants.length) {
+    const code = validGtin(product.ean);
+    return code?.length === 13 ? { code, variant: null } : null;
+  }
+  const pick = chosenVariant
+    ? variants.filter((v) => v.title === chosenVariant)
+    : variants.filter((v) => validGtin(v.ean)?.length === 13);
+  const variant = pick[0];
+  const code = variant ? validGtin(variant.ean) : null;
+  return code?.length === 13 ? { code, variant: variant.title || null } : null;
+}

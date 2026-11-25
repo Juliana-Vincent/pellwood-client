@@ -2221,6 +2221,25 @@ input[type=number]
 	}
 }
 
+.ean_barcode{
+	margin: 20px 0 0;
+	svg{
+		display: block;
+		width: 190px;
+		max-width: 100%;
+		height: auto;
+	}
+	.ean_digits{
+		font-family: "OCR-B", "Courier New", monospace;
+	}
+	figcaption{
+		margin-top: 4px;
+		font-size: 13px;
+		letter-spacing: 1px;
+		color: rgba($accent, .7);
+	}
+}
+
 
 .select-variant.uk-dropdown{
 	padding: 0;
