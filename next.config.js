@@ -48,11 +48,16 @@ module.exports = (phase) => {
 
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://www.googletagmanager.com https://c.seznam.cz`,
-    "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: blob: https://*.pellwood.com ${strapiOrigin} https://*.zbozi.cz https://www.googletagmanager.com https://www.google-analytics.com https://*.seznam.cz${isDev ? ' http://localhost:1337' : ''}`,
-    `connect-src 'self' https://*.pellwood.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.seznam.cz https://*.zbozi.cz ${strapiOrigin}${isDev ? ' http://localhost:1337 ws://localhost:*' : ''}`,
-    "frame-src 'none'",
+    // Google's hosts are what GTM's own tags (GA4, Google Ads, preview mode) load
+    // from. A tag from anyone else added in GTM needs its host added here too -
+    // the browser console names it ("Content Security Policy").
+    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://*.googletagmanager.com https://tagmanager.google.com https://www.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com https://c.seznam.cz`,
+    "style-src 'self' 'unsafe-inline' https://tagmanager.google.com https://fonts.googleapis.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    `img-src 'self' data: blob: https://*.pellwood.com ${strapiOrigin} https://*.zbozi.cz https://*.googletagmanager.com https://*.google-analytics.com https://ssl.gstatic.com https://www.gstatic.com https://www.google.com https://www.google.cz https://googleads.g.doubleclick.net https://www.googleadservices.com https://*.seznam.cz${isDev ? ' http://localhost:1337' : ''}`,
+    `connect-src 'self' https://*.pellwood.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.doubleclick.net https://www.google.com https://www.googleadservices.com https://pagead2.googlesyndication.com https://*.seznam.cz https://*.zbozi.cz ${strapiOrigin}${isDev ? ' http://localhost:1337 ws://localhost:*' : ''}`,
+    // Google Ads conversion tags use these frames; nothing else may be framed.
+    "frame-src https://td.doubleclick.net https://bid.g.doubleclick.net https://www.googletagmanager.com",
     // The Strapi admin embeds a page here for its Preview panel, so its origin is
     // allowed to frame the site. Nothing else is.
     `frame-ancestors 'self' ${strapiOrigin}`,

@@ -1,4 +1,5 @@
 import type { GtagPurchaseEvent } from "@/functions/gtag";
+import { GTM_ID, consentSignals } from "@/lib/gtm";
 
 /*
  * Analytics and ad scripts, loaded only after the visitor consents.
@@ -40,6 +41,38 @@ let seznamReady = false;
 let pendingPurchase: GtagPurchaseEvent | null = null;
 let purchaseSentToGa = false;
 let purchaseSentToSklik = false;
+let purchaseSentToGtm: string | null = null;
+
+/** GTM (lib/gtm.ts) loads on its own; it only needs to hear about the banner. */
+function updateGtmConsent(next: Consent) {
+  if (!GTM_ID) return;
+  window.dataLayer = window.dataLayer || [];
+  if (!window.gtag) {
+    window.gtag = function gtag() {
+      // eslint-disable-next-line prefer-rest-params
+      window.dataLayer!.push(arguments);
+    };
+  }
+  window.gtag("consent", "update", consentSignals(next));
+  window.dataLayer.push({
+    event: "cookie_consent_update",
+    consent_analytics: next.analytics,
+    consent_targeting: next.targeting,
+  });
+}
+
+/**
+ * The order for GTM's tags (GA4 / Google Ads ecommerce format). Sent whatever
+ * the consent: each tag in GTM checks the consent state itself.
+ */
+function pushPurchaseToGtm(p: GtagPurchaseEvent) {
+  if (!GTM_ID || purchaseSentToGtm === p.transaction_id) return;
+  window.dataLayer = window.dataLayer || [];
+  // Clears the previous ecommerce object, as Google recommends.
+  window.dataLayer.push({ ecommerce: null });
+  window.dataLayer.push({ event: "purchase", ecommerce: p });
+  purchaseSentToGtm = p.transaction_id;
+}
 
 function injectScript(id: string, src: string, onLoad?: () => void) {
   if (document.getElementById(id)) return;
@@ -110,6 +143,7 @@ export function applyConsent(next: Consent) {
   const revoked =
     (consent.analytics && !next.analytics) || (consent.targeting && !next.targeting);
   consent = next;
+  updateGtmConsent(next);
   // A script that is already running can't be unloaded; reload so the page comes
   // back without it.
   if (revoked && (gaLoaded || seznamLoaded)) {
@@ -128,5 +162,6 @@ export function trackPurchase(event: GtagPurchaseEvent) {
     purchaseSentToGa = false;
     purchaseSentToSklik = false;
   }
+  pushPurchaseToGtm(event);
   flushPurchase();
 }
